@@ -41,13 +41,11 @@ public class CWLRunner {
                     throw new IOException("unterminated skip...");
                 }
             }
-            long ret = 0;
+            long ret = in.read(buffer);
             while (ret != -1) {
+                System.out.print(new String(Arrays.copyOf(buffer, (int)ret)));
+                offset += ret;
                 ret = in.read(buffer);
-                if (ret > 0) {
-                    System.out.print(new String(Arrays.copyOf(buffer, (int)ret)));
-                    offset += ret;
-                }
             }
         } catch (IOException e) {
             e.printStackTrace();
