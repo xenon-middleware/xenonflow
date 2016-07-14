@@ -2,10 +2,12 @@ package nl.esciencecenter.xenon.cwl;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,27 +63,33 @@ public class CWLRunner {
 
             LOGGER.info("Starting the " + CWLRunner.class.getSimpleName() + " example.");
 
+            // TODO: nice argument parsing
             assert args.length > 2;
             assert "--xenon-host".equals(args[0]);
 
             LOGGER.debug("Convert the command line parameter to a URI...");
             URI location = new URI(args[1]);
 
-            String fileScheme = "sftp";
-
             String workflowFilename = args[2];
+
+            // TODO: support local?
+            String fileScheme = "sftp";
 
             LOGGER.debug("Creating a new Xenon...");
             Xenon xenon = XenonFactory.newXenon(null);
+            // TODO: make cache dir configurable?
             String cacheDir = "xenon-cwl-runner/workflows/" + UUID.randomUUID().toString();
 
             LOGGER.info("Writing files to " + cacheDir);
 
+            // Creating local and remote files and filesystems
             Files files = xenon.files();
             FileSystem remoteFileSystem = files.newFileSystem(fileScheme, location.getAuthority(), null, null);
             Path cachePath = Utils.resolveWithEntryPath(files, remoteFileSystem, cacheDir);
             files.createDirectories(cachePath);
 
+            // Copy workflow to machine
+            // TODO: copy other files to machine
             FileSystem localFileSystem = files.newFileSystem("local", null, null, null);
             Path localWorkflow = files.newPath(localFileSystem, new RelativePath(Utils.getLocalCWD(files).getRelativePath(), new RelativePath(workflowFilename)));
             Path remoteWorkflow = Utils.resolveWithRoot(files, cachePath, workflowFilename);
@@ -91,6 +99,7 @@ public class CWLRunner {
             LOGGER.debug("Creating a JobDescription for the job we want to run...");
             JobDescription description = new JobDescription();
             description.setExecutable("cwl-runner");
+            // TODO: pass other arguments to cwl-runner
             String[] cwlArguments = Arrays.copyOfRange(args, 2, args.length);
             cwlArguments[0] = cacheDir + "/" + workflowFilename;
             description.setArguments(cwlArguments);
@@ -110,9 +119,12 @@ public class CWLRunner {
 
             jobs.waitUntilRunning(job, 0);
 
+            // Creating local and remote files and filesystems
             Path outPath = Utils.resolveWithEntryPath(files, remoteFileSystem, job.getJobDescription().getStdout());
             Path errPath = Utils.resolveWithEntryPath(files, remoteFileSystem, job.getJobDescription().getStderr());
 
+            // Reading in the standard error and standard out
+            //
             long outIndex = -1L;
             long errIndex = -1L;
 
@@ -122,7 +134,6 @@ public class CWLRunner {
                 errIndex = print(files, errPath, errIndex);
                 status = jobs.waitUntilDone(job, 5000L);
             } while (!status.isDone());
-
 
             while (!files.exists(outPath)) {
                 Thread.sleep(1000L);
