@@ -1,2 +1,8 @@
 #!/bin/bash
-java -jar build/libs/xenon-cwl-runner-all.jar $@
+
+#figure out where this script is stored (http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in)
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" 
+
+#Add jar to classpath, pass along all command line options to the main class
+java -jar $DIR/build/libs/xenon-cwl-runner-all.jar $@
