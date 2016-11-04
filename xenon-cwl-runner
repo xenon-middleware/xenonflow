@@ -1,0 +1,2 @@
+#!/bin/bash
+java -jar build/libs/xenon-cwl-runner-all.jar $@
