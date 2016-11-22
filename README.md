@@ -1,5 +1,7 @@
 # xenon-cwl-runner
 
+#Note: This runner is both a prototype and incomplete. We do plan to finish it at some point in the near future.
+
 Run CWL workflows using Xenon
 
 # Building
