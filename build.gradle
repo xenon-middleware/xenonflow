@@ -4,6 +4,7 @@ plugins {
     id 'idea'
     id 'application'
     id 'com.github.johnrengelman.shadow' version '1.2.3'
+    id 'org.hidetake.swagger.generator' version '2.4.2'
 }
 
 mainClassName = 'nl.esciencecenter.xenon.cwl.CWLRunner'
@@ -20,9 +21,25 @@ dependencies {
     // The production code uses the SLF4J logging API at compile time
     compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '1.1.0'
 
+    swaggerCodegen 'io.swagger:swagger-codegen-cli:2.2.2'
+
     // Declare the dependency for your favourite test framework you want to use in your tests.
     // TestNG is also supported by the Gradle Test task. Just change the
     // testCompile dependency to testCompile 'org.testng:testng:6.8.1' and add
     // 'test.useTestNG()' to your build script.
     testCompile 'junit:junit:4.12'
+}
+
+
+validateSwagger {
+    inputFile = file('xenon-workflow-execution-api.yaml')
+}
+
+
+generateSwaggerCode {
+    language = 'msf4j'
+    inputFile = file('xenon-workflow-execution-api.yaml')
+//    outputDir = file('src')
+//    configFile = file('config.json')
+//    components = ['models', 'apis']
 }
