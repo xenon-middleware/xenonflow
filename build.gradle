@@ -20,6 +20,7 @@ repositories {
 dependencies {
     // The production code uses the SLF4J logging API at compile time
     compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '1.1.0'
+    compile 'org.yaml:snakeyaml:1.18'
 
     swaggerCodegen 'io.swagger:swagger-codegen-cli:2.2.2'
 
