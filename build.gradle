@@ -2,6 +2,7 @@
 plugins {
     id 'java'
     id 'idea'
+    id 'eclipse'
     id 'application'
     id 'com.github.johnrengelman.shadow' version '1.2.3'
     id 'org.hidetake.swagger.generator' version '2.4.2'
@@ -13,14 +14,19 @@ mainClassName = 'nl.esciencecenter.xenon.cwl.CWLRunner'
 repositories {
     // Use 'jcenter' for resolving your dependencies.
     // You can declare any Maven/Ivy/file repository here.
+    mavenLocal()
     jcenter()
 }
 
 // In this section you declare the dependencies for your production and test code
 dependencies {
     // The production code uses the SLF4J logging API at compile time
-    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '1.1.0'
+    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.0.0'
     compile 'org.yaml:snakeyaml:1.18'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.0.pr4'
+	compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.0.pr4'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
+    
 
     swaggerCodegen 'io.swagger:swagger-codegen-cli:2.2.2'
 

@@ -2,8 +2,6 @@ package nl.esciencecenter.xenon.cwl;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,27 +10,27 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import nl.esciencecenter.xenon.Xenon;
 import nl.esciencecenter.xenon.XenonException;
-import nl.esciencecenter.xenon.XenonFactory;
-import nl.esciencecenter.xenon.files.FileSystem;
-import nl.esciencecenter.xenon.files.Files;
-import nl.esciencecenter.xenon.files.Path;
-import nl.esciencecenter.xenon.files.RelativePath;
-import nl.esciencecenter.xenon.jobs.*;
-import nl.esciencecenter.xenon.util.Utils;
+import nl.esciencecenter.xenon.credentials.DefaultCredential;
+import nl.esciencecenter.xenon.filesystems.CopyMode;
+import nl.esciencecenter.xenon.filesystems.FileSystem;
+import nl.esciencecenter.xenon.filesystems.Path;
+import nl.esciencecenter.xenon.schedulers.JobDescription;
+import nl.esciencecenter.xenon.schedulers.JobHandle;
+import nl.esciencecenter.xenon.schedulers.JobStatus;
+import nl.esciencecenter.xenon.schedulers.Scheduler;
 
 public class CWLRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CWLRunner.class);
 
     private static byte[] buffer = new byte[64*1024];
 
-    private static long print(Files files, Path path, long offset) throws XenonException {
+    private static long print(FileSystem files, Path path, long offset) throws XenonException {
         if (offset == -1L && !files.exists(path)) {
             return -1L;
         }
         try {
-            InputStream in = files.newInputStream(path);
+            InputStream in = files.readFromFile(path);
             if (offset == -1) {
                 offset = 0;
             }
@@ -63,36 +61,34 @@ public class CWLRunner {
 
             // TODO: nice argument parsing
             assert args.length > 2;
-            assert "--xenon-host".equals(args[0]);
+            assert "--xenon-scheduler".equals(args[0]);           
+            assert "--xenon-location".equals(args[2]);
+            
+            String schedulertype = args[1];
+            String location = args[3];
 
-            LOGGER.debug("Convert the command line parameter to a URI...");
-            URI location = new URI(args[1]);
-
-            String workflowFilename = args[2];
+            String workflowFilename = args[4];
 
             // TODO: support local?
             String fileScheme = "sftp";
 
-            LOGGER.debug("Creating a new Xenon...");
-            Xenon xenon = XenonFactory.newXenon(null);
             // TODO: make cache dir configurable?
             String cacheDir = "xenon-cwl-runner/workflows/" + UUID.randomUUID().toString();
 
             LOGGER.info("Writing files to " + cacheDir);
 
             // Creating local and remote files and filesystems
-            Files files = xenon.files();
-            FileSystem remoteFileSystem = files.newFileSystem(fileScheme, location.getAuthority(), null, null);
-            Path cachePath = Utils.resolveWithEntryPath(files, remoteFileSystem, cacheDir);
-            files.createDirectories(cachePath);
+            FileSystem remoteFileSystem =  FileSystem.create(fileScheme, location); // files.newFileSystem(fileScheme, location.getAuthority(), null, null);
+            Path cachePath = remoteFileSystem.getEntryPath().resolve(cacheDir); // Utils.resolveWithEntryPath(files, remoteFileSystem, cacheDir);
+            remoteFileSystem.createDirectories(cachePath);
 
             // Copy workflow to machine
             // TODO: copy other files to machine
-            FileSystem localFileSystem = files.newFileSystem("local", null, null, null);
-            Path localWorkflow = files.newPath(localFileSystem, new RelativePath(Utils.getLocalCWD(files).getRelativePath(), new RelativePath(workflowFilename)));
-            Path remoteWorkflow = Utils.resolveWithRoot(files, cachePath, workflowFilename);
+            FileSystem localFileSystem = FileSystem.create("local");
+            Path localWorkflow = localFileSystem.getEntryPath().resolve(workflowFilename);
+            Path remoteWorkflow = cachePath.resolve(workflowFilename);
             LOGGER.debug("Copying the localWorkflow");
-            files.copy(localWorkflow, remoteWorkflow);
+            localFileSystem.copy(localWorkflow, remoteFileSystem, remoteWorkflow, CopyMode.REPLACE, false);
 
             LOGGER.debug("Creating a JobDescription for the job we want to run...");
             JobDescription description = new JobDescription();
@@ -104,22 +100,19 @@ public class CWLRunner {
             description.setStdout(cacheDir + "/stdout.txt");
             description.setStderr(cacheDir + "/stderr.txt");
 
-            LOGGER.debug("Retrieving the Jobs API...");
-            Jobs jobs = xenon.jobs();
-
             Map<String, String> properties = new HashMap<>();
             properties.put("xenon.adaptors.slurm.ignore.version", "true");
             LOGGER.debug("Creating a scheduler to run the job...");
-            Scheduler scheduler = jobs.newScheduler(location.getScheme(), location.getAuthority(), null, properties);
+            Scheduler scheduler = Scheduler.create(schedulertype, location, new DefaultCredential(), properties); //jobs.newScheduler(location.getScheme(), location.getAuthority(), null, properties);
 
             LOGGER.debug("Submitting the job...");
-            Job job = jobs.submitJob(scheduler, description);
+            JobHandle job = scheduler.submitJob(description);
 
-            jobs.waitUntilRunning(job, 0);
+            scheduler.waitUntilRunning(job, 0);
 
             // Creating local and remote files and filesystems
-            Path outPath = Utils.resolveWithEntryPath(files, remoteFileSystem, job.getJobDescription().getStdout());
-            Path errPath = Utils.resolveWithEntryPath(files, remoteFileSystem, job.getJobDescription().getStderr());
+            Path outPath = remoteFileSystem.getEntryPath().resolve(job.getJobDescription().getStdout()); // Utils.resolveWithEntryPath(files, remoteFileSystem, job.getJobDescription().getStdout());
+            Path errPath = remoteFileSystem.getEntryPath().resolve(job.getJobDescription().getStderr());// Utils.resolveWithEntryPath(files, remoteFileSystem, job.getJobDescription().getStderr());
 
             // Reading in the standard error and standard out
             //
@@ -128,31 +121,29 @@ public class CWLRunner {
 
             JobStatus status;
             do {
-                outIndex = print(files, outPath, outIndex);
-                errIndex = print(files, errPath, errIndex);
-                status = jobs.waitUntilDone(job, 5000L);
+                outIndex = print(remoteFileSystem, outPath, outIndex);
+                errIndex = print(remoteFileSystem, errPath, errIndex);
+                status = scheduler.waitUntilDone(job, 5000L);
             } while (!status.isDone());
 
-            while (!files.exists(outPath)) {
+            while (!remoteFileSystem.exists(outPath)) {
                 Thread.sleep(1000L);
             }
-            while (!files.exists(errPath)) {
+            while (!remoteFileSystem.exists(errPath)) {
                 Thread.sleep(1000L);
             }
 
-            print(files, outPath, outIndex);
-            print(files, errPath, errIndex);
+            print(remoteFileSystem, outPath, outIndex);
+            print(remoteFileSystem, errPath, errIndex);
 
             LOGGER.debug("Closing the scheduler to free up resources...");
-            jobs.close(scheduler);
-            files.close(remoteFileSystem);
-
-            LOGGER.debug("Ending Xenon to release all resources...");
-            XenonFactory.endXenon(xenon);
+            scheduler.close();
+            remoteFileSystem.close();
+            localFileSystem.close();
 
             LOGGER.info(CWLRunner.class.getSimpleName() + " completed.");
 
-        } catch (URISyntaxException | XenonException e) {
+        } catch (XenonException e) {
             LOGGER.error(CWLRunner.class.getSimpleName() + " example failed: " + e.getMessage());
             e.printStackTrace();
         } catch (InterruptedException e) {
