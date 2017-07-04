@@ -1,4 +1,4 @@
-package nl.esciencecenter.cwl;
+package nl.esciencecenter.xenon.config;
 
 import nl.esciencecenter.xenon.config.XenonConfigParser;
 

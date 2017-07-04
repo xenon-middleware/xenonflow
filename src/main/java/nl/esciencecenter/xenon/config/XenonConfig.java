@@ -5,18 +5,18 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class XenonConfig {
-	private Map<String, ComputeResource> resources;
+	private Map<String, ComputeResource> computeResources;
 	
-	public XenonConfig(@JsonProperty("ComputeResources") Map<String, ComputeResource> resources) {
+	public XenonConfig(@JsonProperty("ComputeResources") Map<String, ComputeResource> computeResources) {
 		super();
-		this.resources = resources;
+		this.computeResources = computeResources;
 	}
 	
-	public Map<String, ComputeResource> getResources() {
-		return resources;
+	public Map<String, ComputeResource> getComputeResources() {
+		return computeResources;
 	}
 
-	public void setResources(Map<String, ComputeResource> resources) {
-		this.resources = resources;
+	public void setComputeResources(Map<String, ComputeResource> computeResources) {
+		this.computeResources = computeResources;
 	}
 }

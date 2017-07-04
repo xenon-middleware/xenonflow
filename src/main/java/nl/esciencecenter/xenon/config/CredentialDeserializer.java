@@ -1,7 +1,9 @@
 package nl.esciencecenter.xenon.config;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,21 +31,39 @@ public class CredentialDeserializer extends JsonDeserializer<Credential> {
 		String user = node.get("user").asText();
 		
 		if(node.has("password")) {
-			// @TODO Go through binaryValue instead of string
-			char[] password = node.get("password").asText().toCharArray();
+			char[] password = decodeBinaryValue(node.get("password"));					
 			return new PasswordCredential(user, password);
 		} else if(node.has("certificatefile")){
 			String certificateFile = node.get("certificatefile").asText();
 			char[] passphrase = null;
 			
 			if(node.has("passphrase")) {
-				// @TODO Go through binaryValue instead of string
-				passphrase = node.get("passphrase").asText().toCharArray();
+				passphrase = decodeBinaryValue(node.get("passphrase"));
 			}
 			return new CertificateCredential(user, certificateFile, passphrase);
 		} else {
 			return new DefaultCredential(user);
 		}
+	}
+	
+	/**
+	 * Decode base64 encoded utf-8 strings from JsonNodes
+	 * 
+	 * Used for password to avoid the String object
+	 * 
+	 * @param node
+	 * @return Decoded binary value
+	 * @throws IOException
+	 */
+	private static char[] decodeBinaryValue(JsonNode node) throws IOException {
+		byte[] bytes = node.binaryValue();
+		Charset utf8 = Charset.forName("UTF-8");
+
+		CharBuffer characters = utf8.decode(ByteBuffer.wrap(bytes));
+		char[] chars = new char[characters.remaining()]; 
+		characters.get(chars);
+		
+		return chars;
 	}
 
 }

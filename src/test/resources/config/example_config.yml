@@ -6,6 +6,7 @@ ComputeResources:
             location: ssh://fs0.das5.cs.vu.nl
             credential:
                 user: bweel
+                password: dGVzdGluZw==
             options:
                 max_time: 1440
         filesystem:
