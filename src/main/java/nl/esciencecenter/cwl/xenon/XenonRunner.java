@@ -1,7 +1,9 @@
-package nl.esciencecenter.xenon.cwl;
+package nl.esciencecenter.cwl.xenon;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,9 +12,17 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
+import nl.esciencecenter.cwl.Workflow;
 import nl.esciencecenter.xenon.XenonException;
-import nl.esciencecenter.xenon.credentials.DefaultCredential;
+import nl.esciencecenter.xenon.config.AdaptorConfig;
+import nl.esciencecenter.xenon.config.ComputeResource;
+import nl.esciencecenter.xenon.config.XenonConfig;
+import nl.esciencecenter.xenon.filesystems.CopyHandle;
 import nl.esciencecenter.xenon.filesystems.CopyMode;
+import nl.esciencecenter.xenon.filesystems.CopyStatus;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 import nl.esciencecenter.xenon.schedulers.JobDescription;
@@ -20,8 +30,8 @@ import nl.esciencecenter.xenon.schedulers.JobHandle;
 import nl.esciencecenter.xenon.schedulers.JobStatus;
 import nl.esciencecenter.xenon.schedulers.Scheduler;
 
-public class CWLRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CWLRunner.class);
+public class XenonRunner {
+    private static final Logger LOGGER = LoggerFactory.getLogger(XenonRunner.class);
 
     private static byte[] buffer = new byte[64*1024];
 
@@ -57,53 +67,71 @@ public class CWLRunner {
     public static void main(String[] args) {
         try {
 
-            LOGGER.info("Starting the " + CWLRunner.class.getSimpleName() + " example.");
+            LOGGER.info("Starting the " + XenonRunner.class.getSimpleName() + " example.");
 
             // TODO: nice argument parsing
-            assert args.length > 2;
-            assert "--xenon-scheduler".equals(args[0]);           
-            assert "--xenon-location".equals(args[2]);
+            assert args.length > 5;
+            assert "--xenon-config".equals(args[0]);           
+            assert "--xenon-compute-resource".equals(args[2]);
             
-            String schedulertype = args[1];
-            String location = args[3];
-
+            String xenonConfigFilename = args[1];
+            String xenonComputeResource = args[3];
             String workflowFilename = args[4];
 
-            // TODO: support local?
-            String fileScheme = "sftp";
-
             // TODO: make cache dir configurable?
-            String cacheDir = "xenon-cwl-runner/workflows/" + UUID.randomUUID().toString();
-
+            String cacheDir = "/tmp/xenon-cwl-runner/workflows/" + UUID.randomUUID().toString();
             LOGGER.info("Writing files to " + cacheDir);
+            
+            
+            LOGGER.info("Reading xenon configuration from " + xenonConfigFilename);
+            XenonConfig config = XenonConfig.loadFromFile(new File(xenonConfigFilename));
+            ComputeResource resource = config.get(xenonComputeResource);
+            AdaptorConfig fileSystemConfig = resource.getFilesystemConfig();
+            AdaptorConfig schedulerConfig = resource.getSchedulerConfig();
+            
+            LOGGER.info("Reading workflow from " + workflowFilename);
+            Workflow workflow = Workflow.fromFile(new File(workflowFilename));
+            
 
             // Creating local and remote files and filesystems
-            FileSystem remoteFileSystem =  FileSystem.create(fileScheme, location); // files.newFileSystem(fileScheme, location.getAuthority(), null, null);
+            LOGGER.info("Setting up remote file system using " + fileSystemConfig.getAdaptor() + " adaptor and " + fileSystemConfig.getLocation() + " as location");
+            FileSystem remoteFileSystem =  FileSystem.create(fileSystemConfig.getAdaptor(), fileSystemConfig.getLocation());
             Path cachePath = remoteFileSystem.getEntryPath().resolve(cacheDir); // Utils.resolveWithEntryPath(files, remoteFileSystem, cacheDir);
             remoteFileSystem.createDirectories(cachePath);
 
             // Copy workflow to machine
             // TODO: copy other files to machine
-            FileSystem localFileSystem = FileSystem.create("local");
+            FileSystem localFileSystem = FileSystem.create("file", "/");
             Path localWorkflow = localFileSystem.getEntryPath().resolve(workflowFilename);
-            Path remoteWorkflow = cachePath.resolve(workflowFilename);
-            LOGGER.debug("Copying the localWorkflow");
-            localFileSystem.copy(localWorkflow, remoteFileSystem, remoteWorkflow, CopyMode.REPLACE, false);
+            String workflowBaseName = localWorkflow.getFileNameAsString();
+            Path remoteWorkflow = cachePath.resolve(workflowBaseName);
+            LOGGER.info("Copying the localWorkflow from " + localWorkflow + " to " + remoteWorkflow);
+            CopyHandle h = localFileSystem.copy(localWorkflow, remoteFileSystem, remoteWorkflow, CopyMode.REPLACE, false);
+            CopyStatus s = localFileSystem.waitUntilDone(h, 1000);
+            if(s.hasException()){
+            	LOGGER.error("OH MY GOD IT'S BURNIGN!: " + s.getException().getMessage());
+            	s.getException().printStackTrace();
+            	System.exit(-1);
+            }
 
-            LOGGER.debug("Creating a JobDescription for the job we want to run...");
+            LOGGER.info("Creating a JobDescription for the job we want to run...");
             JobDescription description = new JobDescription();
             description.setExecutable("cwl-runner");
             // TODO: pass other arguments to cwl-runner
-            String[] cwlArguments = Arrays.copyOfRange(args, 2, args.length);
-            cwlArguments[0] = cacheDir + "/" + workflowFilename;
-            description.setArguments(cwlArguments);
+            ArrayList<String> cwlArguments = new ArrayList<String>();
+            cwlArguments.add(cacheDir + "/" + workflowBaseName);
+            cwlArguments.addAll(Arrays.asList(Arrays.copyOfRange(args, 5, args.length)));
+            
+            System.out.println(Arrays.toString(cwlArguments.toArray()));
+            
+            description.setArguments(cwlArguments.toArray(new String[cwlArguments.size()]));
             description.setStdout(cacheDir + "/stdout.txt");
             description.setStderr(cacheDir + "/stderr.txt");
 
             Map<String, String> properties = new HashMap<>();
             properties.put("xenon.adaptors.slurm.ignore.version", "true");
             LOGGER.debug("Creating a scheduler to run the job...");
-            Scheduler scheduler = Scheduler.create(schedulertype, location, new DefaultCredential(), properties); //jobs.newScheduler(location.getScheme(), location.getAuthority(), null, properties);
+            Scheduler scheduler = Scheduler.create(schedulerConfig.getAdaptor(), schedulerConfig.getLocation(), schedulerConfig.getCredential(), schedulerConfig.getProperties()); //jobs.newScheduler(location.getScheme(), location.getAuthority(), null, properties);
 
             LOGGER.debug("Submitting the job...");
             JobHandle job = scheduler.submitJob(description);
@@ -141,13 +169,19 @@ public class CWLRunner {
             remoteFileSystem.close();
             localFileSystem.close();
 
-            LOGGER.info(CWLRunner.class.getSimpleName() + " completed.");
+            LOGGER.info(XenonRunner.class.getSimpleName() + " completed.");
 
         } catch (XenonException e) {
-            LOGGER.error(CWLRunner.class.getSimpleName() + " example failed: " + e.getMessage());
+            LOGGER.error(XenonRunner.class.getSimpleName() + " example failed: " + e.getMessage());
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        } catch (JsonParseException e) {
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
 }

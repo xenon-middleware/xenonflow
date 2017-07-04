@@ -2,13 +2,8 @@
 ComputeResources:
     das5:
         scheduler:
-            adaptor: slurm
-            location: ssh://fs0.das5.cs.vu.nl
-            credential:
-                user: bweel
-                password: dGVzdGluZw==
-            options:
-                max_time: 1440
+            adaptor: local
+            location: local://berend
         filesystem:
-            adaptor: sftp
-            location: ssh://fs0.das5.cs.vu.nl
+            adaptor: file
+            location: /
