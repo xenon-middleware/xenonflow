@@ -1,25 +1,28 @@
 package nl.esciencecenter.xenon.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = false)
 public class ComputeResource {
-	private AdaptorConfig scheduler;
-	private AdaptorConfig filesystem;
+	@JsonProperty("scheduler")
+	private AdaptorConfig schedulerConfig;
+	@JsonProperty("filesystem")
+	private AdaptorConfig filesystemConfig;
 	
-	public AdaptorConfig getScheduler() {
-		return scheduler;
+	public AdaptorConfig getSchedulerConfig() {
+		return schedulerConfig;
 	}
 
-	public void setScheduler(AdaptorConfig scheduler) {
-		this.scheduler = scheduler;
+	public void setSchedulerConfig(AdaptorConfig schedulerConfig) {
+		this.schedulerConfig = schedulerConfig;
 	}
 
-	public AdaptorConfig getFilesystem() {
-		return filesystem;
+	public AdaptorConfig getFilesystemConfig() {
+		return filesystemConfig;
 	}
 
-	public void setFilesystem(AdaptorConfig filesystem) {
-		this.filesystem = filesystem;
+	public void setFilesystemConfig(AdaptorConfig filesystemConfig) {
+		this.filesystemConfig = filesystemConfig;
 	}
 }

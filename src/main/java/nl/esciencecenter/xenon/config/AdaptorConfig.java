@@ -10,7 +10,7 @@ import nl.esciencecenter.xenon.credentials.DefaultCredential;
 public class AdaptorConfig {
 	private String adaptor;
 	private String location;
-	private Map<String, String> options;
+	private Map<String, String> properties;
 	private Credential credential;
 	
 	public AdaptorConfig(@JsonProperty("credential") Credential credential) {
@@ -37,12 +37,12 @@ public class AdaptorConfig {
 		this.location = location;
 	}
 	
-	public Map<String, String> getOptions() {
-		return options;
+	public Map<String, String> getProperties() {
+		return properties;
 	}
 	
-	public void setOptions(Map<String, String> options) {
-		this.options = options;
+	public void setProperties(Map<String, String> properties) {
+		this.properties = properties;
 	}
 	
 	public Credential getCredential() {

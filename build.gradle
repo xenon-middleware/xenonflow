@@ -9,7 +9,8 @@ plugins {
     id 'org.springframework.boot' version '1.5.4.RELEASE'
 }
 
-mainClassName = 'nl.esciencecenter.xenon.cwl.rest.Swagger2SpringBoot'
+//mainClassName = 'nl.esciencecenter.xenon.cwl.rest.Swagger2SpringBoot'
+mainClassName = 'nl.esciencecenter.cwl.xenon.XenonRunner'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
@@ -23,11 +24,11 @@ repositories {
 dependencies {
     // The production code uses the SLF4J logging API at compile time
     compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.0.0'
-    compile 'org.yaml:snakeyaml:1.18'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.0.pr4'
 	compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.0.pr4'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
-    
+    compileOnly "org.projectlombok:lombok:1.16.16"
+
 
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat'
