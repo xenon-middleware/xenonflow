@@ -6,9 +6,11 @@ plugins {
     id 'application'
     id 'com.github.johnrengelman.shadow' version '1.2.3'
     id 'org.hidetake.swagger.generator' version '2.4.2'
+    id 'org.springframework.boot' version '1.5.4.RELEASE'
 }
 
-mainClassName = 'nl.esciencecenter.cwl.xenon.XenonRunner'
+mainClassName = 'nl.esciencecenter.xenon.cwl.rest.Swagger2SpringBoot'
+//mainClassName = 'nl.esciencecenter.cwl.xenon.XenonRunner'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
@@ -20,20 +22,34 @@ repositories {
 
 // In this section you declare the dependencies for your production and test code
 dependencies {
-    // The production code uses the SLF4J logging API at compile time
+    // Xenon
     compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.0.0'
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.0.pr4'
-	compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.0.pr4'
-    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
-    compileOnly "org.projectlombok:lombok:1.16.16"
-    
 
+    //Spring(boot)
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat'
+    compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.5.0'
+    compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.5.0'
+
+    //Jackson, match version used in Spring
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.8'
+    compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.8.8'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.8.8'
+
+
+    //compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310'
+
+    compile group: 'javax.validation', name: 'validation-api', version: '1.1.0.Final'
+
+
+
+    //Swagger
     swaggerCodegen 'io.swagger:swagger-codegen-cli:2.2.2'
 
-    // Declare the dependency for your favourite test framework you want to use in your tests.
-    // TestNG is also supported by the Gradle Test task. Just change the
-    // testCompile dependency to testCompile 'org.testng:testng:6.8.1' and add
-    // 'test.useTestNG()' to your build script.
+
+    //Misc
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
+    compile group: 'org.projectlombok', name: 'lombok', version: '1.16.16'
     testCompile 'junit:junit:4.12'
 }
 
@@ -42,10 +58,22 @@ validateSwagger {
     inputFile = file('xenon-workflow-execution-api.yaml')
 }
 
+def swaggerProperties = [
+        'basePackage'            : 'nl.esciencecenter.xenon.cwl.rest',
+        'modelPackage'           : 'nl.esciencecenter.xenon.cwl.rest.model',
+        'apiPackage'             : 'nl.esciencecenter.xenon.cwl.rest.api',
+        'invokerPackage'         : 'nl.esciencecenter.xenon.cwl.rest.invoker',
+        'java8'                  : 'true',
+        'hideGenerationTimestamp': 'true',
+        'dateLibrary'            : 'java8',
+        'serializableModel'      : 'true'
+
+]
 
 generateSwaggerCode {
-    language = 'msf4j'
+    language = 'spring'
     inputFile = file('xenon-workflow-execution-api.yaml')
+    additionalProperties = swaggerProperties
 //    outputDir = file('src')
 //    configFile = file('config.json')
 //    components = ['models', 'apis']
