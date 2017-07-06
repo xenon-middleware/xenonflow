@@ -13,23 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.esciencecenter.cwl;
+package nl.esciencecenter.computeservice;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
-public class OutputParameter extends Parameter {
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -1477836903369041963L;
-	
-	public OutputParameter(
-			@JsonProperty("id") String id,
-			@JsonProperty("type") String type,
-			@JsonProperty("label") String label
-			){
-		super(id, type, label);
-	}
-
+@Repository
+public interface CWLInputFileRepository extends CrudRepository<CWLInputFile, Long>{
+	List<CWLInputFile> findByFilename(String filename);
+	List<CWLInputFile> findByLocation(String location);
 }

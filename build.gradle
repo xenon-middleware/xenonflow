@@ -26,8 +26,8 @@ dependencies {
     compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.0.0'
 
     //Spring(boot)
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '1.5.4.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '1.5.4.RELEASE'
     compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.5.0'
     compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.5.0'
 
@@ -36,23 +36,33 @@ dependencies {
     compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.8.8'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.8.8'
 
-
+	
     //compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310'
-
     compile group: 'javax.validation', name: 'validation-api', version: '1.1.0.Final'
-
+	
+	//JPA, hibernate and h2 database persistance libraries
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '1.5.4.RELEASE'
+	runtime group: 'com.h2database', name: 'h2', version: '1.4.196'
+	
+	//Unittest spring-boot all-inclusive package
+	testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.5.4.RELEASE'
 
 
     //Swagger
     swaggerCodegen 'io.swagger:swagger-codegen-cli:2.2.2'
 
-
     //Misc
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
+    compile group: 'commons-io', name: 'commons-io', version: '2.5'
     compile group: 'org.projectlombok', name: 'lombok', version: '1.16.16'
     testCompile 'junit:junit:4.12'
 }
 
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
 
 validateSwagger {
     inputFile = file('xenon-workflow-execution-api.yaml')

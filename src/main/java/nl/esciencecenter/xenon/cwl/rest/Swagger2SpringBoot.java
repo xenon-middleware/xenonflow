@@ -1,26 +1,30 @@
 package nl.esciencecenter.xenon.cwl.rest;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.catalina.servlets.WebdavServlet;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.web.servlet.ServletRegistrationBean;
-
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
-import org.apache.catalina.servlets.WebdavServlet;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-
+import nl.esciencecenter.computeservice.CWLInputFile;
+import nl.esciencecenter.computeservice.CWLInputFileRepository;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @SpringBootApplication
 @EnableSwagger2
 @ComponentScan(basePackages = "nl.esciencecenter.xenon.cwl.rest")
+@EntityScan("nl.esciencecenter.computeservice")
+@EnableJpaRepositories("nl.esciencecenter.computeservice*")
 public class Swagger2SpringBoot implements CommandLineRunner {
-
 
 	@Bean
 	public ServletRegistrationBean servletRegistrationBean(){
@@ -35,7 +39,6 @@ public class Swagger2SpringBoot implements CommandLineRunner {
 		registration.addUrlMappings("/webdav/*");
 
 		registration.setLoadOnStartup(1);
-
 
 		return registration;
 	}
