@@ -5,4 +5,4 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" 
 
 #Add jar to classpath, pass along all command line options to the main class
-java -jar $DIR/build/libs/xenon-cwl-runner-all.jar $@
+java -jar $DIR/build/libs/xenon-cwl-runner.jar $@

@@ -23,7 +23,7 @@ ComputeResources:
                 certificatefile: /home/bweel/.ssh/id_rsa
         filesystem:
             adaptor: sftp
-            location: fs0.das5.cs.vu.nl/var/scratch/bweel
+            location: fs0.das5.cs.vu.nl
     local:
         scheduler:
             adaptor: local
@@ -33,6 +33,8 @@ ComputeResources:
             location: /
 
 default: das5
+
+cwlCommand: cwltool-wrapper-not-thisone
 
 localFileSystem:
     adaptor: webdav

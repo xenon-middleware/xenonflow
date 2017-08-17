@@ -6,6 +6,10 @@ build/
 .settings
 *.iws
 
+log/
+db/
+xenon-cwl-runner.log
+
 # Ignore Gradle GUI config
 gradle-app.setting
 

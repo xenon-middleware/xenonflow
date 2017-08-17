@@ -4,13 +4,13 @@ plugins {
     id 'idea'
     id 'eclipse'
     id 'application'
-    id 'com.github.johnrengelman.shadow' version '1.2.3'
     id 'org.hidetake.swagger.generator' version '2.4.2'
-    id 'org.springframework.boot' version '1.5.4.RELEASE'
+    id 'org.springframework.boot' version '1.5.6.RELEASE'
 }
 
-mainClassName = 'nl.esciencecenter.xenon.cwl.rest.Swagger2SpringBoot'
-//mainClassName = 'nl.esciencecenter.cwl.xenon.XenonRunner'
+bootRepackage {
+    mainClass = 'nl.esciencecenter.computeservice.rest.Swagger2SpringBoot'
+}
 
 // In this section you declare where to find the dependencies of your project
 repositories {
@@ -18,16 +18,19 @@ repositories {
     // You can declare any Maven/Ivy/file repository here.
     mavenLocal()
     jcenter()
+    maven { url 'https://jitpack.io' }
 }
 
 // In this section you declare the dependencies for your production and test code
 dependencies {
     // Xenon
+    // compile "com.github.NLeSC:Xenon:master-SNAPSHOT"
     compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.0.0'
 
     //Spring(boot)
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '1.5.4.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '1.5.4.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '1.5.6.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '1.5.6.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '1.5.6.RELEASE'
     compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.5.0'
     compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.5.0'
 
@@ -41,11 +44,11 @@ dependencies {
     compile group: 'javax.validation', name: 'validation-api', version: '1.1.0.Final'
 	
 	//JPA, hibernate and h2 database persistance libraries
-	compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '1.5.4.RELEASE'
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '1.5.6.RELEASE'
 	runtime group: 'com.h2database', name: 'h2', version: '1.4.196'
 	
 	//Unittest spring-boot all-inclusive package
-	testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.5.4.RELEASE'
+	testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.5.6.RELEASE'
 
 
     //Swagger
@@ -69,10 +72,10 @@ validateSwagger {
 }
 
 def swaggerProperties = [
-        'basePackage'            : 'nl.esciencecenter.xenon.cwl.rest',
-        'modelPackage'           : 'nl.esciencecenter.xenon.cwl.rest.model',
-        'apiPackage'             : 'nl.esciencecenter.xenon.cwl.rest.api',
-        'invokerPackage'         : 'nl.esciencecenter.xenon.cwl.rest.invoker',
+        'basePackage'            : 'nl.esciencecenter.computeservice.rest',
+        'modelPackage'           : 'nl.esciencecenter.computeservice.rest.model',
+        'apiPackage'             : 'nl.esciencecenter.computeservice.rest.api',
+        'invokerPackage'         : 'nl.esciencecenter.computeservice.rest.invoker',
         'java8'                  : 'true',
         'hideGenerationTimestamp': 'true',
         'dateLibrary'            : 'java8',

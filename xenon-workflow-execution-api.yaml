@@ -121,7 +121,7 @@ paths:
         '404':
           description: Job not found
     delete:
-      summary: Deleta a job
+      summary: Delete a job
       description: >-
         Delete a job, if job is in waiting or running state then job will be
         cancelled first.
@@ -328,6 +328,9 @@ definitions:
         type: string
         format: uri
         example: 'http://localhost:5000/jobs/afcd1554-9604-11e6-bd3f-080027e8b32a/log'
+      additionalInfo:
+        type: object
+        additionalProperties: true
   file:
     type: object
     required:
