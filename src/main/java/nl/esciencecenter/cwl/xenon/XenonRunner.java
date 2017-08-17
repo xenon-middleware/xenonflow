@@ -20,13 +20,11 @@ import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.config.AdaptorConfig;
 import nl.esciencecenter.xenon.config.ComputeResource;
 import nl.esciencecenter.xenon.config.XenonConfig;
-import nl.esciencecenter.xenon.filesystems.CopyHandle;
 import nl.esciencecenter.xenon.filesystems.CopyMode;
 import nl.esciencecenter.xenon.filesystems.CopyStatus;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 import nl.esciencecenter.xenon.schedulers.JobDescription;
-import nl.esciencecenter.xenon.schedulers.JobHandle;
 import nl.esciencecenter.xenon.schedulers.JobStatus;
 import nl.esciencecenter.xenon.schedulers.Scheduler;
 
@@ -70,7 +68,13 @@ public class XenonRunner {
             LOGGER.info("Starting the " + XenonRunner.class.getSimpleName() + " example.");
 
             // TODO: nice argument parsing
-            assert args.length > 5;
+            if (args.length < 5){
+            	System.out.print("Usage: ");
+            	System.out.print("--xenon-config <path-to-xenon-config> ");
+            	System.out.print("--xenon-compute-resource <compute-resource-name> ");
+            	System.out.println("<workflow-filename>");
+            	System.exit(0);
+            }
             assert "--xenon-config".equals(args[0]);           
             assert "--xenon-compute-resource".equals(args[2]);
             
@@ -79,7 +83,7 @@ public class XenonRunner {
             String workflowFilename = args[4];
 
             // TODO: make cache dir configurable?
-            String cacheDir = "/tmp/xenon-cwl-runner/workflows/" + UUID.randomUUID().toString();
+            Path cacheDir = new Path("/tmp/xenon-cwl-runner/workflows/" + UUID.randomUUID().toString());
             LOGGER.info("Writing files to " + cacheDir);
             
             
@@ -91,23 +95,21 @@ public class XenonRunner {
             
             LOGGER.info("Reading workflow from " + workflowFilename);
             Workflow workflow = Workflow.fromFile(new File(workflowFilename));
-            
 
             // Creating local and remote files and filesystems
             LOGGER.info("Setting up remote file system using " + fileSystemConfig.getAdaptor() + " adaptor and " + fileSystemConfig.getLocation() + " as location");
             FileSystem remoteFileSystem =  FileSystem.create(fileSystemConfig.getAdaptor(), fileSystemConfig.getLocation());
-            Path cachePath = remoteFileSystem.getEntryPath().resolve(cacheDir); // Utils.resolveWithEntryPath(files, remoteFileSystem, cacheDir);
-            remoteFileSystem.createDirectories(cachePath);
+            remoteFileSystem.createDirectories(cacheDir);
 
             // Copy workflow to machine
             // TODO: copy other files to machine
             FileSystem localFileSystem = FileSystem.create("file", "/");
-            Path localWorkflow = localFileSystem.getEntryPath().resolve(workflowFilename);
+            Path localWorkflow = new Path(workflowFilename);
             String workflowBaseName = localWorkflow.getFileNameAsString();
-            Path remoteWorkflow = cachePath.resolve(workflowBaseName);
+            Path remoteWorkflow = cacheDir.resolve(workflowBaseName);
             LOGGER.info("Copying the localWorkflow from " + localWorkflow + " to " + remoteWorkflow);
-            CopyHandle h = localFileSystem.copy(localWorkflow, remoteFileSystem, remoteWorkflow, CopyMode.REPLACE, false);
-            CopyStatus s = localFileSystem.waitUntilDone(h, 1000);
+            String copyId = localFileSystem.copy(localWorkflow, remoteFileSystem, remoteWorkflow, CopyMode.REPLACE, false);
+            CopyStatus s = localFileSystem.waitUntilDone(copyId, 1000);
             if(s.hasException()){
             	LOGGER.error("OH MY GOD IT'S BURNIGN!: " + s.getException().getMessage());
             	s.getException().printStackTrace();
@@ -117,12 +119,11 @@ public class XenonRunner {
             LOGGER.info("Creating a JobDescription for the job we want to run...");
             JobDescription description = new JobDescription();
             description.setExecutable("cwl-runner");
-            // TODO: pass other arguments to cwl-runner
+
+            // Pass other arguments to cwl-runner
             ArrayList<String> cwlArguments = new ArrayList<String>();
             cwlArguments.add(cacheDir + "/" + workflowBaseName);
             cwlArguments.addAll(Arrays.asList(Arrays.copyOfRange(args, 5, args.length)));
-            
-            System.out.println(Arrays.toString(cwlArguments.toArray()));
             
             description.setArguments(cwlArguments.toArray(new String[cwlArguments.size()]));
             description.setStdout(cacheDir + "/stdout.txt");
@@ -134,35 +135,38 @@ public class XenonRunner {
             Scheduler scheduler = Scheduler.create(schedulerConfig.getAdaptor(), schedulerConfig.getLocation(), schedulerConfig.getCredential(), schedulerConfig.getProperties()); //jobs.newScheduler(location.getScheme(), location.getAuthority(), null, properties);
 
             LOGGER.debug("Submitting the job...");
-            JobHandle job = scheduler.submitJob(description);
+            String jobId = scheduler.submitBatchJob(description);
 
-            scheduler.waitUntilRunning(job, 0);
+            JobStatus status = scheduler.waitUntilRunning(jobId, 0);
 
             // Creating local and remote files and filesystems
-            Path outPath = remoteFileSystem.getEntryPath().resolve(job.getJobDescription().getStdout()); // Utils.resolveWithEntryPath(files, remoteFileSystem, job.getJobDescription().getStdout());
-            Path errPath = remoteFileSystem.getEntryPath().resolve(job.getJobDescription().getStderr());// Utils.resolveWithEntryPath(files, remoteFileSystem, job.getJobDescription().getStderr());
+            Path outPath = new Path(description.getStdout()); //remoteFileSystem.getWorkingDirectory().getStdout()); // Utils.resolveWithEntryPath(files, remoteFileSystem, job.getJobDescription().getStdout());
+            Path errPath = new Path(description.getStderr()); //remoteFileSystem.getEntryPath().resolve(job.getJobDescription().getStderr());// Utils.resolveWithEntryPath(files, remoteFileSystem, job.getJobDescription().getStderr());
 
             // Reading in the standard error and standard out
             //
             long outIndex = -1L;
             long errIndex = -1L;
-
-            JobStatus status;
-            do {
+            
+            while (!status.isDone()) {
                 outIndex = print(remoteFileSystem, outPath, outIndex);
                 errIndex = print(remoteFileSystem, errPath, errIndex);
-                status = scheduler.waitUntilDone(job, 5000L);
-            } while (!status.isDone());
-
-            while (!remoteFileSystem.exists(outPath)) {
-                Thread.sleep(1000L);
-            }
-            while (!remoteFileSystem.exists(errPath)) {
-                Thread.sleep(1000L);
+                status = scheduler.waitUntilDone(jobId, 5000L);
             }
 
-            print(remoteFileSystem, outPath, outIndex);
-            print(remoteFileSystem, errPath, errIndex);
+            if (!status.hasException()) {
+	            while (!remoteFileSystem.exists(outPath)) {
+	                Thread.sleep(1000L);
+	            }
+	            while (!remoteFileSystem.exists(errPath)) {
+	                Thread.sleep(1000L);
+	            }
+	
+	            print(remoteFileSystem, outPath, outIndex);
+	            print(remoteFileSystem, errPath, errIndex);
+            } else {
+            	throw new XenonException(scheduler.getAdaptorName(), "An error occured during execution", status.getException());
+            }
 
             LOGGER.debug("Closing the scheduler to free up resources...");
             scheduler.close();
