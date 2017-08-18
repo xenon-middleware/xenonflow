@@ -135,7 +135,8 @@ public class XenonService {
 			// TODO: Xenon should pick up on this automatically from the
 			// location
 			// in the release version it should. For now we hack it in here.
-			remoteFileSystem.setWorkingDirectory(new Path("/var/scratch/bweel"));
+			remoteFileSystem.setWorkingDirectory(new Path("/var/scratch/bweel/xenon-cwl-service/jobs/"));
+			logger.debug("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
 		}
 		return remoteFileSystem;
 	}

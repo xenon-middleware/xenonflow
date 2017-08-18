@@ -17,6 +17,7 @@ package org.commonwl.cwl;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -61,5 +62,13 @@ public class Workflow extends HashMap<String, Object> {
 
 	public void setOutputs(OutputParameter[] outputs) {
 		this.outputs = outputs;
+	}
+
+	public static Workflow fromInputStream(InputStream inputStream) throws JsonParseException, JsonMappingException, IOException {
+		ObjectMapper mapper = new ObjectMapper(new YAMLFactory());		
+		
+		Workflow wf = mapper.readValue(inputStream, Workflow.class);
+		
+		return wf;
 	}
 }

@@ -67,6 +67,7 @@ public class CwlWorkflowTask implements Runnable {
 			description.setArguments(cwlArguments.toArray(new String[cwlArguments.size()]));
 			description.setStdout(remoteDirectory.resolve("stdout.txt").toString());
 			description.setStderr(remoteDirectory.resolve("stderr.txt").toString());
+			description.setWorkingDirectory(remoteDirectory.toString());
 
 			jobLogger.debug("Submitting the job: " + description);
 			String xenonJobId = scheduler.submitBatchJob(description);

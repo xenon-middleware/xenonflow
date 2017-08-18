@@ -47,10 +47,9 @@ public class XenonStager {
 	 * @param targetFileSystem
 	 * @throws XenonException
 	 */
-	public Job doStaging(StagingManifest manifest, FileSystem sourceFileSystem, FileSystem targetFileSystem)
+	public Job doStaging(StagingManifest manifest, Job job, FileSystem sourceFileSystem, FileSystem targetFileSystem)
 			throws XenonException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
-		Job job = repository.findOne(manifest.getJobId());
 
 		// Make sure the target directory exists
 		Path targetDirectory = targetFileSystem.getWorkingDirectory().resolve(manifest.getTargetDirectory());
@@ -84,9 +83,22 @@ public class XenonStager {
 				jobLogger.debug("Input contents: " + contents);
 				out.write(contents);
 				out.close();
+			} else if (stageObject instanceof DirectoryStagingObject) {
+				DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
+				Path sourcePath = object.getSourcePath();
+				Path targetPath = targetDirectory.resolve(object.getTargetPath());
+
+				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
+				String copyId = sourceFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
+						true);
+				CopyStatus s = sourceFileSystem.waitUntilDone(copyId, 1000);
+				if (s.hasException()) {
+					job.setState(StateEnum.SYSTEMERROR);
+					job = repository.save(job);
+					throw s.getException();
+				}
 			}
 		}
-
 		return job;
 	}
 
@@ -94,10 +106,11 @@ public class XenonStager {
 	 * Do the staging from local to remote
 	 * 
 	 * @param manifest
+	 * @return 
 	 * @throws XenonException
 	 */
-	public Job stageIn(StagingManifest manifest) throws XenonException {
-		return doStaging(manifest, localFileSystem, remoteFileSystem);
+	public Job stageIn(StagingManifest manifest, Job job) throws XenonException {
+		return doStaging(manifest, job, localFileSystem, remoteFileSystem);
 	}
 
 	/**
@@ -112,10 +125,10 @@ public class XenonStager {
 	 * @throws XenonException
 	 * @throws IOException
 	 */
-	public Job stageOut(StagingManifest manifest) throws XenonException, IOException {
+	public Job stageOut(StagingManifest manifest, Job job) throws XenonException, IOException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 
-		Job job = doStaging(manifest, remoteFileSystem, localFileSystem);
+		job = doStaging(manifest, job, remoteFileSystem, localFileSystem);
 
 		for (StagingObject stageObject : manifest) {
 			if (stageObject instanceof FileStagingObject) {
@@ -124,6 +137,12 @@ public class XenonStager {
 
 				b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
 				job.getOutput().put(object.getTargetPath().getFileNameAsString(), b.build().toString());
+			} else if (stageObject instanceof DirectoryStagingObject) {
+				DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
+				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(localFileSystem.getLocation().toString());
+
+				b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+				job.getOutput().put(object.getTargetPath().getFileNameAsString(), b.build().toString());  
 			} else if (stageObject instanceof FileToStringStagingObject) {
 				FileToStringStagingObject object = (FileToStringStagingObject) stageObject;
 				Path sourcePath = object.getSourcePath();
@@ -146,8 +165,7 @@ public class XenonStager {
 				}
 			}
 		}
-
-		job = repository.save(job);
+		
 		return job;
 	}
 }

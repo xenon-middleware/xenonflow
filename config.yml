@@ -34,7 +34,7 @@ ComputeResources:
 
 default: das5
 
-cwlCommand: cwltool-wrapper-not-thisone
+cwlCommand: cwltool-wrapper --copy-outputs 
 
 localFileSystem:
     adaptor: webdav

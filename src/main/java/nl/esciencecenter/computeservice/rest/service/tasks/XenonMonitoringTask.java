@@ -46,35 +46,38 @@ public class XenonMonitoringTask implements Runnable {
 		for (Job job : jobs) {      
 			Logger jobLogger = LoggerFactory.getLogger("jobs."+job.getId());
 			try {
-				JobStatus status = scheduler.getJobStatus(job.getXenonId());
-	            job.getAdditionalInfo().put("xenon.state", status.getState());
-		        
-	        	if (job.getState() == StateEnum.WAITING && status.isRunning()) {
-	        		job.setState(StateEnum.RUNNING);
-	        		
-	        		job = repository.save(job);
-	        	} else if (status.isDone()) {
-		        	job.getAdditionalInfo().put("xenon.exitcode", status.getExitCode());
-		        
-		        	if (status.hasException()) {
-		        		jobLogger.error("Exception during execution", status.getException());
-		        		job.setState(StateEnum.PERMANENTFAILURE);
-		        		job.getAdditionalInfo().put("xenon.error", status.getException());
+				String xenonJobId = job.getXenonId();
+				if (xenonJobId != null && !xenonJobId.isEmpty()) {
+					JobStatus status = scheduler.getJobStatus(xenonJobId);
+		            job.getAdditionalInfo().put("xenon.state", status.getState());
+			        
+		        	if (job.getState() == StateEnum.WAITING && status.isRunning()) {
+		        		job.setState(StateEnum.RUNNING);
+		        		
 		        		job = repository.save(job);
-		        		continue;
-		        	}
-		        
-		        	if (status.getExitCode() != 0) {
-		        		jobLogger.error("Job has finished with errors.");
-		        		job.setState(StateEnum.PERMANENTFAILURE);
-		        	} else {
-		        		jobLogger.info("Jobs done.");
-		        		job.setState(StateEnum.SUCCESS);
-		        	}
-		        	
-		        	job = repository.save(job);
-		        	service.getTaskScheduler().execute(new CwlStageOutTask(job.getId(), status, service));
-		        }
+		        	} else if (status.isDone()) {
+			        	job.getAdditionalInfo().put("xenon.exitcode", status.getExitCode());
+			        
+			        	if (status.hasException()) {
+			        		jobLogger.error("Exception during execution", status.getException());
+			        		job.setState(StateEnum.PERMANENTFAILURE);
+			        		job.getAdditionalInfo().put("xenon.error", status.getException());
+			        		job = repository.save(job);
+			        		continue;
+			        	}
+			        
+			        	if (status.getExitCode() != 0) {
+			        		jobLogger.error("Job has finished with errors.");
+			        		job.setState(StateEnum.PERMANENTFAILURE);
+			        	} else {
+			        		jobLogger.info("Jobs done.");
+			        		job.setState(StateEnum.SUCCESS);
+			        	}
+			        	
+			        	job = repository.save(job);
+			        	service.getTaskScheduler().execute(new CwlStageOutTask(job.getId(), status, service));
+			        }
+				}
 			} catch (NoSuchJobException e) {
 				logger.info("Could not recover job" + job + " it is probably lost...");
 				// TODO: We should probably try harder here to figure out what went wrong
