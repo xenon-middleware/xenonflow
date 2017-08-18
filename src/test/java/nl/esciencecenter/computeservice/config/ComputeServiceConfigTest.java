@@ -16,15 +16,9 @@
 package nl.esciencecenter.computeservice.config;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.junit.Test;
 import org.springframework.util.Assert;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
-import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
 
 public class ComputeServiceConfigTest {
 	@Test

@@ -14,7 +14,6 @@ import nl.esciencecenter.computeservice.rest.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.Path;
-import nl.esciencecenter.xenon.schedulers.JobDescription;
 import nl.esciencecenter.xenon.schedulers.JobStatus;
 
 public class CwlStageOutTask implements Runnable {

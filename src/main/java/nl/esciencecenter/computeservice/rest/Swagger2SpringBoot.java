@@ -12,11 +12,8 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
@@ -24,12 +21,13 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @SpringBootApplication
 @EnableSwagger2
 @ComponentScan("nl.esciencecenter.computeservice.rest*")
-@EntityScan(basePackages = {"nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.cwl.*"})
-@EnableJpaRepositories(basePackages = {"nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.cwl.*"})
+@EntityScan(basePackages = { "nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.cwl.*" })
+@EnableJpaRepositories(basePackages = { "nl.esciencecenter.computeservice.rest*",
+		"nl.esciencecenter.computeservice.cwl.*" })
 @EnableAsync
 public class Swagger2SpringBoot implements CommandLineRunner {
 	@Bean
-	public static ServletRegistrationBean servletRegistrationBean(){
+	public static ServletRegistrationBean servletRegistrationBean() {
 
 		final ServletRegistrationBean registration = new ServletRegistrationBean(new WebdavServlet());
 
@@ -44,13 +42,13 @@ public class Swagger2SpringBoot implements CommandLineRunner {
 
 		return registration;
 	}
-	
+
 	@Bean
-    public static ThreadPoolTaskScheduler taskScheduler() {
-        final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(5);
-        return scheduler;
-    }
+	public static ThreadPoolTaskScheduler taskScheduler() {
+		final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+		scheduler.setPoolSize(5);
+		return scheduler;
+	}
 
 	@Override
 	public void run(String... arg0) throws Exception {

@@ -1,9 +1,8 @@
 package nl.esciencecenter.computeservice.rest.model;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Objects;
-import java.io.Serializable;
-import javax.validation.constraints.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,12 +10,14 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
-
 /**
  * WorkflowBinding
  */
 public class WorkflowBinding extends HashMap<String, Object> implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 290701851370536682L;
 	private static final Logger logger = LoggerFactory.getLogger(WorkflowBinding.class);
 
 	@Override
