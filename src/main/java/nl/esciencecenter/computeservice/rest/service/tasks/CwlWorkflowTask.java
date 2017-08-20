@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
+import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
 import nl.esciencecenter.computeservice.rest.model.Job.StateEnum;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
@@ -35,12 +36,6 @@ public class CwlWorkflowTask implements Runnable {
 		Job job = repository.findOne(jobId);
 		try {
 			Scheduler scheduler = service.getScheduler();
-
-			CwlStageInTask stageIn = new CwlStageInTask(job.getId(), service);
-			FutureTask<?> task = new FutureTask<Void>(stageIn, null);
-			service.getTaskScheduler().execute(task);
-			// wait for staging to finish
-			task.get();
 
 			// Job has changed during StageIn so get it from the database again.
 			job = repository.findOne(jobId);
@@ -84,11 +79,13 @@ public class CwlWorkflowTask implements Runnable {
 			// was any other error during execution it is handled
 			// there.
 			job.setState(StateEnum.RUNNING);
+			job.setInternalState(InternalStateEnum.RUNNING);
 			job.getAdditionalInfo().put("xenon.state", status.getState());
 
 			if (status.hasException()) {
 				jobLogger.error("Exception during execution", status.getException());
 				job.setState(StateEnum.PERMANENTFAILURE);
+				job.setInternalState(InternalStateEnum.ERROR);
 				job.getAdditionalInfo().put("xenon.error", status.getException());
 			}
 
@@ -96,15 +93,6 @@ public class CwlWorkflowTask implements Runnable {
 		} catch (XenonException e) {
 			jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 			logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-			;
-		} catch (InterruptedException e) {
-			jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-			logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-			;
-		} catch (ExecutionException e) {
-			jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-			logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-			;
 		}
 	}
 

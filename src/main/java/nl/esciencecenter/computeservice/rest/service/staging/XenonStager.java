@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
+import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
 import nl.esciencecenter.computeservice.rest.model.Job.StateEnum;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.xenon.XenonException;
@@ -71,6 +72,7 @@ public class XenonStager {
 				CopyStatus s = sourceFileSystem.waitUntilDone(copyId, 1000);
 				if (s.hasException()) {
 					job.setState(StateEnum.SYSTEMERROR);
+					job.setInternalState(InternalStateEnum.ERROR);
 					job = repository.save(job);
 					throw s.getException();
 				}
@@ -94,6 +96,7 @@ public class XenonStager {
 				CopyStatus s = sourceFileSystem.waitUntilDone(copyId, 1000);
 				if (s.hasException()) {
 					job.setState(StateEnum.SYSTEMERROR);
+					job.setInternalState(InternalStateEnum.ERROR);
 					job = repository.save(job);
 					throw s.getException();
 				}

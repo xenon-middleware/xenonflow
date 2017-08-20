@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
+import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
+import nl.esciencecenter.computeservice.rest.model.Job.StateEnum;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.computeservice.rest.service.staging.DirectoryStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.FileStagingObject;
@@ -76,7 +78,10 @@ public class CwlStageInTask implements Runnable {
 	        	for (InputParameter parameter : workflow.getInputs()) {
 	        		if (parameter.getType().equals("File")) {
 	        			if (jobOrder.containsKey(parameter.getId())) {
-	        				HashMap<String, Object> fileInput = (HashMap<String, Object>) jobOrder.get(parameter.getId());
+	        				// This should either work or throw an exception, we know about the problem (type erasure).
+	        				@SuppressWarnings("unchecked")
+							HashMap<String, Object> fileInput = (HashMap<String, Object>) jobOrder.get(parameter.getId());
+
 	        				Path localPath = new Path((String) fileInput.get("path"));
 	        				Path remotePath = new Path(localPath.getFileNameAsString());
 	        				manifest.add(new FileStagingObject(localPath, remotePath));
@@ -85,7 +90,10 @@ public class CwlStageInTask implements Runnable {
 	        			}
 	        		} else if (parameter.getType().equals("Directory")) {
 	        			if (jobOrder.containsKey(parameter.getId())) {
+	        				// This should either work or throw an exception, we know about the problem (type erasure).
+	        				@SuppressWarnings("unchecked")
 	        				HashMap<String, Object> fileInput = (HashMap<String, Object>) jobOrder.get(parameter.getId());
+
 	        				Path localPath = new Path((String) fileInput.get("path"));
 	        				Path remotePath = new Path(localPath.getFileNameAsString());
 	        				manifest.add(new DirectoryStagingObject(localPath, remotePath));
@@ -106,19 +114,16 @@ public class CwlStageInTask implements Runnable {
 	        job.getAdditionalInfo().put("xenon.remote.directory", remoteDirectory.toString());
 	        
 	        jobLogger.info("StageIn complete.\n\n");
+	        job.setInternalState(InternalStateEnum.POST_STAGEIN);
 	        job = repository.save(job);
-		} catch (XenonException e) {
+		} catch (XenonException | IOException e) {
 			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);;
-		} catch (JsonParseException e) {
-			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);;
-		} catch (JsonMappingException e) {
-			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);;
-		} catch (IOException e) {
-			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);;
+			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
+			
+			job.setState(StateEnum.PERMANENTFAILURE);
+			job.setInternalState(InternalStateEnum.ERROR);
+			job.getAdditionalInfo().put("error", e);
+			job = repository.save(job);
 		}
 	}
 }

@@ -20,6 +20,7 @@ import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
 import nl.esciencecenter.computeservice.rest.model.Job.StateEnum;
 
 @Repository
@@ -27,4 +28,7 @@ public interface JobRepository extends CrudRepository<Job, String>{
 	List<Job> findAll();
 
 	List<Job> findAllByState(StateEnum state);
+	List<Job> findAllByInternalState(InternalStateEnum internalState);
+
+	List<Job> findAllByStateAndInternalStateNot(StateEnum cancelled, InternalStateEnum internal);
 }

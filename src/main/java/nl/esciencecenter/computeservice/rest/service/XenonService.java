@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.FutureTask;
 
 import javax.annotation.PostConstruct;
 
@@ -24,14 +25,17 @@ import nl.esciencecenter.computeservice.config.AdaptorConfig;
 import nl.esciencecenter.computeservice.config.ComputeResource;
 import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
 import nl.esciencecenter.computeservice.rest.model.Job;
+import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
 import nl.esciencecenter.computeservice.rest.model.Job.StateEnum;
 import nl.esciencecenter.computeservice.rest.model.JobDescription;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
+import nl.esciencecenter.computeservice.rest.service.tasks.CwlStageInTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.CwlWorkflowTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.XenonMonitoringTask;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
+import nl.esciencecenter.xenon.schedulers.JobStatus;
 import nl.esciencecenter.xenon.schedulers.Scheduler;
 
 @Service
@@ -93,7 +97,7 @@ public class XenonService {
 
 		// Running and waiting jobs are automatically picked up by the
 		// XenonWaitingTask
-		taskScheduler.scheduleAtFixedRate(new XenonMonitoringTask(this), 1000);
+		taskScheduler.scheduleAtFixedRate(new XenonMonitoringTask(this), 1500);
 	}
 
 	public ThreadPoolTaskScheduler getTaskScheduler() {
@@ -133,8 +137,7 @@ public class XenonService {
 					fileSystemConfig.getCredential(), fileSystemConfig.getProperties());
 
 			// TODO: Xenon should pick up on this automatically from the
-			// location
-			// in the release version it should. For now we hack it in here.
+			// location in the release version it should. For now we hack it in here.
 			remoteFileSystem.setWorkingDirectory(new Path("/var/scratch/bweel/xenon-cwl-service/jobs/"));
 			logger.debug("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
 		}
@@ -236,9 +239,43 @@ public class XenonService {
 		job = repository.save(job);
 
 		jobLogger.info("Submitted Job: " + job);
+		
+		taskScheduler.execute(new CwlStageInTask(job.getId(), this));
 
-		taskScheduler.execute(new CwlWorkflowTask(job.getId(), this));
-
+		return job;
+	}
+	
+	public Job cancelJob(String jobId) {
+		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
+		
+		jobLogger.info("Trying to cancel job " + jobId);
+		
+		Job job = repository.findOne(jobId);
+		
+		if (job != null && !job.hasError()) {
+			try {
+				// We need to store the running state here
+				// because we have to set the job to cancelled
+				// before actually canceling the job using
+				// Xenon. Otherwise we get an unexpected
+				// exception in @see XenonMonitoring
+				boolean running = job.isRunning();
+				job.setState(StateEnum.CANCELLED);
+				// Not setting internal state to cancelled yet. This is
+				// done in XenonMonitoringStatus
+				job = repository.save(job);
+				if (running){
+						JobStatus status = scheduler.getJobStatus(job.getXenonId());
+						if (status.isRunning()) {
+							status = scheduler.cancelJob(job.getXenonId());
+							logger.debug("Cancelled job: " + job.getId() + " new status: " + status);
+						}
+				}
+			} catch (XenonException e) {
+				logger.error("Error cancelling job: ", e);
+			}
+		}
+		
 		return job;
 	}
 }

@@ -27,6 +27,10 @@ public class Job implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -651298299479062306L;
+	
+	public Job() {
+		this.internalState = InternalStateEnum.WAITING;
+	}
 
 	@JsonProperty("id")
 	@Id
@@ -47,6 +51,17 @@ public class Job implements Serializable {
 	@JsonProperty("additionalInfo")
 	@Column(name = "additionalInfo", columnDefinition = "CLOB", nullable = true)
 	private HashMap<String, Object> additionalInfo = null;
+	
+	
+	@JsonIgnore
+	public boolean isStageOutDone() {
+		return internalState == InternalStateEnum.DONE;
+	}
+
+	@JsonIgnore
+	public boolean isPostStageIn() {
+		return internalState == InternalStateEnum.POST_STAGEIN;
+	}
 
 	/**
 	 * Xenon Related Values. Not added to json, and for internal use.
@@ -62,7 +77,7 @@ public class Job implements Serializable {
 	public void setXenonId(String xenonId) {
 		this.xenonId = xenonId;
 	}
-
+	
 	/**
 	 * Gets or Sets state
 	 */
@@ -107,6 +122,69 @@ public class Job implements Serializable {
 	@JsonProperty("state")
 	@Column(name = "state")
 	private StateEnum state = null;
+	
+	/**
+	 * Gets or Sets state
+	 */
+	public enum InternalStateEnum {
+		WAITING("Waiting"),
+
+		STAGEIN("StageIn"),
+		
+		POST_STAGEIN("Post StageIn"),
+		
+		SUBMITTING("Submitting"),
+
+		RUNNING("Running"),
+		
+		STAGEOUT("STAGEOUT"),
+
+		DONE("Done"),
+		
+		CANCELLED("Cancelled"),
+		
+		ERROR("Error");
+
+		private String value;
+
+		InternalStateEnum(String value) {
+			this.value = value;
+		}
+
+		@Override
+		@JsonValue
+		public String toString() {
+			return String.valueOf(value);
+		}
+
+		@JsonCreator
+		public static StateEnum fromValue(String text) {
+			for (StateEnum b : StateEnum.values()) {
+				if (String.valueOf(b.value).equals(text)) {
+					return b;
+				}
+			}
+			return null;
+		}
+	}
+	
+	
+	@JsonIgnore
+	@Column(name = "internalState")
+	private InternalStateEnum internalState = null;
+	
+	public Job internalState(InternalStateEnum internalState) {
+		this.internalState = internalState;
+		return this;
+	}
+
+	public InternalStateEnum getInternalState() {
+		return internalState;
+	}
+
+	public void setInternalState(InternalStateEnum internalState) {
+		this.internalState = internalState;
+	}
 
 	@JsonProperty("output")
 	@Column(name = "output", columnDefinition = "CLOB", nullable = true)
@@ -275,6 +353,7 @@ public class Job implements Serializable {
 		if (additionalInfo == null) {
 			additionalInfo = new HashMap<String, Object>();
 		}
+		additionalInfo.put("internalState", internalState);
 		return additionalInfo;
 	}
 
@@ -350,7 +429,37 @@ public class Job implements Serializable {
 	}
 	
 	@JsonIgnore
+	public boolean stageBackPossible() {
+		return state == StateEnum.SUCCESS;
+	}
+	
+	@JsonIgnore
 	public boolean isDone() {
 		return state == StateEnum.SUCCESS || state == StateEnum.CANCELLED || hasError();
+	}
+	
+	@JsonIgnore
+	public boolean isRunningOrWaiting () {
+		return state == StateEnum.RUNNING || state == StateEnum.WAITING;
+	}
+
+	@JsonIgnore
+	public boolean isRunning() {
+		return state == StateEnum.RUNNING;
+	}
+	
+	@JsonIgnore
+	public boolean isWaiting() {
+		return state == StateEnum.WAITING;
+	}
+
+	@JsonIgnore
+	public boolean isCancelled() {
+		return state == StateEnum.CANCELLED;
+	}
+	
+	@JsonIgnore
+	public boolean isSubmitting() {
+		return internalState == InternalStateEnum.SUBMITTING;
 	}
 }

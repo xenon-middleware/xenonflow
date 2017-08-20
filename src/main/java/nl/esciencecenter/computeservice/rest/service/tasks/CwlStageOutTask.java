@@ -19,11 +19,11 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
+import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.computeservice.rest.service.staging.DirectoryStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.FileStagingObject;
-import nl.esciencecenter.computeservice.rest.service.staging.FileToMapStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
@@ -70,7 +70,11 @@ public class CwlStageOutTask implements Runnable {
 	        
 	        job = stager.stageOut(manifest, job);
 	        
+	        // TODO: Delete the remote sandbox to clean up?
+
 	        jobLogger.info("StageOut complete.\n\n");
+	        
+	        job.setInternalState(InternalStateEnum.DONE);
 	        job = repository.save(job);
 		} catch (XenonException e) {
 			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
@@ -101,7 +105,10 @@ public class CwlStageOutTask implements Runnable {
     	for (OutputParameter parameter : workflow.getOutputs()) {
     		if (parameter.getType().equals("File")) {
     			if (outputMap.containsKey(parameter.getId())) {
+    				// This should either work or throw an exception, we know about the problem (type erasure).
+    				@SuppressWarnings("unchecked")
     				HashMap<String, Object> fileOutput = (HashMap<String, Object>) outputMap.get(parameter.getId());
+
     				Path remotePath = new Path((String) fileOutput.get("path"));
     				Path localPath = new Path(remotePath.getFileNameAsString());
     				manifest.add(new FileStagingObject(remotePath, localPath));
@@ -114,7 +121,10 @@ public class CwlStageOutTask implements Runnable {
     				fileOutput.put("location", b.build().toString());
     			}
     		} else if (parameter.getType().equals("Directory")) {
+    			// This should either work or throw an exception, we know about the problem (type erasure).
+				@SuppressWarnings("unchecked")
     			HashMap<String, Object> dirOutput = (HashMap<String, Object>) outputMap.get(parameter.getId());
+
 				Path remotePath = new Path((String) dirOutput.get("path"));
 				Path localPath = new Path(remotePath.getFileNameAsString());
 				manifest.add(new DirectoryStagingObject(remotePath, localPath));
