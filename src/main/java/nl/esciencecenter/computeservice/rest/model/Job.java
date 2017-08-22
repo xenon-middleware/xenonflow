@@ -10,10 +10,8 @@ import javax.persistence.Id;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 
 import io.swagger.annotations.ApiModelProperty;
 import nl.esciencecenter.xenon.filesystems.Path;
@@ -27,10 +25,6 @@ public class Job implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -651298299479062306L;
-	
-	public Job() {
-		this.internalState = InternalStateEnum.WAITING;
-	}
 
 	@JsonProperty("id")
 	@Id
@@ -51,18 +45,7 @@ public class Job implements Serializable {
 	@JsonProperty("additionalInfo")
 	@Column(name = "additionalInfo", columnDefinition = "CLOB", nullable = true)
 	private HashMap<String, Object> additionalInfo = null;
-	
-	
-	@JsonIgnore
-	public boolean isStageOutDone() {
-		return internalState == InternalStateEnum.DONE;
-	}
-
-	@JsonIgnore
-	public boolean isPostStageIn() {
-		return internalState == InternalStateEnum.POST_STAGEIN;
-	}
-
+		
 	/**
 	 * Xenon Related Values. Not added to json, and for internal use.
 	 */
@@ -78,112 +61,21 @@ public class Job implements Serializable {
 		this.xenonId = xenonId;
 	}
 	
-	/**
-	 * Gets or Sets state
-	 */
-	public enum StateEnum {
-		WAITING("Waiting"),
-
-		RUNNING("Running"),
-
-		SUCCESS("Success"),
-
-		CANCELLED("Cancelled"),
-
-		SYSTEMERROR("SystemError"),
-
-		TEMPORARYFAILURE("TemporaryFailure"),
-
-		PERMANENTFAILURE("PermanentFailure");
-
-		private String value;
-
-		StateEnum(String value) {
-			this.value = value;
-		}
-
-		@Override
-		@JsonValue
-		public String toString() {
-			return String.valueOf(value);
-		}
-
-		@JsonCreator
-		public static StateEnum fromValue(String text) {
-			for (StateEnum b : StateEnum.values()) {
-				if (String.valueOf(b.value).equals(text)) {
-					return b;
-				}
-			}
-			return null;
-		}
-	}
-
-	@JsonProperty("state")
-	@Column(name = "state")
-	private StateEnum state = null;
-	
-	/**
-	 * Gets or Sets state
-	 */
-	public enum InternalStateEnum {
-		WAITING("Waiting"),
-
-		STAGEIN("StageIn"),
-		
-		POST_STAGEIN("Post StageIn"),
-		
-		SUBMITTING("Submitting"),
-
-		RUNNING("Running"),
-		
-		STAGEOUT("STAGEOUT"),
-
-		DONE("Done"),
-		
-		CANCELLED("Cancelled"),
-		
-		ERROR("Error");
-
-		private String value;
-
-		InternalStateEnum(String value) {
-			this.value = value;
-		}
-
-		@Override
-		@JsonValue
-		public String toString() {
-			return String.valueOf(value);
-		}
-
-		@JsonCreator
-		public static StateEnum fromValue(String text) {
-			for (StateEnum b : StateEnum.values()) {
-				if (String.valueOf(b.value).equals(text)) {
-					return b;
-				}
-			}
-			return null;
-		}
-	}
-	
-	
 	@JsonIgnore
 	@Column(name = "internalState")
-	private InternalStateEnum internalState = null;
+	private JobState internalState = null;
 	
-	public Job internalState(InternalStateEnum internalState) {
-		this.internalState = internalState;
-		return this;
-	}
-
-	public InternalStateEnum getInternalState() {
+	@NotNull
+	public JobState getInternalState() {
 		return internalState;
 	}
 
-	public void setInternalState(InternalStateEnum internalState) {
-		this.internalState = internalState;
+	public void setInternalState(JobState internalState) throws Exception {
+		if (this.internalState == null) {
+			this.internalState = internalState;
+		}else {
+			throw new Exception("Cannot set state when state is not null");
+		}
 	}
 
 	@JsonProperty("output")
@@ -285,24 +177,14 @@ public class Job implements Serializable {
 		return input != null && !input.isEmpty();
 	}
 
-	public Job state(StateEnum state) {
-		this.state = state;
-		return this;
-	}
-
 	/**
 	 * Get state
 	 * 
 	 * @return state
 	 **/
 	@ApiModelProperty(example = "Running", required = true, value = "")
-	@NotNull
-	public StateEnum getState() {
-		return state;
-	}
-
-	public void setState(StateEnum state) {
-		this.state = state;
+	public String getState() {
+		return internalState.toCwlStateString();
 	}
 
 	public Job output(WorkflowBinding output) {
@@ -372,13 +254,13 @@ public class Job implements Serializable {
 		Job job = (Job) o;
 		return Objects.equals(this.id, job.id) && Objects.equals(this.name, job.name)
 				&& Objects.equals(this.workflow, job.workflow) && Objects.equals(this.input, job.input)
-				&& Objects.equals(this.state, job.state) && Objects.equals(this.output, job.output)
+				&& Objects.equals(this.internalState, job.internalState) && Objects.equals(this.output, job.output)
 				&& Objects.equals(this.log, job.log) && Objects.equals(this.additionalInfo, job.additionalInfo);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, name, workflow, input, state, output, log);
+		return Objects.hash(id, name, workflow, input, internalState, output, log);
 	}
 
 	@Override
@@ -390,7 +272,7 @@ public class Job implements Serializable {
 		sb.append("    name: ").append(toIndentedString(name)).append("\n");
 		sb.append("    workflow: ").append(toIndentedString(workflow)).append("\n");
 		sb.append("    input: ").append(toIndentedString(input)).append("\n");
-		sb.append("    state: ").append(toIndentedString(state)).append("\n");
+		sb.append("    state: ").append(toIndentedString(internalState)).append("\n");
 		sb.append("    output: ").append(toIndentedString(output)).append("\n");
 		sb.append("    log: ").append(toIndentedString(log)).append("\n");
 		sb.append("    additionalInfo:").append(toIndentedString(additionalInfo)).append("\n");
@@ -423,43 +305,11 @@ public class Job implements Serializable {
 		return new Path(dirstring);
 	}
 
-	@JsonIgnore
-	public boolean hasError() {
-		return state == StateEnum.PERMANENTFAILURE || state == StateEnum.TEMPORARYFAILURE || state == StateEnum.SYSTEMERROR;
-	}
-	
-	@JsonIgnore
-	public boolean stageBackPossible() {
-		return state == StateEnum.SUCCESS;
-	}
-	
-	@JsonIgnore
-	public boolean isDone() {
-		return state == StateEnum.SUCCESS || state == StateEnum.CANCELLED || hasError();
-	}
-	
-	@JsonIgnore
-	public boolean isRunningOrWaiting () {
-		return state == StateEnum.RUNNING || state == StateEnum.WAITING;
-	}
-
-	@JsonIgnore
-	public boolean isRunning() {
-		return state == StateEnum.RUNNING;
-	}
-	
-	@JsonIgnore
-	public boolean isWaiting() {
-		return state == StateEnum.WAITING;
-	}
-
-	@JsonIgnore
-	public boolean isCancelled() {
-		return state == StateEnum.CANCELLED;
-	}
-	
-	@JsonIgnore
-	public boolean isSubmitting() {
-		return internalState == InternalStateEnum.SUBMITTING;
+	public void changeState(JobState from, JobState to) throws Exception {
+		if (this.internalState != from) {
+			throw new Exception("Previous state: " + this.internalState + " was expected to be: " + from);
+		} else {
+			this.internalState = to;
+		}
 	}
 }

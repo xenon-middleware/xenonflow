@@ -10,15 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
-import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
-import nl.esciencecenter.computeservice.rest.model.Job.StateEnum;
+import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.computeservice.rest.service.staging.DirectoryStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.FileStagingObject;
@@ -28,6 +26,7 @@ import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.Path;
 
+
 public class CwlStageInTask implements Runnable {
 
 	private static final Logger logger = LoggerFactory.getLogger(CwlStageInTask.class);
@@ -35,19 +34,28 @@ public class CwlStageInTask implements Runnable {
 	private String jobId;
 	private XenonService service;
 	private JobRepository repository;
+	private JobService jobService;
 
 	public CwlStageInTask(String jobId, XenonService service) throws XenonException {
 		this.jobId = jobId;
 		this.service = service;
 		this.repository = service.getRepository();
+		this.jobService = service.getJobService();
 	}
 	
 	@Override
 	public void run(){
-		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
-		Job job = repository.findOne(jobId);
 		try {
-			XenonStager stager = new XenonStager(repository, service.getLocalFileSystem(), service.getRemoteFileSystem());
+			Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
+
+			Job job = repository.findOne(jobId);
+			if (job.getInternalState().isFinal()) {
+				return;
+			}
+			
+			job = jobService.setJobState(jobId, JobState.SUBMITTED, JobState.STAGING_IN);
+			
+			XenonStager stager = new XenonStager(jobService, repository, service.getSourceFileSystem(), service.getRemoteFileSystem());
 
 			// Staging files
 			StagingManifest manifest = new StagingManifest(jobId, job.getSandboxDirectory());
@@ -55,6 +63,9 @@ public class CwlStageInTask implements Runnable {
 	        // Add the workflow to the staging manifest
 	        Path localWorkflow = new Path(job.getWorkflow());
 	        Path workflowBaseName = new Path (localWorkflow.getFileNameAsString());
+	        
+	        // TODO: Recursively go through the workflow to find other cwl files
+	        // to stage. Or do we expect ppl to use in-line workflow files
 	        manifest.add(new FileStagingObject(localWorkflow, workflowBaseName));
 	        
 	        Path remoteJobOrder = null;
@@ -73,7 +84,7 @@ public class CwlStageInTask implements Runnable {
 				HashMap<String, Object> jobOrder = mapper.readValue(new StringReader(jobOrderString), typeRef);
 				
 				// Read in the workflow to get the required inputs
-	        	Workflow workflow = Workflow.fromInputStream(service.getLocalFileSystem().readFromFile(localWorkflow));
+	        	Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(localWorkflow));
 	        	
 	        	for (InputParameter parameter : workflow.getInputs()) {
 	        		if (parameter.getType().equals("File")) {
@@ -108,22 +119,17 @@ public class CwlStageInTask implements Runnable {
 	        	manifest.add(new StringToFileStagingObject(newJobOrderString, remoteJobOrder));
 	        }
 	        
-	        job = stager.stageIn(manifest, job);
+	        stager.stageIn(manifest);
 	        
-	        Path remoteDirectory = service.getRemoteFileSystem().getWorkingDirectory().resolve(manifest.getTargetDirectory());
-	        job.getAdditionalInfo().put("xenon.remote.directory", remoteDirectory.toString());
-	        
+	        jobService.setXenonRemoteDir(jobId, service.getRemoteFileSystem().getWorkingDirectory().resolve(manifest.getTargetDirectory()));
+	        jobService.setJobState(jobId, JobState.STAGING_IN, JobState.READY);
+
 	        jobLogger.info("StageIn complete.\n\n");
-	        job.setInternalState(InternalStateEnum.POST_STAGEIN);
-	        job = repository.save(job);
 		} catch (XenonException | IOException e) {
-			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			
-			job.setState(StateEnum.PERMANENTFAILURE);
-			job.setInternalState(InternalStateEnum.ERROR);
-			job.getAdditionalInfo().put("error", e);
-			job = repository.save(job);
+			jobService.setErrorAndState(jobId, e, JobState.STAGING_IN, JobState.PERMANENT_FAILURE);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 }

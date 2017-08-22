@@ -50,6 +50,7 @@ dependencies {
 	//Unittest spring-boot all-inclusive package
 	testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.5.6.RELEASE'
 
+	// Admin Interface
 
     //Swagger
     swaggerCodegen 'io.swagger:swagger-codegen-cli:2.2.2'
@@ -57,7 +58,6 @@ dependencies {
     //Misc
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
     compile group: 'commons-io', name: 'commons-io', version: '2.5'
-    compile group: 'org.projectlombok', name: 'lombok', version: '1.16.16'
     testCompile 'junit:junit:4.12'
 }
 

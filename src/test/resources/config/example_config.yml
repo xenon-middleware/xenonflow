@@ -34,7 +34,9 @@ ComputeResources:
 
 default: das5
 
-localFileSystem:
+cwlCommand: cwltool
+
+sourceFileSystem:
     adaptor: webdav
     location: http://localhost:8001/
     credential:

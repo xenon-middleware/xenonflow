@@ -19,8 +19,9 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
-import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
+import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.computeservice.rest.service.staging.DirectoryStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.FileStagingObject;
@@ -28,7 +29,6 @@ import nl.esciencecenter.computeservice.rest.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.Path;
-import nl.esciencecenter.xenon.schedulers.JobStatus;
 
 public class CwlStageOutTask implements Runnable {
 
@@ -37,13 +37,15 @@ public class CwlStageOutTask implements Runnable {
 	private String jobId;
 	private XenonService service;
 	private JobRepository repository;
-	private JobStatus status;
+	private int exitcode;
+	private JobService jobService;
 
-	public CwlStageOutTask(String jobId, JobStatus status, XenonService service) throws XenonException {
+	public CwlStageOutTask(String jobId, int exitcode, XenonService service) throws XenonException {
 		this.jobId = jobId;
 		this.service = service;
 		this.repository = service.getRepository();
-		this.status = status;
+		this.jobService = service.getJobService();
+		this.exitcode = exitcode;
 	}
 	
 	@Override
@@ -51,7 +53,13 @@ public class CwlStageOutTask implements Runnable {
 		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
 		Job job = repository.findOne(jobId);
 		try {
-			XenonStager stager = new XenonStager(repository, service.getLocalFileSystem(), service.getRemoteFileSystem());
+			if (job.getInternalState().isFinal()) {
+				return;
+			}
+
+			job = jobService.setJobState(jobId, JobState.FINISHED, JobState.STAGING_OUT);
+
+			XenonStager stager = new XenonStager(jobService, repository, service.getSourceFileSystem(), service.getRemoteFileSystem());
 	        // Staging back output
 	        StagingManifest manifest = new StagingManifest(jobId, new Path("out/" + job.getId() + "/"));
 	        
@@ -62,32 +70,31 @@ public class CwlStageOutTask implements Runnable {
 	        
 	        manifest.add(new FileStagingObject(errPath, localErrPath));
 	        
-	        if (status.getExitCode() == 0) {
+	        if (exitcode == 0) {
 	        	// Add output from cwl run
 	        	// Read in the workflow to get the required inputs
-	        	job = addOutputStaging(manifest, job, outPath);
+	        	addOutputStaging(manifest, new Path(job.getWorkflow()), outPath);
 	        }
 	        
-	        job = stager.stageOut(manifest, job);
+	        stager.stageOut(manifest);
 	        
-	        // TODO: Delete the remote sandbox to clean up?
-
 	        jobLogger.info("StageOut complete.\n\n");
 	        
-	        job.setInternalState(InternalStateEnum.DONE);
-	        job = repository.save(job);
+	        jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
 		} catch (XenonException e) {
 			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
 			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);;
 		} catch (IOException e) {
 			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
 			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);;
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
-	private Job addOutputStaging(StagingManifest manifest, Job job, Path outPath) throws JsonParseException, JsonMappingException, IOException, XenonException {
-		Path localWorkflow = new Path(job.getWorkflow());
-    	Workflow workflow = Workflow.fromInputStream(service.getLocalFileSystem().readFromFile(localWorkflow));
+	private void addOutputStaging(StagingManifest manifest, Path localWorkflow, Path outPath) throws JsonParseException, JsonMappingException, IOException, XenonException {
+    	Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(localWorkflow));
     	
     	// Read the cwltool stdout to determine where the files are.
 		ObjectMapper mapper = new ObjectMapper(new JsonFactory());
@@ -116,7 +123,7 @@ public class CwlStageOutTask implements Runnable {
     				String fullPath = manifest.getTargetDirectory().resolve(localPath).toString();
     				fileOutput.put("path", fullPath);
     				
-    				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(service.getLocalFileSystem().getLocation().toString());
+    				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(service.getSourceFileSystem().getLocation().toString());
     				b.pathSegment(fullPath);
     				fileOutput.put("location", b.build().toString());
     			}
@@ -132,14 +139,11 @@ public class CwlStageOutTask implements Runnable {
 				String fullPath = manifest.getTargetDirectory().resolve(localPath).toString();
 				dirOutput.put("path", fullPath);
 				
-				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(service.getLocalFileSystem().getLocation().toString());
+				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(service.getSourceFileSystem().getLocation().toString());
 				b.pathSegment(fullPath);
 				dirOutput.put("location", b.build().toString());
     		}
     	}
-    	
-    	job.getOutput().put("stdout", outputMap);
-    	return job;
+    	jobService.setOutput(jobId, "stdout", outputMap);
 	}
-
 }

@@ -17,18 +17,20 @@ package nl.esciencecenter.computeservice.rest.model;
 
 import java.util.List;
 
+import javax.persistence.LockModeType;
+
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
-import nl.esciencecenter.computeservice.rest.model.Job.StateEnum;
-
 @Repository
-public interface JobRepository extends CrudRepository<Job, String>{
+public interface JobRepository extends CrudRepository<Job, String> {
 	List<Job> findAll();
-
-	List<Job> findAllByState(StateEnum state);
-	List<Job> findAllByInternalState(InternalStateEnum internalState);
-
-	List<Job> findAllByStateAndInternalStateNot(StateEnum cancelled, InternalStateEnum internal);
+	
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select j from Job j where j.id = ?1")
+	Job findOneForUpdate(String jobId);
+	
+	List<Job> findAllByInternalState(JobState internalState);
 }

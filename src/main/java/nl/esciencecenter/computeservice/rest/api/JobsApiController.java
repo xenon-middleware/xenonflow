@@ -22,7 +22,6 @@ import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobDescription;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
-import nl.esciencecenter.xenon.XenonException;
 
 @Controller
 public class JobsApiController implements JobsApi {
@@ -36,19 +35,27 @@ public class JobsApiController implements JobsApi {
 	
 	@Override
 	public ResponseEntity<Job> cancelJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
-		Job job = xenonService.cancelJob(jobId);
-		
-		if (job != null) {
-			HttpHeaders headers = new HttpHeaders();
-			ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
-			builder.pathSegment(job.getId());
-			
-			logger.debug("Setting location header to: " + builder.build().toUri());
-			headers.setLocation(builder.build().toUri());
-			
-			return new ResponseEntity<Job>(job, headers, HttpStatus.CREATED);
+		Job job;
+		try {
+			job = xenonService.cancelJob(jobId);
+			if (job != null) {
+				HttpHeaders headers = new HttpHeaders();
+				ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
+				builder.pathSegment(job.getId());
+				
+				logger.debug("Setting location header to: " + builder.build().toUri());
+				headers.setLocation(builder.build().toUri());
+				
+				return new ResponseEntity<Job>(job, headers, HttpStatus.OK);
+			}
+			return new ResponseEntity<Job>(HttpStatus.NOT_FOUND);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return new ResponseEntity<Job>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		return new ResponseEntity<Job>(HttpStatus.NOT_FOUND);
+		
+		
 	}
 
 	@Override
@@ -103,9 +110,11 @@ public class JobsApiController implements JobsApi {
 			headers.setLocation(builder.build().toUri());
 			
 			return new ResponseEntity<Job>(job, headers, HttpStatus.CREATED);
-		} catch (XenonException e) {
+		} catch (Exception e) {
 			logger.error("Error while posting job", e);
+			Job job = new Job();
+			job.getAdditionalInfo().put("exception", e);
+			return new ResponseEntity<Job>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		return new ResponseEntity<Job>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 }

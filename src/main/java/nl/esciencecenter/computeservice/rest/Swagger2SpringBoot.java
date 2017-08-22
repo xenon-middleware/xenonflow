@@ -13,8 +13,8 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
@@ -22,9 +22,9 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableSwagger2
 @ComponentScan("nl.esciencecenter.computeservice.rest*")
 @EntityScan(basePackages = { "nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.cwl.*" })
+@EnableTransactionManagement
 @EnableJpaRepositories(basePackages = { "nl.esciencecenter.computeservice.rest*",
 		"nl.esciencecenter.computeservice.cwl.*" })
-@EnableAsync
 public class Swagger2SpringBoot implements CommandLineRunner {
 	@Bean
 	public static ServletRegistrationBean servletRegistrationBean() {
@@ -35,6 +35,7 @@ public class Swagger2SpringBoot implements CommandLineRunner {
 		params.put("debug", "1");
 		params.put("listings", "true");
 		params.put("readonly", "false");
+
 		registration.setInitParameters(params);
 		registration.addUrlMappings("/webdav/*");
 

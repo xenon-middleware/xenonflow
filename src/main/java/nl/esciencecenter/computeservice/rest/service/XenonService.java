@@ -2,10 +2,7 @@ package nl.esciencecenter.computeservice.rest.service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.FutureTask;
 
 import javax.annotation.PostConstruct;
 
@@ -25,17 +22,14 @@ import nl.esciencecenter.computeservice.config.AdaptorConfig;
 import nl.esciencecenter.computeservice.config.ComputeResource;
 import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
 import nl.esciencecenter.computeservice.rest.model.Job;
-import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
-import nl.esciencecenter.computeservice.rest.model.Job.StateEnum;
 import nl.esciencecenter.computeservice.rest.model.JobDescription;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
+import nl.esciencecenter.computeservice.rest.model.JobState;
 import nl.esciencecenter.computeservice.rest.service.tasks.CwlStageInTask;
-import nl.esciencecenter.computeservice.rest.service.tasks.CwlWorkflowTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.XenonMonitoringTask;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
-import nl.esciencecenter.xenon.schedulers.JobStatus;
 import nl.esciencecenter.xenon.schedulers.Scheduler;
 
 @Service
@@ -50,14 +44,15 @@ public class XenonService {
 
 	@Autowired
 	JobRepository repository;
-
+	
+	@Autowired
+	JobService jobService;
+	
 	private ThreadPoolTaskScheduler taskScheduler = null;
-
 	private ComputeServiceConfig config = null;
-
 	private Scheduler scheduler = null;
 	private FileSystem remoteFileSystem = null;
-	private FileSystem localFileSystem = null;
+	private FileSystem sourceFileSystem = null;
 
 	public XenonService(ThreadPoolTaskScheduler taskScheduler) throws IOException {
 		this.taskScheduler = taskScheduler;
@@ -70,8 +65,8 @@ public class XenonService {
 			if (scheduler != null && scheduler.isOpen()) {
 				scheduler.close();
 			}
-			if (localFileSystem != null && localFileSystem.isOpen()) {
-				localFileSystem.close();
+			if (sourceFileSystem != null && sourceFileSystem.isOpen()) {
+				sourceFileSystem.close();
 			}
 			if (remoteFileSystem != null && remoteFileSystem.isOpen()) {
 				remoteFileSystem.close();
@@ -80,7 +75,7 @@ public class XenonService {
 			logger.error("Error while shutting down xenon: ", e);
 		}
 		scheduler = null;
-		localFileSystem = null;
+		sourceFileSystem = null;
 		remoteFileSystem = null;
 	}
 
@@ -108,18 +103,25 @@ public class XenonService {
 		this.taskScheduler = taskScheduler;
 	}
 
+	public JobService getJobService() {
+		return jobService;
+	}
+
+	public void setJobService(JobService jobService) {
+		this.jobService = jobService;
+	}
+
 	public Scheduler getScheduler() throws XenonException {
 		if (scheduler == null) {
 			// Initialize xenon scheduler
 			ComputeResource resource = getConfig().defaultComputeResource();
 			AdaptorConfig schedulerConfig = resource.getSchedulerConfig();
-			Map<String, String> properties = new HashMap<>();
 
-			properties.put("xenon.adaptors.slurm.ignore.version", "true");
 			logger.debug("Creating a scheduler to run jobs...");
 			scheduler = Scheduler.create(schedulerConfig.getAdaptor(), schedulerConfig.getLocation(),
 					schedulerConfig.getCredential(), schedulerConfig.getProperties());
 		}
+
 		return scheduler;
 	}
 
@@ -148,22 +150,22 @@ public class XenonService {
 		this.remoteFileSystem = remoteFileSystem;
 	}
 
-	public FileSystem getLocalFileSystem() throws XenonException {
-		if (localFileSystem == null || !localFileSystem.isOpen()) {
+	public FileSystem getSourceFileSystem() throws XenonException {
+		if (sourceFileSystem == null || !sourceFileSystem.isOpen()) {
 			// Initialize local filesystem
-			AdaptorConfig localConfig = getConfig().getLocalFilesystemConfig();
-			logger.debug("Creating local filesystem..." + localConfig.getAdaptor() + " location: "
-					+ localConfig.getLocation());
-			logger.debug(localConfig.getAdaptor() + " " + localConfig.getLocation() + " " + localConfig.getCredential()
-					+ " " + localConfig.getProperties());
-			localFileSystem = FileSystem.create(localConfig.getAdaptor(), localConfig.getLocation(),
-					localConfig.getCredential(), localConfig.getProperties());
+			AdaptorConfig sourceConfig = getConfig().getSourceFilesystemConfig();
+			logger.debug("Creating source filesystem..." + sourceConfig.getAdaptor() + " location: "
+					+ sourceConfig.getLocation());
+			logger.debug(sourceConfig.getAdaptor() + " " + sourceConfig.getLocation() + " " + sourceConfig.getCredential()
+					+ " " + sourceConfig.getProperties());
+			sourceFileSystem = FileSystem.create(sourceConfig.getAdaptor(), sourceConfig.getLocation(),
+					sourceConfig.getCredential(), sourceConfig.getProperties());
 		}
-		return localFileSystem;
+		return sourceFileSystem;
 	}
 
-	public void setLocalFileSystem(FileSystem localFileSystem) {
-		this.localFileSystem = localFileSystem;
+	public void setSourceFileSystem(FileSystem sourceFileSystem) {
+		this.sourceFileSystem = sourceFileSystem;
 	}
 
 	public JobRepository getRepository() {
@@ -216,7 +218,7 @@ public class XenonService {
 		logbackLogger.addAppender(fileAppender);
 	}
 
-	public Job submitJob(JobDescription body) throws XenonException {
+	public Job submitJob(JobDescription body) throws Exception {
 		String uuid = UUID.randomUUID().toString();
 
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + uuid);
@@ -226,7 +228,7 @@ public class XenonService {
 		job.setId(uuid);
 		job.setInput(body.getInput());
 		job.setName(body.getName());
-		job.setState(StateEnum.WAITING);
+		job.setInternalState(JobState.SUBMITTED);
 		job.setWorkflow(body.getWorkflow());
 
 		ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
@@ -245,34 +247,31 @@ public class XenonService {
 		return job;
 	}
 	
-	public Job cancelJob(String jobId) {
+	public Job cancelJob(String jobId) throws Exception {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
 		
 		jobLogger.info("Trying to cancel job " + jobId);
 		
 		Job job = repository.findOne(jobId);
-		
-		if (job != null && !job.hasError()) {
-			try {
-				// We need to store the running state here
-				// because we have to set the job to cancelled
-				// before actually canceling the job using
-				// Xenon. Otherwise we get an unexpected
-				// exception in @see XenonMonitoring
-				boolean running = job.isRunning();
-				job.setState(StateEnum.CANCELLED);
-				// Not setting internal state to cancelled yet. This is
-				// done in XenonMonitoringStatus
-				job = repository.save(job);
-				if (running){
-						JobStatus status = scheduler.getJobStatus(job.getXenonId());
-						if (status.isRunning()) {
-							status = scheduler.cancelJob(job.getXenonId());
-							logger.debug("Cancelled job: " + job.getId() + " new status: " + status);
-						}
-				}
-			} catch (XenonException e) {
-				logger.error("Error cancelling job: ", e);
+		if (job != null && !job.getInternalState().isFinal()) {
+			switch (job.getInternalState()) {
+				case STAGING_IN:
+					jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_IN_CR);
+					break;
+				case WAITING:
+					jobService.setJobState(jobId, JobState.WAITING, JobState.WAITING_CR);
+					break;
+				case RUNNING:
+					jobService.setJobState(jobId, JobState.RUNNING, JobState.RUNNING_CR);
+					break;
+				case STAGING_OUT:
+					jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.STAGING_OUT_CR);
+					break;
+				default:
+					if (!job.getInternalState().isFinal()) {
+						jobService.setJobState(jobId, job.getInternalState(), JobState.CANCELLED);
+					}
+					break;
 			}
 		}
 		

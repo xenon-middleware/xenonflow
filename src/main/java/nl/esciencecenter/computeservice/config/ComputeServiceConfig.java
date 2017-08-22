@@ -47,8 +47,8 @@ public class ComputeServiceConfig {
 	@JsonProperty("default")
 	private String defaultComputeResourceName = null;
 	
-	@JsonProperty("localFileSystem")
-	private AdaptorConfig localFileSystemConfig;
+	@JsonProperty("sourceFileSystem")
+	private AdaptorConfig sourceFileSystemConfig;
 	
 	@JsonProperty(value="cwlCommand", required=false)
 	private String cwlCommand = "cwltool";
@@ -164,12 +164,12 @@ public class ComputeServiceConfig {
 		}
 	}
 	
-	public AdaptorConfig getLocalFilesystemConfig() {
-		return localFileSystemConfig;
+	public AdaptorConfig getSourceFilesystemConfig() {
+		return sourceFileSystemConfig;
 	}
 
-	public void setLocalFilesystemConfig(AdaptorConfig localFileSystemConfig) {
-		this.localFileSystemConfig = localFileSystemConfig;
+	public void setSourceFilesystemConfig(AdaptorConfig sourceFileSystemConfig) {
+		this.sourceFileSystemConfig = sourceFileSystemConfig;
 	}
 
 	public String getCwlCommand() {

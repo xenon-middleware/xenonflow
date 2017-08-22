@@ -36,9 +36,10 @@ default: das5
 
 cwlCommand: cwltool-wrapper --copy-outputs 
 
-localFileSystem:
+sourceFileSystem:
     adaptor: webdav
     location: http://localhost:8001/
     credential:
         user: webdav
         password: dmFkYmV3
+      

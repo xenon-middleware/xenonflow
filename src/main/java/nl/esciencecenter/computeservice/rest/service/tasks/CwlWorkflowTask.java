@@ -1,20 +1,17 @@
 package nl.esciencecenter.computeservice.rest.service.tasks;
 
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
-import nl.esciencecenter.computeservice.rest.model.Job.InternalStateEnum;
-import nl.esciencecenter.computeservice.rest.model.Job.StateEnum;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
+import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.Path;
-import nl.esciencecenter.xenon.schedulers.JobStatus;
 import nl.esciencecenter.xenon.schedulers.Scheduler;
 
 public class CwlWorkflowTask implements Runnable {
@@ -23,11 +20,13 @@ public class CwlWorkflowTask implements Runnable {
 	private String jobId;
 	private XenonService service;
 	private JobRepository repository;
+	private JobService jobService;
 
 	public CwlWorkflowTask(String jobId, XenonService service) throws XenonException {
 		this.jobId = jobId;
 		this.service = service;
 		this.repository = service.getRepository();
+		this.jobService = service.getJobService();
 	}
 
 	@Override
@@ -37,9 +36,14 @@ public class CwlWorkflowTask implements Runnable {
 		try {
 			Scheduler scheduler = service.getScheduler();
 
-			// Job has changed during StageIn so get it from the database again.
 			job = repository.findOne(jobId);
-			if (job.isDone()) {
+
+			if (job.getInternalState().isCancellationActive()) {
+				jobService.setJobState(jobId, job.getInternalState(), JobState.CANCELLED);
+				return;
+			}
+
+			if (job.getInternalState().isFinal()) {
 				return;
 			}
 
@@ -68,31 +72,14 @@ public class CwlWorkflowTask implements Runnable {
 			String xenonJobId = scheduler.submitBatchJob(description);
 			jobLogger.info("Xenon jobid: " + xenonJobId);
 
-			job.setXenonId(xenonJobId);
-			job.getAdditionalInfo().put("xenon.id", xenonJobId);
-			job = repository.save(job);
-
-			JobStatus status = scheduler.waitUntilRunning(xenonJobId, 0);
-
-			// Unless there was an exception we will assume it is running
-			// this is later checked in the XenonWaitingTask if there
-			// was any other error during execution it is handled
-			// there.
-			job.setState(StateEnum.RUNNING);
-			job.setInternalState(InternalStateEnum.RUNNING);
-			job.getAdditionalInfo().put("xenon.state", status.getState());
-
-			if (status.hasException()) {
-				jobLogger.error("Exception during execution", status.getException());
-				job.setState(StateEnum.PERMANENTFAILURE);
-				job.setInternalState(InternalStateEnum.ERROR);
-				job.getAdditionalInfo().put("xenon.error", status.getException());
-			}
-
-			job = repository.save(job);
+			jobService.setXenonJobId(jobId, xenonJobId);			
+			jobService.setJobState(jobId, JobState.READY, JobState.WAITING);
 		} catch (XenonException e) {
 			jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 			logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 

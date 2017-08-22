@@ -27,7 +27,7 @@ public class ComputeServiceConfigTest {
 		Assert.notNull(config, "Configuration should not be null");
 		Assert.notNull(config.get("das5"), "ComputeResource das5 should exist");
 		Assert.notNull(config.defaultComputeResource(), "Default resource should exist");
-		Assert.notNull(config.getLocalFilesystemConfig(), "Local filesystem should exist");
+		Assert.notNull(config.getSourceFilesystemConfig(), "Local filesystem should exist");
 	}
 	
 	@Test
@@ -45,7 +45,8 @@ public class ComputeServiceConfigTest {
 				+ "			}"
 				+ "		}"
 				+ "	},"
-				+ " \"localFileSystem\": {"
+				+ " \"cwlCommand\": \"cwltool\","
+				+ " \"sourceFileSystem\": {"
 				+ "    \"adaptor\": \"webdav\","
 				+ "    \"location\": \"http://localhost:8080/\""
 				+ "  }"
@@ -53,7 +54,7 @@ public class ComputeServiceConfigTest {
 		Assert.notNull(config, "Configuration should not be null");
 		Assert.notNull(config.get("das5"), "ComputeResource das5 should exist");
 		Assert.notNull(config.defaultComputeResource(), "Default resource should exist");
-		Assert.notNull(config.getLocalFilesystemConfig(), "Local filesystem should exist");
+		Assert.notNull(config.getSourceFilesystemConfig(), "Local filesystem should exist");
 		assert (config.get("das5").getSchedulerConfig().getAdaptor().equals("local")); 
 	}
 }
