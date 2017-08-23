@@ -1,6 +1,8 @@
 package nl.esciencecenter.computeservice.rest.model;
 
 import java.io.Serializable;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -301,8 +303,11 @@ public class Job implements Serializable {
 
 	@JsonIgnore
 	public Path getSandboxDirectory() {
-		String dirstring = hasName() ? getName() + "/" + getId() : getId();
-		return new Path(dirstring);
+		String dirString = hasName() ? getName() + "-" + getId() : getId();
+		String niceString = Normalizer.normalize(dirString.toLowerCase(), Form.NFD)
+		        .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+		        .replaceAll("[^\\p{Alnum}]+", "-");
+		return new Path(niceString);
 	}
 
 	public void changeState(JobState from, JobState to) throws Exception {
