@@ -124,7 +124,7 @@ public class CwlStageInTask implements Runnable {
 	        jobService.setXenonRemoteDir(jobId, service.getRemoteFileSystem().getWorkingDirectory().resolve(manifest.getTargetDirectory()));
 	        jobService.setJobState(jobId, JobState.STAGING_IN, JobState.READY);
 
-	        jobLogger.info("StageIn complete.\n\n");
+	        jobLogger.info("StageIn complete.");
 		} catch (XenonException | IOException e) {
 			jobService.setErrorAndState(jobId, e, JobState.STAGING_IN, JobState.PERMANENT_FAILURE);
 		} catch (Exception e) {
