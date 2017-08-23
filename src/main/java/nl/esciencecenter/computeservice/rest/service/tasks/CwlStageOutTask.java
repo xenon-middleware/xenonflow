@@ -78,7 +78,7 @@ public class CwlStageOutTask implements Runnable {
 	        
 	        stager.stageOut(manifest);
 	        
-	        jobLogger.info("StageOut complete.\n\n");
+	        jobLogger.info("StageOut complete.");
 	        
 	        if (exitcode == 0) {
 	        	jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);

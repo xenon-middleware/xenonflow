@@ -21,9 +21,13 @@ public class JobService {
 	
 	@Transactional
 	public Job setJobState(String jobId, JobState from, JobState to) throws Exception {
+		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
+		
 		Job job = repository.findOneForUpdate(jobId);
 		job.changeState(from, to);
         job = repository.save(job);
+        
+        jobLogger.info("Job " + jobId + " now has state: " + to);
         return job;
 	}
 	
@@ -34,13 +38,13 @@ public class JobService {
 		try {
 			Job job = repository.findOneForUpdate(jobId);
 
-			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-		
+			if (e != null) {
+				jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
+				logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
+				job.getAdditionalInfo().put("error", e);
+				job = repository.save(job);
+			}
 			setJobState(jobId, from, to);
-
-			job.getAdditionalInfo().put("error", e);
-			job = repository.save(job);
 		} catch (Exception except) {
 			logger.error("Error during update of Job (" +jobId +")", except);
 		}

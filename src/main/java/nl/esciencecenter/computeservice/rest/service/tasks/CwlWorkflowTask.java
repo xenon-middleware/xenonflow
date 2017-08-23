@@ -47,8 +47,7 @@ public class CwlWorkflowTask implements Runnable {
 				return;
 			}
 
-			Path remoteDirectory = service.getRemoteFileSystem().getWorkingDirectory()
-					.resolve(job.getSandboxDirectory());
+			Path remoteDirectory = job.getSandboxDirectory();
 
 			// Create a new job description
 			nl.esciencecenter.xenon.schedulers.JobDescription description = new nl.esciencecenter.xenon.schedulers.JobDescription();
@@ -57,16 +56,18 @@ public class CwlWorkflowTask implements Runnable {
 			jobLogger.debug("Using cwl command: " + description.getExecutable());
 
 			ArrayList<String> cwlArguments = new ArrayList<String>();
-			cwlArguments.add(remoteDirectory.resolve(new Path(job.getWorkflow()).getFileName()).toString());
+			cwlArguments.add(new Path(job.getWorkflow()).getFileNameAsString());
 
 			if (job.hasInput()) {
-				cwlArguments.add(remoteDirectory.resolve("job-order.json").toString());
+				cwlArguments.add("job-order.json");
 			}
 
 			description.setArguments(cwlArguments.toArray(new String[cwlArguments.size()]));
-			description.setStdout(remoteDirectory.resolve("stdout.txt").toString());
-			description.setStderr(remoteDirectory.resolve("stderr.txt").toString());
+			description.setStdout("stdout.txt");
+			description.setStderr("stderr.txt");
 			description.setWorkingDirectory(remoteDirectory.toString());
+			
+			jobLogger.debug("Executing description: " + description);
 
 			jobLogger.debug("Submitting the job: " + description);
 			String xenonJobId = scheduler.submitBatchJob(description);

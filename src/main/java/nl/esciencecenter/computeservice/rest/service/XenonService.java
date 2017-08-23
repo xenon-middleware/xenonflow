@@ -26,6 +26,7 @@ import nl.esciencecenter.computeservice.rest.model.JobDescription;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
 import nl.esciencecenter.computeservice.rest.service.tasks.CwlStageInTask;
+import nl.esciencecenter.computeservice.rest.service.tasks.DeleteJobTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.XenonMonitoringTask;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
@@ -280,6 +281,23 @@ public class XenonService {
 					}
 					break;
 			}
+		}
+		
+		return job;
+	}
+
+	public Job deleteJob(String jobId) throws Exception {
+		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
+		
+		jobLogger.info("Going to delete job " + jobId);
+		
+		Job job = repository.findOne(jobId);
+		if (job != null) {
+			if (!job.getInternalState().isFinal()) {
+				job = cancelJob(jobId);
+			}
+			
+			taskScheduler.execute(new DeleteJobTask(jobId, this));
 		}
 		
 		return job;

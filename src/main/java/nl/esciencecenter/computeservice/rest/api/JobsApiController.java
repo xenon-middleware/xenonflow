@@ -60,8 +60,24 @@ public class JobsApiController implements JobsApi {
 
 	@Override
 	public ResponseEntity<Void> deleteJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
-		// TODO Auto-generated method stub
-		return JobsApi.super.deleteJobById(jobId);
+		try {
+			Job job = xenonService.deleteJob(jobId);
+			if (job != null) {
+				HttpHeaders headers = new HttpHeaders();
+				ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
+				builder.pathSegment(job.getId());
+				
+				logger.debug("Setting location header to: " + builder.build().toUri());
+				headers.setLocation(builder.build().toUri());
+				
+				return new ResponseEntity<Void>(headers, HttpStatus.OK);
+			}
+			return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	@Override
