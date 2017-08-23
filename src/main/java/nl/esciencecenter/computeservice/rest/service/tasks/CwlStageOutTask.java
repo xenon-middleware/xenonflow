@@ -80,13 +80,17 @@ public class CwlStageOutTask implements Runnable {
 	        
 	        jobLogger.info("StageOut complete.\n\n");
 	        
-	        jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
+	        if (exitcode == 0) {
+	        	jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
+	        } else {
+	        	jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
+	        }
 		} catch (XenonException e) {
 			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);;
+			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
 		} catch (IOException e) {
 			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);;
+			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

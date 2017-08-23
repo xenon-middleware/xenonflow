@@ -36,7 +36,6 @@ public class XenonMonitoringTask implements Runnable {
 			scheduler = service.getScheduler();
 		} catch (XenonException e) {
 			logger.error("Error getting the xenon scheduler", e);
-			;
 			return;
 		}
 
@@ -143,6 +142,10 @@ public class XenonMonitoringTask implements Runnable {
 					} else if (status.hasException()) {
 						jobLogger.error("Exception during execution", status.getException());
 						jobService.setErrorAndState(job.getId(), status.getException(), JobState.WAITING, JobState.PERMANENT_FAILURE);
+					} else if (status.isDone() && status.getExitCode() != 0) {
+						jobLogger.error("Execution failed with code: " + status.getExitCode());
+						jobService.setXenonExitcode(job.getId(), status.getExitCode());
+						jobService.setErrorAndState(job.getId(), status.getException(), JobState.WAITING, JobState.FINISHED);
 					} else {
 						jobLogger.error(
 								"Exception during execution, Job is in an inconsistent state for workflowtask: " + job);

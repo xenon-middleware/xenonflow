@@ -3,12 +3,12 @@ services:
   xenon_cwl:
     image: nlesc/xenon-cwl
     ports:
-      - "127.0.0.1:4040:4040"
-  webdav:
-    build:
-      context: webdav
-    ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:8080:8080"
+#  webdav:
+#    build:
+#      context: webdav
+#    ports:
+#      - "127.0.0.1:8080:80"
   slurm:
     build:
       context: slurm

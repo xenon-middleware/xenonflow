@@ -89,6 +89,13 @@ public class XenonService {
 
 		// Read xenon config
 		setConfig(ComputeServiceConfig.loadFromFile(new File(xenonConfigFile)));
+		// Sanity Check the config file.
+		ComputeResource resource = getConfig().defaultComputeResource();
+		// TODO: Is assertions the nicest way?
+		assert(resource != null);
+		assert(resource.getSchedulerConfig() != null);
+		assert(resource.getFilesystemConfig() != null);
+		
 
 		// Running and waiting jobs are automatically picked up by the
 		// XenonWaitingTask
@@ -140,7 +147,7 @@ public class XenonService {
 
 			// TODO: Xenon should pick up on this automatically from the
 			// location in the release version it should. For now we hack it in here.
-			remoteFileSystem.setWorkingDirectory(new Path("/var/scratch/bweel/xenon-cwl-service/jobs/"));
+			remoteFileSystem.setWorkingDirectory(new Path("/home/xenon/"));
 			logger.debug("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
 		}
 		return remoteFileSystem;

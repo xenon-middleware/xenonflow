@@ -24,6 +24,19 @@ ComputeResources:
         filesystem:
             adaptor: sftp
             location: fs0.das5.cs.vu.nl
+    docker:
+        scheduler:
+            adaptor: slurm
+            location: localhost:10022
+            credential:
+                user: xenon
+                password: amF2YWdhdA==
+        filesystem:
+            adaptor: sftp
+            location: localhost:10022
+            credential:
+                user: xenon
+                password: amF2YWdhdA==
     local:
         scheduler:
             adaptor: local
@@ -32,7 +45,7 @@ ComputeResources:
             adaptor: file
             location: /
 
-default: das5
+default: docker
 
 cwlCommand: cwltool-wrapper --copy-outputs 
 
