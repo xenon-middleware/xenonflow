@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.WorkflowBinding;
 import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.CopyMode;
@@ -53,17 +54,22 @@ public class XenonStager {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 
 		// Make sure the target directory exists
-		Path targetDirectory = targetFileSystem.getWorkingDirectory().resolve(manifest.getTargetDirectory());
+		Path targetDirectory = targetFileSystem.getWorkingDirectory().resolve(manifest.getTargetDirectory()).toAbsolutePath();
 		if (!targetFileSystem.exists(targetDirectory)) {
 			jobLogger.info("Creating directory: " + targetDirectory);
 			targetFileSystem.createDirectories(targetDirectory);
 		}
+		
+		Path sourceDirectory = sourceFileSystem.getWorkingDirectory().toAbsolutePath();
 
 		// Copy all the files there
 		for (StagingObject stageObject : manifest) {
 			if (stageObject instanceof FileStagingObject) {
 				FileStagingObject object = (FileStagingObject) stageObject;
 				Path sourcePath = object.getSourcePath();
+				if (!sourcePath.isAbsolute()) {
+					sourcePath = sourceDirectory.resolve(object.getSourcePath()).toAbsolutePath();
+				}
 				Path targetPath = targetDirectory.resolve(object.getTargetPath());
 
 				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
@@ -82,6 +88,9 @@ public class XenonStager {
 			} else if (stageObject instanceof DirectoryStagingObject) {
 				DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
 				Path sourcePath = object.getSourcePath();
+				if (!sourcePath.isAbsolute()) {
+					sourcePath = sourceDirectory.resolve(object.getSourcePath()).toAbsolutePath();
+				}
 				Path targetPath = targetDirectory.resolve(object.getTargetPath());
 
 				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
@@ -130,18 +139,21 @@ public class XenonStager {
 	 * into a json object in the job output
 	 * 
 	 * @param manifest
+	 * @return 
 	 * @throws Exception 
 	 */
-	public void stageOut(StagingManifest manifest) throws Exception {
+	public WorkflowBinding stageOut(StagingManifest manifest) throws Exception {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 
 		try {
 			doStaging(manifest, remoteFileSystem, localFileSystem);
 		} catch (XenonException e) {
 			jobService.setErrorAndState(manifest.getJobId(), e, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
-			return;
+			return null;
 		}
 
+		Job job = repository.findOne(manifest.getJobId());
+		WorkflowBinding binding = job.getOutput();
 		for (StagingObject stageObject : manifest) {
 			String outputTarget = null;
 			Object outputObject = null;
@@ -182,7 +194,10 @@ public class XenonStager {
 					outputObject = value;
 				}
 			}
-			jobService.setOutput(manifest.getJobId(), outputTarget, outputObject);
+			binding.put(outputTarget, outputObject);
+			//jobService.setOutput(manifest.getJobId(), outputTarget, outputObject);
 		}
+		return binding;
+		// jobService.setOutputBinding(manifest.getJobId(), binding);
 	}
 }

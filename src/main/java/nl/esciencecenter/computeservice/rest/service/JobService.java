@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.WorkflowBinding;
 import nl.esciencecenter.xenon.filesystems.Path;
 
 @Service
@@ -84,5 +85,12 @@ public class JobService {
 		Job job = repository.findOneForUpdate(jobId);
 		job.getAdditionalInfo().put("xenon.exitcode", exitCode);
 		repository.save(job);
+	}
+
+	@Transactional
+	public void setOutputBinding(String jobId, WorkflowBinding binding) {
+		Job job = repository.findOneForUpdate(jobId);
+    	job.setOutput(binding);
+    	repository.save(job);
 	}
 }

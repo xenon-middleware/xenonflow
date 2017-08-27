@@ -15,6 +15,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
@@ -38,6 +41,7 @@ public class Swagger2SpringBoot implements CommandLineRunner {
 
 		registration.setInitParameters(params);
 		registration.addUrlMappings("/webdav/*");
+		registration.setName("cwl-xenon-service");
 
 		registration.setLoadOnStartup(1);
 

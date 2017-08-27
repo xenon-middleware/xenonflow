@@ -70,9 +70,11 @@ public class XenonMonitoringTask implements Runnable {
 							jobService.setErrorAndState(job.getId(), status.getException(), JobState.RUNNING, JobState.PERMANENT_FAILURE);
 						} else if (status.getExitCode() != 0) {
 							jobLogger.error("Job has finished with errors.");
-							jobService.setJobState(job.getId(), JobState.RUNNING, JobState.PERMANENT_FAILURE);
+							jobService.setXenonExitcode(job.getId(), status.getExitCode());
+							jobService.setJobState(job.getId(), JobState.RUNNING, JobState.FINISHED);
 						} else {
 							jobLogger.info("Jobs done.");
+							jobService.setXenonExitcode(job.getId(), status.getExitCode());
 							jobService.setJobState(job.getId(), JobState.RUNNING, JobState.FINISHED);
 						}
 					}
@@ -111,6 +113,10 @@ public class XenonMonitoringTask implements Runnable {
 						jobLogger.error("Execution failed with code: " + status.getExitCode());
 						jobService.setXenonExitcode(job.getId(), status.getExitCode());
 						jobService.setErrorAndState(job.getId(), status.getException(), JobState.WAITING, JobState.FINISHED);
+					} else if (status.isDone() && status.getExitCode() == 0) {
+						jobLogger.info("Jobs done.");
+						jobService.setXenonExitcode(job.getId(), status.getExitCode());
+						jobService.setJobState(job.getId(), JobState.RUNNING, JobState.FINISHED);
 					} else {
 						jobLogger.error(
 								"Exception during execution, Job is in an inconsistent state for workflowtask: " + job);

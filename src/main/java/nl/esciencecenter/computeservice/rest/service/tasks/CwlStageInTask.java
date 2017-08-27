@@ -24,6 +24,7 @@ import nl.esciencecenter.computeservice.rest.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.rest.service.staging.StringToFileStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
+import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 
 
@@ -84,33 +85,44 @@ public class CwlStageInTask implements Runnable {
 				HashMap<String, Object> jobOrder = mapper.readValue(new StringReader(jobOrderString), typeRef);
 				
 				// Read in the workflow to get the required inputs
-	        	Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(localWorkflow));
+				Path workflowPath = service.getSourceFileSystem().getWorkingDirectory().resolve(localWorkflow);
+	        	Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()));
 	        	
 	        	for (InputParameter parameter : workflow.getInputs()) {
 	        		if (parameter.getType().equals("File")) {
+	        			String paramId = null;
 	        			if (jobOrder.containsKey(parameter.getId())) {
-	        				// This should either work or throw an exception, we know about the problem (type erasure).
-	        				@SuppressWarnings("unchecked")
-							HashMap<String, Object> fileInput = (HashMap<String, Object>) jobOrder.get(parameter.getId());
-
-	        				Path localPath = new Path((String) fileInput.get("path"));
-	        				Path remotePath = new Path(localPath.getFileNameAsString());
-	        				manifest.add(new FileStagingObject(localPath, remotePath));
-	        			
-	        				fileInput.put("path", remotePath.toString());
+	        				paramId = parameter.getId();
+	        			} else if (parameter.getId().startsWith("#")) {
+	        				paramId = parameter.getId().split("/")[1];
 	        			}
+	        			
+        				// This should either work or throw an exception, we know about the problem (type erasure).
+        				@SuppressWarnings("unchecked")
+						HashMap<String, Object> fileInput = (HashMap<String, Object>) jobOrder.get(paramId);
+
+        				Path localPath = new Path((String) fileInput.get("path"));
+        				Path remotePath = new Path(localPath.getFileNameAsString());
+        				manifest.add(new FileStagingObject(localPath, remotePath));
+        			
+        				fileInput.put("path", remotePath.toString());
 	        		} else if (parameter.getType().equals("Directory")) {
+	        			String paramId = null;
 	        			if (jobOrder.containsKey(parameter.getId())) {
-	        				// This should either work or throw an exception, we know about the problem (type erasure).
-	        				@SuppressWarnings("unchecked")
-	        				HashMap<String, Object> fileInput = (HashMap<String, Object>) jobOrder.get(parameter.getId());
-
-	        				Path localPath = new Path((String) fileInput.get("path"));
-	        				Path remotePath = new Path(localPath.getFileNameAsString());
-	        				manifest.add(new DirectoryStagingObject(localPath, remotePath));
-	        			
-	        				fileInput.put("path", remotePath.toString());
+	        				paramId = parameter.getId();
+	        			} else if (parameter.getId().startsWith("#")) {
+	        				paramId = parameter.getId().split("/")[1];
 	        			}
+	        			
+        				// This should either work or throw an exception, we know about the problem (type erasure).
+        				@SuppressWarnings("unchecked")
+        				HashMap<String, Object> fileInput = (HashMap<String, Object>) jobOrder.get(paramId);
+
+        				Path localPath = new Path((String) fileInput.get("path"));
+        				Path remotePath = new Path(localPath.getFileNameAsString());
+        				manifest.add(new DirectoryStagingObject(localPath, remotePath));
+        			
+        				fileInput.put("path", remotePath.toString());
 	        		}
 	        	}
 	        	

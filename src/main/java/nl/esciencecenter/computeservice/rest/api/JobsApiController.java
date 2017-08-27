@@ -13,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -23,6 +24,7 @@ import nl.esciencecenter.computeservice.rest.model.JobDescription;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 
+@CrossOrigin
 @Controller
 public class JobsApiController implements JobsApi {
 	private static final Logger logger = LoggerFactory.getLogger(JobsApi.class);
@@ -41,7 +43,7 @@ public class JobsApiController implements JobsApi {
 			if (job != null) {
 				HttpHeaders headers = new HttpHeaders();
 				ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
-				builder.pathSegment(job.getId());
+				builder.replacePath("/jobs/" + job.getId());
 				
 				logger.debug("Setting location header to: " + builder.build().toUri());
 				headers.setLocation(builder.build().toUri());
@@ -65,10 +67,9 @@ public class JobsApiController implements JobsApi {
 			if (job != null) {
 				HttpHeaders headers = new HttpHeaders();
 				ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
-				builder.pathSegment(job.getId());
 				
 				logger.debug("Setting location header to: " + builder.build().toUri());
-				headers.setLocation(builder.build().toUri());
+				headers.setLocation(builder.replacePath("/jobs").build().toUri());
 				
 				return new ResponseEntity<Void>(headers, HttpStatus.OK);
 			}

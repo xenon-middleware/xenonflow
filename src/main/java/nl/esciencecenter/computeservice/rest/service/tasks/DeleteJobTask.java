@@ -63,7 +63,7 @@ public class DeleteJobTask implements Runnable {
 			try {
 				// delete local output directory if it exists
 				FileSystem localFilesystem = service.getSourceFileSystem();
-				Path localDirectory = new Path("out/" + job.getId() + "/");
+				Path localDirectory = localFilesystem.getWorkingDirectory().resolve("out/" + job.getId() + "/").toAbsolutePath();
 				
 				if (localFilesystem.exists(localDirectory)) {
 					jobLogger.info("Deleting local output directory: " + localDirectory);

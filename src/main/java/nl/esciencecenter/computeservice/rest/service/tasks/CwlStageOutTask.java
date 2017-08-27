@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.WorkflowBinding;
 import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.computeservice.rest.service.staging.DirectoryStagingObject;
@@ -70,13 +71,21 @@ public class CwlStageOutTask implements Runnable {
 	        
 	        manifest.add(new FileStagingObject(errPath, localErrPath));
 	        
+	        HashMap<String, Object> outputMap = null;
 	        if (exitcode == 0) {
 	        	// Add output from cwl run
 	        	// Read in the workflow to get the required inputs
-	        	addOutputStaging(manifest, new Path(job.getWorkflow()), outPath);
+	        	outputMap = addOutputStaging(manifest, new Path(job.getWorkflow()), outPath);
 	        }
 	        
-	        stager.stageOut(manifest);
+	        WorkflowBinding binding = stager.stageOut(manifest);
+	        
+	        if (binding != null) {
+	        	if (outputMap != null) {
+	        		binding.put("stdout", outputMap);
+	        	}
+	        	jobService.setOutputBinding(jobId, binding);
+	        }
 	        
 	        jobLogger.info("StageOut complete.");
 	        
@@ -97,8 +106,9 @@ public class CwlStageOutTask implements Runnable {
 		}
 	}
 
-	private void addOutputStaging(StagingManifest manifest, Path localWorkflow, Path outPath) throws JsonParseException, JsonMappingException, IOException, XenonException {
-    	Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(localWorkflow));
+	private HashMap<String, Object> addOutputStaging(StagingManifest manifest, Path localWorkflow, Path outPath) throws JsonParseException, JsonMappingException, IOException, XenonException {
+		Path workflowPath = service.getSourceFileSystem().getWorkingDirectory().resolve(localWorkflow);
+		Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()));
     	
     	// Read the cwltool stdout to determine where the files are.
 		ObjectMapper mapper = new ObjectMapper(new JsonFactory());
@@ -115,28 +125,39 @@ public class CwlStageOutTask implements Runnable {
     	
     	for (OutputParameter parameter : workflow.getOutputs()) {
     		if (parameter.getType().equals("File")) {
+    			String paramId = null;
     			if (outputMap.containsKey(parameter.getId())) {
-    				// This should either work or throw an exception, we know about the problem (type erasure).
-    				@SuppressWarnings("unchecked")
-    				HashMap<String, Object> fileOutput = (HashMap<String, Object>) outputMap.get(parameter.getId());
-
-    				Path remotePath = new Path((String) fileOutput.get("path"));
-    				Path localPath = new Path(remotePath.getFileNameAsString());
-    				manifest.add(new FileStagingObject(remotePath, localPath));
-    			
-    				String fullPath = manifest.getTargetDirectory().resolve(localPath).toString();
-    				fileOutput.put("path", fullPath);
-    				
-    				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(service.getSourceFileSystem().getLocation().toString());
-    				b.pathSegment(fullPath);
-    				fileOutput.put("location", b.build().toString());
+    				paramId = parameter.getId();
+    			} else if (parameter.getId().startsWith("#")) {
+    				paramId = parameter.getId().split("/")[1];
     			}
+				// This should either work or throw an exception, we know about the problem (type erasure).
+				@SuppressWarnings("unchecked")
+				HashMap<String, Object> fileOutput = (HashMap<String, Object>) outputMap.get(paramId);
+
+				Path remotePath = new Path((String) fileOutput.get("path")).toAbsolutePath();
+				Path localPath = new Path(remotePath.getFileNameAsString());
+				manifest.add(new FileStagingObject(remotePath, localPath));
+			
+				String fullPath = manifest.getTargetDirectory().resolve(localPath).toString();
+				fileOutput.put("path", fullPath);
+				
+				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(service.getSourceFileSystem().getLocation().toString());
+				b.pathSegment(fullPath);
+				fileOutput.put("location", b.build().toString());
     		} else if (parameter.getType().equals("Directory")) {
+    			String paramId = null;
+    			if (outputMap.containsKey(parameter.getId())) {
+    				paramId = parameter.getId();
+    			} else if (parameter.getId().startsWith("#")) {
+    				paramId = parameter.getId().split("/")[1];
+    			}
+    			
     			// This should either work or throw an exception, we know about the problem (type erasure).
 				@SuppressWarnings("unchecked")
-    			HashMap<String, Object> dirOutput = (HashMap<String, Object>) outputMap.get(parameter.getId());
+    			HashMap<String, Object> dirOutput = (HashMap<String, Object>) outputMap.get(paramId);
 
-				Path remotePath = new Path((String) dirOutput.get("path"));
+				Path remotePath = new Path((String) dirOutput.get("path")).toAbsolutePath();
 				Path localPath = new Path(remotePath.getFileNameAsString());
 				manifest.add(new DirectoryStagingObject(remotePath, localPath));
 			
@@ -148,6 +169,7 @@ public class CwlStageOutTask implements Runnable {
 				dirOutput.put("location", b.build().toString());
     		}
     	}
-    	jobService.setOutput(jobId, "stdout", outputMap);
+    	
+    	return outputMap;
 	}
 }
