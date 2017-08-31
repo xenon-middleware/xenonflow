@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.computeservice.rest.service.staging.DirectoryStagingObject;
@@ -46,9 +47,8 @@ public class CwlStageInTask implements Runnable {
 	
 	@Override
 	public void run(){
+		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
 		try {
-			Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
-
 			Job job = repository.findOne(jobId);
 			if (job.getInternalState().isFinal()) {
 				return;
@@ -134,14 +134,13 @@ public class CwlStageInTask implements Runnable {
 	        stager.stageIn(manifest);
 	        
 	        jobService.setXenonRemoteDir(jobId, service.getRemoteFileSystem().getWorkingDirectory().resolve(manifest.getTargetDirectory()));
-	        jobService.setJobState(jobId, JobState.STAGING_IN, JobState.READY);
+	        jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_READY);
 
 	        jobLogger.info("StageIn complete.");
-		} catch (XenonException | IOException e) {
+		} catch (XenonException | IOException | StatePreconditionException e) {
+			jobLogger.error("Error during stage-in: ", e);
+			logger.error("Error during stage-in: ", e);
 			jobService.setErrorAndState(jobId, e, JobState.STAGING_IN, JobState.PERMANENT_FAILURE);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	}
 }

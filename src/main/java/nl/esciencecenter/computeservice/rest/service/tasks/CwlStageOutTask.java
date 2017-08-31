@@ -14,13 +14,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.model.WorkflowBinding;
 import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
@@ -38,10 +38,10 @@ public class CwlStageOutTask implements Runnable {
 	private String jobId;
 	private XenonService service;
 	private JobRepository repository;
-	private int exitcode;
+	private Integer exitcode;
 	private JobService jobService;
 
-	public CwlStageOutTask(String jobId, int exitcode, XenonService service) throws XenonException {
+	public CwlStageOutTask(String jobId, Integer exitcode, XenonService service) throws XenonException {
 		this.jobId = jobId;
 		this.service = service;
 		this.repository = service.getRepository();
@@ -54,12 +54,6 @@ public class CwlStageOutTask implements Runnable {
 		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
 		Job job = repository.findOne(jobId);
 		try {
-			if (job.getInternalState().isFinal()) {
-				return;
-			}
-
-			job = jobService.setJobState(jobId, JobState.FINISHED, JobState.STAGING_OUT);
-
 			XenonStager stager = new XenonStager(jobService, repository, service.getSourceFileSystem(), service.getRemoteFileSystem());
 	        // Staging back output
 	        StagingManifest manifest = new StagingManifest(jobId, new Path("out/" + job.getId() + "/"));
@@ -69,59 +63,70 @@ public class CwlStageOutTask implements Runnable {
 	        Path errPath = remoteDirectory.resolve("stderr.txt");
 	        Path localErrPath = new Path(errPath.getFileNameAsString());
 	        
-	        manifest.add(new FileStagingObject(errPath, localErrPath));
-	        
-	        HashMap<String, Object> outputMap = null;
-	        if (exitcode == 0) {
-	        	// Add output from cwl run
-	        	// Read in the workflow to get the required inputs
-	        	outputMap = addOutputStaging(manifest, new Path(job.getWorkflow()), outPath);
-	        }
-	        
-	        WorkflowBinding binding = stager.stageOut(manifest);
-	        
-	        if (binding != null) {
-	        	if (outputMap != null) {
-	        		binding.put("stdout", outputMap);
-	        	}
-	        	jobService.setOutputBinding(jobId, binding);
-	        }
-	        
+	        InputStream stderr = service.getRemoteFileSystem().readFromFile(errPath);
+			String errorContents = IOUtils.toString(stderr, "UTF-8");
+			if (errorContents.isEmpty()) {
+	    		//throw new IOException("Output path " + outPath + " was empty!");
+	    		jobLogger.warn("Error path " + errPath + " was empty!");
+	    	} else {
+	    		jobLogger.info("Standard Error:" + errorContents);
+	    		manifest.add(new FileStagingObject(errPath, localErrPath));
+	    	}
+			
+			InputStream stdout = service.getRemoteFileSystem().readFromFile(outPath);
+	    	String outputContents = IOUtils.toString(stdout, "UTF-8");
+	    	
+	    	if (outputContents.isEmpty()) {
+	    		//throw new IOException("Output path " + outPath + " was empty!");
+	    		jobLogger.warn("Output path " + outPath + " was empty!");
+	    	} else {
+		    	jobLogger.info("Raw output: " + outputContents);
+	  
+		        WorkflowBinding outputMap = null;
+		        // TODO: Try to stage back files even if the exitcode
+		        // is not 0.
+		        if (exitcode != null && exitcode.intValue() == 0) {
+		        	// Add output from cwl run
+		        	// Read in the workflow to get the outputs
+		        	// TODO: Take care of optional outputs
+		        	outputMap = addOutputStaging(manifest, new Path(job.getWorkflow()), outputContents);
+		        }
+		        
+		        if (outputMap != null) {
+		        	jobLogger.info("Fixed output: " + outputMap.toIndentedString());
+		        	jobService.setOutputBinding(jobId, outputMap);
+		        }
+	    	}
+
+	    	if (manifest.size() > 0) {
+	    		WorkflowBinding files = stager.stageOut(manifest);
+	    		jobService.setAdditionalInfo(jobId, "files", files);
+	    	} else {
+	    		jobLogger.warn("There are no files to stage.");
+	    	}
+	    	
 	        jobLogger.info("StageOut complete.");
 	        
-	        if (exitcode == 0) {
-	        	jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
-	        } else {
-	        	jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
+	        if (!job.getInternalState().isFinal()) {
+	        	if (exitcode == 0) {
+	        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
+	        	} else {
+	        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
+	        	}
 	        }
-		} catch (XenonException e) {
-			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-		} catch (IOException e) {
-			jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-			logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (StatePreconditionException | IOException | XenonException e){
+			jobLogger.error("Error during stage out of " + job.getName() + "(" +job.getId() +")", e);
+			logger.error("Error during stage out of " + job.getName() + "(" +job.getId() +")", e);
 		}
 	}
 
-	private HashMap<String, Object> addOutputStaging(StagingManifest manifest, Path localWorkflow, Path outPath) throws JsonParseException, JsonMappingException, IOException, XenonException {
+	private WorkflowBinding addOutputStaging(StagingManifest manifest, Path localWorkflow, String outputContents) throws JsonParseException, JsonMappingException, IOException, XenonException {
 		Path workflowPath = service.getSourceFileSystem().getWorkingDirectory().resolve(localWorkflow);
 		Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()));
     	
     	// Read the cwltool stdout to determine where the files are.
 		ObjectMapper mapper = new ObjectMapper(new JsonFactory());
-		TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
-
-    	InputStream stdout = service.getRemoteFileSystem().readFromFile(outPath);
-    	String contents = IOUtils.toString(stdout, "UTF-8");
-    	
-    	if (contents.isEmpty()) {
-    		throw new IOException("Output path " + outPath + " was empty!");
-    	}
-
-    	HashMap<String, Object> outputMap = mapper.readValue(new StringReader(contents), typeRef);
+    	WorkflowBinding outputMap = mapper.readValue(new StringReader(outputContents), WorkflowBinding.class);
     	
     	for (OutputParameter parameter : workflow.getOutputs()) {
     		if (parameter.getType().equals("File")) {

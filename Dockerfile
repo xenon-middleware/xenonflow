@@ -7,7 +7,7 @@ COPY ./gradle /app/gradle
 COPY ./gradlew /app/
 COPY ./build.gradle /app/
 COPY ./settings.gradle /app/
-COPY ./docker-config.yml /app/
+COPY ./config/docker-config.yml /app/config/config.yml
 
 WORKDIR /app
 RUN ./gradlew build

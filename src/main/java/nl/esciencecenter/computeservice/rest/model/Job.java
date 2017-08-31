@@ -72,11 +72,11 @@ public class Job implements Serializable {
 		return internalState;
 	}
 
-	public void setInternalState(JobState internalState) throws Exception {
+	public void setInternalState(JobState internalState) throws StatePreconditionException {
 		if (this.internalState == null) {
 			this.internalState = internalState;
 		}else {
-			throw new Exception("Cannot set state when state is not null");
+			throw new StatePreconditionException("Cannot set state when state is not null");
 		}
 	}
 
@@ -310,9 +310,9 @@ public class Job implements Serializable {
 		return new Path(niceString);
 	}
 
-	public void changeState(JobState from, JobState to) throws Exception {
+	public void changeState(JobState from, JobState to) throws StatePreconditionException {
 		if (this.internalState != from) {
-			throw new Exception("Previous state: " + this.internalState + " was expected to be: " + from);
+			throw new StatePreconditionException("Previous state: " + this.internalState + " was expected to be: " + from);
 		} else {
 			this.internalState = to;
 		}

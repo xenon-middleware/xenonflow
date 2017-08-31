@@ -1,5 +1,6 @@
 package nl.esciencecenter.computeservice.rest.service.tasks;
 
+import java.util.Date;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.xenon.XenonException;
@@ -39,7 +41,7 @@ public class XenonMonitoringTask implements Runnable {
 			return;
 		}
 
-		cancelWatingJobs(scheduler);
+		cancelWaitingJobs(scheduler);
 
 		cancelRunningJobs(scheduler);
 
@@ -56,6 +58,8 @@ public class XenonMonitoringTask implements Runnable {
 		List<Job> jobs = repository.findAllByInternalState(JobState.RUNNING);
 		for (Job job : jobs) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
+			// We re-request the job here because it may have changed while we were looping.
+			job = repository.findOne(job.getId());
 			String xenonJobId = job.getXenonId();
 			if (xenonJobId != null && !xenonJobId.isEmpty()) {
 				try {
@@ -81,15 +85,18 @@ public class XenonMonitoringTask implements Runnable {
 				} catch (NoSuchJobException e) {
 					logger.info("Could not recover job" + job + " it is probably lost...");
 					// TODO: We should probably try harder here to figure out what went wrong
-					// in additional info there may be a xenon.state. Plus we could try
-					// staging back the stdout and stderr of this job.
+					// in additional info there may be a xenon.state.
 					jobService.setErrorAndState(job.getId(), e, job.getInternalState(), JobState.SYSTEM_ERROR);
-				} catch (XenonException e) {
+					try {
+						// Let's try to stage back what we can
+						service.getTaskScheduler().execute(new CwlStageOutTask(job.getId(), null, service));
+					} catch (XenonException e1) {
+						jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e1);
+						logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e1);
+					}
+				} catch (XenonException | StatePreconditionException e) {
 					jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 					logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-				} catch (Exception e){
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
 			}
 		}
@@ -99,12 +106,15 @@ public class XenonMonitoringTask implements Runnable {
 		List<Job> waiting = repository.findAllByInternalState(JobState.WAITING);
 		for (Job job : waiting) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
+			// We re-request the job here because it may have changed while we were looping.
+			job = repository.findOne(job.getId());
 			String xenonJobId = job.getXenonId();
 			if (xenonJobId != null && !xenonJobId.isEmpty()) {
 				try {
 					JobStatus status = scheduler.getJobStatus(xenonJobId);
 	
 					if (status.isRunning() && !status.hasException()) {
+						jobService.setAdditionalInfo(job.getId(), "startedAt", new Date());
 						jobService.setJobState(job.getId(), JobState.WAITING, JobState.RUNNING);
 					} else if (status.hasException()) {
 						jobLogger.error("Exception during execution", status.getException());
@@ -116,20 +126,29 @@ public class XenonMonitoringTask implements Runnable {
 					} else if (status.isDone() && status.getExitCode() == 0) {
 						jobLogger.info("Jobs done.");
 						jobService.setXenonExitcode(job.getId(), status.getExitCode());
-						jobService.setJobState(job.getId(), JobState.RUNNING, JobState.FINISHED);
+						jobService.setJobState(job.getId(), JobState.WAITING, JobState.FINISHED);
 					} else {
 						jobLogger.error(
-								"Exception during execution, Job is in an inconsistent state for workflowtask: " + job);
+								"Exception during execution, Job is in an inconsistent state for workflowtask: " + job + "Excepected WAITING");
 						jobService.setJobState(job.getId(), job.getInternalState(), JobState.PERMANENT_FAILURE);
 					}
 	
 					jobService.setXenonState(job.getId(), status.getState());
-				} catch (XenonException e) {
+				} catch (NoSuchJobException e) {
+					logger.info("Could not recover job" + job + " it is probably lost...");
+					// TODO: We should probably try harder here to figure out what went wrong
+					// in additional info there may be a xenon.state.
+					jobService.setErrorAndState(job.getId(), e, job.getInternalState(), JobState.SYSTEM_ERROR);
+					try {
+						// Let's try to stage back what we can
+						service.getTaskScheduler().execute(new CwlStageOutTask(job.getId(), null, service));
+					} catch (XenonException e1) {
+						jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e1);
+						logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e1);
+					}
+				} catch (XenonException | StatePreconditionException e) {
 					jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 					logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
 			}
 		}
@@ -139,6 +158,8 @@ public class XenonMonitoringTask implements Runnable {
 		List<Job> cancelRunning = repository.findAllByInternalState(JobState.RUNNING_CR);
 		for (Job job : cancelRunning) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
+			// We re-request the job here because it may have changed while we were looping.
+			job = repository.findOne(job.getId());
 			try {
 				String xenonJobId = job.getXenonId();
 				if (xenonJobId != null && !xenonJobId.isEmpty()) {
@@ -159,20 +180,32 @@ public class XenonMonitoringTask implements Runnable {
 						}
 					}
 				}
-			} catch (XenonException e) {
+			} catch (NoSuchJobException e) {
+				if (job.getInternalState().isCancellationActive()) {
+					// We can't find the job that we're cancelling. That's awesome let's continue!
+					try {
+						jobService.setJobState(job.getId(), job.getInternalState(), JobState.CANCELLED);
+					} catch (StatePreconditionException e1) {
+						jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+						logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+					}
+				} else {
+					jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+					logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+				}
+			} catch (XenonException | StatePreconditionException e) {
 				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		}
 	}
 
-	private void cancelWatingJobs(Scheduler scheduler) {
+	private void cancelWaitingJobs(Scheduler scheduler) {
 		List<Job> cancelWaiting = repository.findAllByInternalState(JobState.WAITING_CR);
 		for (Job job : cancelWaiting) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
+			// We re-request the job here because it may have changed while we were looping.
+			job = repository.findOne(job.getId());
 			try {
 				String xenonJobId = job.getXenonId();
 				if (xenonJobId != null && !xenonJobId.isEmpty()) {
@@ -185,13 +218,21 @@ public class XenonMonitoringTask implements Runnable {
 
 					jobService.setJobState(job.getId(), JobState.WAITING_CR, JobState.CANCELLED);
 				}
-			} catch (XenonException e) {
+			} catch (NoSuchJobException e) {
+				logger.info("Could not recover job" + job + " it is probably lost...");
+				// TODO: We should probably try harder here to figure out what went wrong
+				// in additional info there may be a xenon.state.
+				jobService.setErrorAndState(job.getId(), e, job.getInternalState(), JobState.SYSTEM_ERROR);
+				try {
+					// Let's try to stage back what we can
+					service.getTaskScheduler().execute(new CwlStageOutTask(job.getId(), null, service));
+				} catch (XenonException e1) {
+					jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e1);
+					logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e1);
+				}
+			} catch (XenonException | StatePreconditionException e) {
 				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-				;
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		}
 	}
@@ -200,23 +241,29 @@ public class XenonMonitoringTask implements Runnable {
 		List<Job> finished = repository.findAllByInternalState(JobState.FINISHED);
 		for (Job job : finished) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
+			// We re-request the job here because it may have changed while we were looping.
+			job = repository.findOne(job.getId());
 			try {
+				job = jobService.setJobState(job.getId(), JobState.FINISHED, JobState.STAGING_OUT);
 				service.getTaskScheduler().execute(new CwlStageOutTask(job.getId(), (int) job.getAdditionalInfo().get("xenon.exitcode"), service));
-			} catch (XenonException e) {
+			} catch (XenonException | StatePreconditionException e) {
 				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-				;
 			}
 		}
 	}
 
 	private void startReadyJobs(Scheduler scheduler) {
-		List<Job> ready = repository.findAllByInternalState(JobState.READY);
+		List<Job> ready = repository.findAllByInternalState(JobState.STAGING_READY);
 		for (Job job : ready) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
+			// We re-request the job here because it may have changed while we were looping.
+			job = repository.findOne(job.getId());
+			jobLogger.info("Starting new job runner for job: " + job);
 			try {
+				jobService.setJobState(job.getId(), JobState.STAGING_READY, JobState.XENON_SUBMIT);
 				service.getTaskScheduler().execute(new CwlWorkflowTask(job.getId(), service));
-			} catch (XenonException e) {
+			} catch (XenonException | StatePreconditionException e) {
 				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 			}

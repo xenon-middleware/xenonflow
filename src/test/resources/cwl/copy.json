@@ -1,0 +1,34 @@
+{
+    "cwlVersion": "v1.0",
+    "class": "CommandLineTool", 
+    "inputs": [
+        {
+            "id": "#main/inp", 
+            "type": "File", 
+            "inputBinding": {}
+        }, 
+        {
+            "id": "#main/newname", 
+            "type": "string", 
+            "inputBinding": {}
+        }
+    ], 
+    "outputs": [
+        {
+            "id": "#main/out", 
+            "type": "File", 
+            "outputBinding": {
+                "glob": "$(inputs.newname)"
+            }
+        },
+        {
+            "id": "#extra/main", 
+            "type": "File", 
+            "outputBinding": {
+                "glob": "$(inputs.newname)"
+            }
+        }
+    ], 
+    "baseCommand": "cp", 
+    "id": "#main"
+}

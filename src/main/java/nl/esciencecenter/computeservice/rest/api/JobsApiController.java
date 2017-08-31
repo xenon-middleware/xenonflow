@@ -22,7 +22,9 @@ import io.swagger.annotations.ApiParam;
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobDescription;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
+import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
+import nl.esciencecenter.xenon.XenonException;
 
 @CrossOrigin
 @Controller
@@ -51,9 +53,8 @@ public class JobsApiController implements JobsApi {
 				return new ResponseEntity<Job>(job, headers, HttpStatus.OK);
 			}
 			return new ResponseEntity<Job>(HttpStatus.NOT_FOUND);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (StatePreconditionException e) {
+			logger.error("Error during job cancellation request:", e);
 			return new ResponseEntity<Job>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
@@ -74,9 +75,9 @@ public class JobsApiController implements JobsApi {
 				return new ResponseEntity<Void>(headers, HttpStatus.OK);
 			}
 			return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
-		} catch (Exception e) {
+		} catch (XenonException | StatePreconditionException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Error job deletion request: ", e);
 			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -127,7 +128,7 @@ public class JobsApiController implements JobsApi {
 			headers.setLocation(builder.build().toUri());
 			
 			return new ResponseEntity<Job>(job, headers, HttpStatus.CREATED);
-		} catch (Exception e) {
+		} catch (XenonException | StatePreconditionException e) {
 			logger.error("Error while posting job", e);
 			Job job = new Job();
 			job.getAdditionalInfo().put("exception", e);

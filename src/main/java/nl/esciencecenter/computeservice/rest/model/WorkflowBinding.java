@@ -51,10 +51,13 @@ public class WorkflowBinding extends HashMap<String, Object> implements Serializ
 	 * Convert the given object to string with each line indented by 4 spaces
 	 * (except the first line).
 	 */
-	private String toIndentedString(java.lang.Object o) {
-		if (o == null) {
-			return "null";
+	public String toIndentedString() {
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
+		} catch (JsonProcessingException e) {
+			logger.error("Error mapping WorkflowBinding to json: ", e);
 		}
-		return o.toString().replace("\n", "\n    ");
+		return super.toString();
 	}
 }

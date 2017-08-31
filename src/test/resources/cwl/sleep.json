@@ -1,0 +1,25 @@
+{
+    "cwlVersion": "v1.0",
+    "class": "CommandLineTool", 
+    "inputs": [
+        {
+            "id": "#main/time", 
+            "type": "string", 
+            "inputBinding": {}
+        }
+    ], 
+    "outputs": [
+        {
+            "id": "#main/out", 
+            "type": "string", 
+            "outputBinding": {
+                "glob": "out.txt", 
+                "loadContents": true, 
+                "outputEval": "$(self[0].contents)"
+            }
+        }
+    ], 
+    "baseCommand": "sleep", 
+    "stdout": "out.txt", 
+    "id": "#main"
+}

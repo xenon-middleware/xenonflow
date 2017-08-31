@@ -40,7 +40,8 @@ public class DeleteJobTask implements Runnable {
 						job = repository.findOne(jobId);
 					}
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					jobLogger.info("Exception while deleting remote directory:", e);
+					logger.error("Exception while deleting remote directory:", e);
 				}
 			}
 			

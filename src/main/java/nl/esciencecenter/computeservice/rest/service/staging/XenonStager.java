@@ -1,5 +1,6 @@
 package nl.esciencecenter.computeservice.rest.service.staging;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.HashMap;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.model.WorkflowBinding;
 import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.xenon.XenonException;
@@ -47,10 +49,10 @@ public class XenonStager {
 	 * @param manifest
 	 * @param sourceFileSystem
 	 * @param targetFileSystem
-	 * @throws Exception 
+	 * @throws XenonException 
+	 * @throws StatePreconditionException 
 	 */
-	public void doStaging(StagingManifest manifest, FileSystem sourceFileSystem, FileSystem targetFileSystem)
-			throws Exception {
+	public void doStaging(StagingManifest manifest, FileSystem sourceFileSystem, FileSystem targetFileSystem) throws XenonException, StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 
 		// Make sure the target directory exists
@@ -101,7 +103,7 @@ public class XenonStager {
 		}
 	}
 
-	private void waitForCopy(String copyId, FileSystem sourceFileSystem, StagingManifest manifest) throws Exception {
+	private void waitForCopy(String copyId, FileSystem sourceFileSystem, StagingManifest manifest) throws XenonException, StatePreconditionException {
 		CopyStatus s = sourceFileSystem.waitUntilDone(copyId, 1000);
 		Job job = repository.findOne(manifest.getJobId());
 		while (!job.getInternalState().isCancellationActive() && !s.isDone()) {
@@ -124,9 +126,10 @@ public class XenonStager {
 	 * 
 	 * @param manifest
 	 * @return 
-	 * @throws Exception 
+	 * @throws StatePreconditionException 
+	 * @throws XenonException 
 	 */
-	public void stageIn(StagingManifest manifest) throws Exception {
+	public void stageIn(StagingManifest manifest) throws XenonException, StatePreconditionException {
 		doStaging(manifest, localFileSystem, remoteFileSystem);
 	}
 
@@ -140,9 +143,11 @@ public class XenonStager {
 	 * 
 	 * @param manifest
 	 * @return 
-	 * @throws Exception 
+	 * @throws StatePreconditionException 
+	 * @throws XenonException 
+	 * @throws IOException 
 	 */
-	public WorkflowBinding stageOut(StagingManifest manifest) throws Exception {
+	public WorkflowBinding stageOut(StagingManifest manifest) throws StatePreconditionException, IOException, XenonException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 
 		try {

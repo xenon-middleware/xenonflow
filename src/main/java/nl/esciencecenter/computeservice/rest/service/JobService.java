@@ -1,5 +1,7 @@
 package nl.esciencecenter.computeservice.rest.service;
 
+import java.util.Date;
+
 import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
@@ -10,7 +12,9 @@ import org.springframework.stereotype.Service;
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.model.WorkflowBinding;
+import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.Path;
 
 @Service
@@ -21,11 +25,16 @@ public class JobService {
 	JobRepository repository;
 	
 	@Transactional
-	public Job setJobState(String jobId, JobState from, JobState to) throws Exception {
+	public Job setJobState(String jobId, JobState from, JobState to) throws StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
 		
 		Job job = repository.findOneForUpdate(jobId);
 		job.changeState(from, to);
+		
+		if (to.isFinal()) {
+			job.getAdditionalInfo().put("finalizedAt", new Date());
+		}
+		
         job = repository.save(job);
         
         jobLogger.info("Job " + jobId + " now has state: " + to);
@@ -46,7 +55,7 @@ public class JobService {
 				job = repository.save(job);
 			}
 			setJobState(jobId, from, to);
-		} catch (Exception except) {
+		} catch (StatePreconditionException except) {
 			logger.error("Error during update of Job (" +jobId +")", except);
 		}
 	}
@@ -92,5 +101,12 @@ public class JobService {
 		Job job = repository.findOneForUpdate(jobId);
     	job.setOutput(binding);
     	repository.save(job);
+	}
+
+	@Transactional
+	public void setAdditionalInfo(String jobId, String key, Object info) {
+		Job job = repository.findOneForUpdate(jobId);
+		job.getAdditionalInfo().put(key, info);
+		repository.save(job);
 	}
 }

@@ -8,9 +8,11 @@ import org.slf4j.LoggerFactory;
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.xenon.XenonException;
+import nl.esciencecenter.xenon.adaptors.NotConnectedException;
 import nl.esciencecenter.xenon.filesystems.Path;
 import nl.esciencecenter.xenon.schedulers.Scheduler;
 
@@ -70,17 +72,41 @@ public class CwlWorkflowTask implements Runnable {
 			jobLogger.debug("Executing description: " + description);
 
 			jobLogger.debug("Submitting the job: " + description);
-			String xenonJobId = scheduler.submitBatchJob(description);
-			jobLogger.info("Xenon jobid: " + xenonJobId);
 
-			jobService.setXenonJobId(jobId, xenonJobId);			
-			jobService.setJobState(jobId, JobState.READY, JobState.WAITING);
-		} catch (XenonException e) {
+			String xenonJobId = null;
+			int tries = 0;
+			while(xenonJobId == null && tries < 3) {
+				try {
+					tries++;
+					xenonJobId = scheduler.submitBatchJob(description);
+				} catch (NotConnectedException e) {
+					if (tries <=3 ) {
+						logger.warn("Try: " + tries + ". Exception during job submission, forcing new scheduler for next attempt");
+						scheduler = service.forceNewScheduler();
+					} else {
+						logger.error("Failed to submit after " + tries + " tries, giving up");
+					}
+					continue;
+				}
+			}
+			
+			if (xenonJobId != null) {
+				jobLogger.info("Xenon jobid: " + xenonJobId);
+	
+				jobService.setXenonJobId(jobId, xenonJobId);			
+				jobService.setJobState(jobId, JobState.XENON_SUBMIT, JobState.WAITING);
+			} else {
+				jobService.setJobState(jobId, JobState.XENON_SUBMIT, JobState.SYSTEM_ERROR);
+			}
+		} catch (StatePreconditionException | XenonException e) {
+			try {
+				jobService.setJobState(jobId, JobState.XENON_SUBMIT, JobState.SYSTEM_ERROR);
+			} catch (StatePreconditionException e1) {
+				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e1);
+				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e1);
+			}
 			jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 			logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	}
 

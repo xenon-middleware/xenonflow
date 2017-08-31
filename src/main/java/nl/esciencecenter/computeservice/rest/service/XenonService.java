@@ -2,6 +2,8 @@ package nl.esciencecenter.computeservice.rest.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
@@ -25,7 +27,10 @@ import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobDescription;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.service.tasks.CwlStageInTask;
+import nl.esciencecenter.computeservice.rest.service.tasks.CwlStageOutTask;
+import nl.esciencecenter.computeservice.rest.service.tasks.CwlWorkflowTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.DeleteJobTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.XenonMonitoringTask;
 import nl.esciencecenter.xenon.XenonException;
@@ -98,7 +103,53 @@ public class XenonService {
 		assert(resource.getFilesystemConfig() != null);
 		
 
-		// Running and waiting jobs are automatically picked up by the
+		// Start up submitted jobs
+		List<Job> submitted = repository.findAllByInternalState(JobState.SUBMITTED);
+		submitted.addAll(repository.findAllByInternalState(JobState.STAGING_IN));
+		for (Job job : submitted) {
+			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
+			// We re-request the job here because it may have changed while we were looping.
+			job = repository.findOne(job.getId());
+			jobLogger.info("Starting new job runner for job: " + job);
+			try {
+				taskScheduler.execute(new CwlStageInTask(job.getId(), this));
+			} catch (XenonException e) {
+				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+			}
+		}
+		
+		// Start up ready jobs
+		List<Job> ready = repository.findAllByInternalState(JobState.STAGING_READY);
+		ready.addAll(repository.findAllByInternalState(JobState.XENON_SUBMIT));
+		for (Job job : ready) {
+			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
+			// We re-request the job here because it may have changed while we were looping.
+			job = repository.findOne(job.getId());
+			jobLogger.info("Starting new job runner for job: " + job);
+			try {
+				taskScheduler.execute(new CwlWorkflowTask(job.getId(), this));
+			} catch (XenonException e) {
+				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+			}
+		}
+		
+		// Start up ready jobs
+		List<Job> staging_out = repository.findAllByInternalState(JobState.STAGING_OUT);
+		for (Job job : staging_out) {
+			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
+			// We re-request the job here because it may have changed while we were looping.
+			job = repository.findOne(job.getId());
+			try {
+				taskScheduler.execute(new CwlStageOutTask(job.getId(), (int) job.getAdditionalInfo().get("xenon.exitcode"), this));
+			} catch (XenonException e) {
+				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+			}
+		}
+		
+		// Running, waiting and finished jobs should be automatically picked up by the
 		// XenonWaitingTask
 		taskScheduler.scheduleAtFixedRate(new XenonMonitoringTask(this), 1500);
 	}
@@ -131,6 +182,13 @@ public class XenonService {
 		}
 
 		return scheduler;
+	}
+	
+	public Scheduler forceNewScheduler() throws XenonException {
+		if (scheduler != null) {
+			scheduler = null;
+		}
+		return getScheduler();
 	}
 
 	public void setScheduler(Scheduler scheduler) {
@@ -226,7 +284,7 @@ public class XenonService {
 		logbackLogger.addAppender(fileAppender);
 	}
 
-	public Job submitJob(JobDescription body) throws Exception {
+	public Job submitJob(JobDescription body) throws StatePreconditionException, XenonException {
 		String uuid = UUID.randomUUID().toString();
 
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + uuid);
@@ -245,6 +303,8 @@ public class XenonService {
 
 		builder.pathSegment("log");
 		job.setLog(builder.build().toString());
+		
+		job.getAdditionalInfo().put("createdAt", new Date());
 
 		job = repository.save(job);
 
@@ -255,7 +315,7 @@ public class XenonService {
 		return job;
 	}
 	
-	public Job cancelJob(String jobId) throws Exception {
+	public Job cancelJob(String jobId) throws StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
 		
 		jobLogger.info("Trying to cancel job " + jobId);
@@ -286,7 +346,7 @@ public class XenonService {
 		return job;
 	}
 
-	public Job deleteJob(String jobId) throws Exception {
+	public Job deleteJob(String jobId) throws XenonException, StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
 		
 		jobLogger.info("Going to delete job " + jobId);

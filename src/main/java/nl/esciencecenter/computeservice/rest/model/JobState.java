@@ -12,7 +12,9 @@ public enum JobState {
 
 	STAGING_IN("Stage_In"),
 	
-	READY("Ready"),
+	STAGING_READY("Staging_Ready"),
+	
+	XENON_SUBMIT("Xenon_Submit"),
 
 	WAITING("Waiting"),
 
@@ -65,6 +67,8 @@ public enum JobState {
 		stateStringMap = new HashMap<JobState, String>();
 		stateStringMap.put(JobState.SUBMITTED, "Waiting");
 		stateStringMap.put(JobState.STAGING_IN, "Waiting");
+		stateStringMap.put(JobState.STAGING_READY, "Waiting");
+		stateStringMap.put(JobState.XENON_SUBMIT, "Waiting");
 		stateStringMap.put(JobState.WAITING, "Waiting");
 		stateStringMap.put(JobState.RUNNING, "Running");
 		stateStringMap.put(JobState.FINISHED, "Running");
