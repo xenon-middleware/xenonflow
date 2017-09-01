@@ -86,8 +86,18 @@ public class CwlStageInTask implements Runnable {
 				
 				// Read in the workflow to get the required inputs
 				Path workflowPath = service.getSourceFileSystem().getWorkingDirectory().resolve(localWorkflow);
-	        	Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()));
+
+				jobLogger.debug("Loading workflow from: " + workflowPath);
+	        	Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()));				
+
+				if (workflow == null || workflow.getInputs() == null) {
+					jobLogger.error("Error staging files, cannot read the workflow file!" + workflow);
+					logger.error("Error staging files, cannot read the workflow file!" + workflow);
+					jobService.setJobState(job.getId(), JobState.STAGING_IN, JobState.SYSTEM_ERROR);
+					return;
+				}
 	        	
+				jobLogger.debug("Parsing inputs from: " + workflow.toString());
 	        	for (InputParameter parameter : workflow.getInputs()) {
 	        		if (parameter.getType().equals("File")) {
 	        			String paramId = null;
