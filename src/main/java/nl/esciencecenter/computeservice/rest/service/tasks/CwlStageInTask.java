@@ -91,8 +91,8 @@ public class CwlStageInTask implements Runnable {
 	        	Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()));				
 
 				if (workflow == null || workflow.getInputs() == null) {
-					jobLogger.error("Error staging files, cannot read the workflow file!" + workflow);
-					logger.error("Error staging files, cannot read the workflow file!" + workflow);
+					jobLogger.error("Error staging files, cannot read the workflow file!\nworkflow: " + workflow);
+					logger.error("Error staging files, cannot read the workflow file!\nworkflow: " + workflow);
 					jobService.setJobState(job.getId(), JobState.STAGING_IN, JobState.SYSTEM_ERROR);
 					return;
 				}
