@@ -14,6 +14,13 @@
 # limitations under the License.
 #
 ComputeResources:
+    local:
+        scheduler:
+            adaptor: local
+            location: local://
+        filesystem:
+            adaptor: file
+            location: /
     docker-slurm:
         scheduler:
             adaptor: slurm
@@ -22,11 +29,13 @@ ComputeResources:
             adaptor: sftp
             location: slurm
 
-default: docker-slurm
-
-cwlCommand: cwltool
+default: local
 
 sourceFileSystem:
-    adaptor: webdav
-    location: http://localhost/webdav/
+    adaptor: file
+    location: /
+
+#sourceFileSystem:
+#    adaptor: webdav
+#    location: http://localhost/webdav/
       

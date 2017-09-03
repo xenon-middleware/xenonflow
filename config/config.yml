@@ -14,17 +14,8 @@
 # limitations under the License.
 #
 ComputeResources:
-    das5:
-        scheduler:
-            adaptor: slurm
-            location: fs0.das5.cs.vu.nl
-            credential:
-                user: bweel
-                certificatefile: /home/bweel/.ssh/id_rsa
-        filesystem:
-            adaptor: sftp
-            location: fs0.das5.cs.vu.nl
     docker:
+        cwlCommand: cwltool
         scheduler:
             adaptor: slurm
             location: localhost:10022
@@ -38,6 +29,7 @@ ComputeResources:
                 user: xenon
                 password: amF2YWdhdA==
     local:
+        cwlCommand: cwltool
         scheduler:
             adaptor: local
             location: local://
@@ -45,14 +37,23 @@ ComputeResources:
             adaptor: file
             location: /
 
-default: docker
+#######
+# To use the docker slurm container instead
+# of the local one change the following line to
+# default: docker
+default: local
 
-cwlCommand: cwltool 
-
+####### 
+# To use the docker webdav instead of 
+# the local filesystem adaptor
+# Comment the following sourceFileSystem entry
+# and uncomment the webdav one.
 sourceFileSystem:
-    adaptor: webdav
-    location: http://localhost:5050
-#     credential:
-#         user: webdav
-#         password: dmFkYmV3
+    adaptor: local
+    location: /
+
+# sourceFileSystem:
+#    adaptor: webdav
+#    location: http://localhost:5050
+
       

@@ -9,11 +9,11 @@ services:
      context: webdav
    ports:
      - "127.0.0.1:5050:5050"
-  slurm:
-    build:
-      context: slurm
-    ports:
-      - "127.0.0.1:10022:22"
+  #slurm:
+  #  build:
+  #    context: slurm
+  #  ports:
+  #    - "127.0.0.1:10022:22"
   #nginx:
   #  build:
   #    context: nginx

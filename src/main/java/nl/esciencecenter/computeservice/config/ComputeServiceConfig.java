@@ -50,9 +50,6 @@ public class ComputeServiceConfig {
 	@JsonProperty("sourceFileSystem")
 	private AdaptorConfig sourceFileSystemConfig;
 	
-	@JsonProperty(value="cwlCommand", required=false)
-	private String cwlCommand = "cwltool";
-	
 	private static final Set<String> yamlTypes = new HashSet<String>(Arrays.asList(new String[] {"yml", "yaml"}));
 	private static final Set<String> jsonTypes = new HashSet<String>(Arrays.asList(new String[] {"json"}));
 	
@@ -170,14 +167,6 @@ public class ComputeServiceConfig {
 
 	public void setSourceFilesystemConfig(AdaptorConfig sourceFileSystemConfig) {
 		this.sourceFileSystemConfig = sourceFileSystemConfig;
-	}
-
-	public String getCwlCommand() {
-		return cwlCommand;
-	}
-
-	public void setCwlCommand(String cwlCommand) {
-		this.cwlCommand = cwlCommand;
 	}
 
 	/*

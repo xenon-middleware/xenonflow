@@ -61,6 +61,43 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+// Include some more files in the distribution zip
+// Don't use include an extra directory in the dist zip.
+distributions {
+    main {
+        contents {
+			
+			from(['config/config.yml', 'config/application.properties']) {
+				into '/config'
+			}
+			from('/test_setup') {
+				into '/test_setup'
+			}
+			from('/docs') {
+				into 'docs'
+			}
+			from (['README.md',
+				   'LICENSE',
+				   'xenon-workflow-execution-api.yaml']) {
+				into '/'
+			} 
+			into '/'
+        }
+    }
+}
+
+// Workaround for the 'line is too long' error
+// in the windows batch file that is generated.
+// Taken from https://gist.github.com/jlmelville/2bfe9277e9e2c0ff79b6
+tasks.withType(CreateStartScripts).each { task ->
+    task.doLast {
+        String text = task.windowsScript.text
+        text = text.replaceFirst(/(set CLASSPATH=%APP_HOME%\\lib\\).*/, { "${it[1]}*" })
+        task.windowsScript.write text
+    }
+}
+
+
 test {
     testLogging {
         events "passed", "skipped", "failed"

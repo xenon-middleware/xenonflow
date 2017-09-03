@@ -51,10 +51,16 @@ public class CwlStageInTask implements Runnable {
 		try {
 			Job job = repository.findOne(jobId);
 			if (job.getInternalState().isFinal()) {
+				// The job is in a final state so it's likely failed
+				// or cancelled.
 				return;
 			}
 			
-			job = jobService.setJobState(jobId, JobState.SUBMITTED, JobState.STAGING_IN);
+			if (job.getInternalState() == JobState.SUBMITTED){
+				job = jobService.setJobState(jobId, JobState.SUBMITTED, JobState.STAGING_IN);
+			} else if (job.getInternalState() != JobState.STAGING_IN) {
+				throw new StatePreconditionException("State is: " + job.getInternalState() + " but expected either SUBMITTED or STAGING_IN");
+			}
 			
 			XenonStager stager = new XenonStager(jobService, repository, service.getSourceFileSystem(), service.getRemoteFileSystem());
 

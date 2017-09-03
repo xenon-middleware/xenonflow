@@ -97,6 +97,7 @@ public class XenonService {
 		setConfig(ComputeServiceConfig.loadFromFile(new File(xenonConfigFile)));
 		// Sanity Check the config file.
 		ComputeResource resource = getConfig().defaultComputeResource();
+
 		// TODO: Is assertions the nicest way?
 		assert(resource != null);
 		assert(resource.getSchedulerConfig() != null);

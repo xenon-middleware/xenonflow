@@ -24,7 +24,10 @@ public class ComputeResource {
 	private AdaptorConfig schedulerConfig;
 	@JsonProperty("filesystem")
 	private AdaptorConfig filesystemConfig;
-	
+
+	@JsonProperty(value="cwlCommand", required=false)
+	private String cwlCommand = "cwltool";
+
 	public AdaptorConfig getSchedulerConfig() {
 		return schedulerConfig;
 	}
@@ -39,5 +42,13 @@ public class ComputeResource {
 
 	public void setFilesystemConfig(AdaptorConfig filesystemConfig) {
 		this.filesystemConfig = filesystemConfig;
+	}
+
+	public String getCwlCommand() {
+		return cwlCommand;
+	}
+
+	public void setCwlCommand(String cwlCommand) {
+		this.cwlCommand = cwlCommand;
 	}
 }

@@ -53,7 +53,7 @@ public class CwlWorkflowTask implements Runnable {
 
 			// Create a new job description
 			nl.esciencecenter.xenon.schedulers.JobDescription description = new nl.esciencecenter.xenon.schedulers.JobDescription();
-			description.setExecutable(service.getConfig().getCwlCommand());
+			description.setExecutable(service.getConfig().defaultComputeResource().getCwlCommand());
 
 			jobLogger.debug("Using cwl command: " + description.getExecutable());
 
