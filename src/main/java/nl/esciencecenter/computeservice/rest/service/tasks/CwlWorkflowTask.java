@@ -67,7 +67,11 @@ public class CwlWorkflowTask implements Runnable {
 			description.setArguments(cwlArguments.toArray(new String[cwlArguments.size()]));
 			description.setStdout("stdout.txt");
 			description.setStderr("stderr.txt");
-			description.setWorkingDirectory(remoteDirectory.toString());
+
+			Path fullRemotePath = service.getRemoteFileSystem().getWorkingDirectory()
+										 .resolve(remoteDirectory);
+			jobLogger.debug("Setting remote working directory to: " + fullRemotePath);
+			description.setWorkingDirectory(fullRemotePath.toString());
 			
 			jobLogger.debug("Executing description: " + description);
 

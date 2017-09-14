@@ -205,9 +205,6 @@ public class XenonService {
 			remoteFileSystem = FileSystem.create(fileSystemConfig.getAdaptor(), fileSystemConfig.getLocation(),
 					fileSystemConfig.getCredential(), fileSystemConfig.getProperties());
 
-			// TODO: Xenon should pick up on this automatically from the
-			// location in the release version it should. For now we hack it in here.
-			remoteFileSystem.setWorkingDirectory(new Path("/home/xenon/"));
 			logger.debug("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
 		}
 		return remoteFileSystem;
