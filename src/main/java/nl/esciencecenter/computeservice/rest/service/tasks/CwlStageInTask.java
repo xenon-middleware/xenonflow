@@ -25,7 +25,6 @@ import nl.esciencecenter.computeservice.rest.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.rest.service.staging.StringToFileStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
-import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 
 

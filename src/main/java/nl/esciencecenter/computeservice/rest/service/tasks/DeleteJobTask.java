@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
-import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
@@ -17,13 +16,11 @@ public class DeleteJobTask implements Runnable {
 	private String jobId;
 	private XenonService service;
 	private JobRepository repository;
-	private JobService jobService;
 
 	public DeleteJobTask(String jobId, XenonService service) throws XenonException {
 		this.jobId = jobId;
 		this.service = service;
 		this.repository = service.getRepository();
-		this.jobService = service.getJobService();
 	}
 
 	@Override

@@ -101,7 +101,6 @@ public class XenonService {
 		// TODO: Is assertions the nicest way?
 		assert(resource != null);
 		assert(resource.getSchedulerConfig() != null);
-		assert(resource.getFilesystemConfig() != null);
 		
 
 		// Start up submitted jobs
@@ -170,18 +169,51 @@ public class XenonService {
 	public void setJobService(JobService jobService) {
 		this.jobService = jobService;
 	}
-
-	public Scheduler getScheduler() throws XenonException {
-		if (scheduler == null) {
-			// Initialize xenon scheduler
-			ComputeResource resource = getConfig().defaultComputeResource();
-			AdaptorConfig schedulerConfig = resource.getSchedulerConfig();
-
+	
+	private void checkSchedulerStates() throws XenonException {
+		ComputeResource resource = getConfig().defaultComputeResource();
+		AdaptorConfig schedulerConfig = resource.getSchedulerConfig();
+		AdaptorConfig fileSystemConfig = resource.getFilesystemConfig();
+		
+		boolean useSchedulerFilesystem = fileSystemConfig == null;
+		boolean recreateScheduler = false;
+		boolean recreateFileSystem = false;
+		if(useSchedulerFilesystem) {
+			if (scheduler == null || !scheduler.isOpen() || remoteFileSystem == null || !remoteFileSystem.isOpen()) {
+				recreateScheduler = true;
+				recreateFileSystem = true;
+			}
+			
+		} else {
+			if (scheduler == null || !scheduler.isOpen()) {
+				recreateScheduler = true;
+			}
+			if (remoteFileSystem == null || !remoteFileSystem.isOpen()) {
+				recreateFileSystem = true;
+			}
+		}
+		if (recreateScheduler) {
 			logger.debug("Creating a scheduler to run jobs...");
 			scheduler = Scheduler.create(schedulerConfig.getAdaptor(), schedulerConfig.getLocation(),
-					schedulerConfig.getCredential(), schedulerConfig.getProperties());
+										 schedulerConfig.getCredential(), schedulerConfig.getProperties());
 		}
+		if (recreateFileSystem) {
+			if (useSchedulerFilesystem && Scheduler.getAdaptorDescription(scheduler.getAdaptorName()).usesFileSystem()) {
+				logger.debug("Using scheduler filesystem as a remote filesystem...");
+				remoteFileSystem = scheduler.getFileSystem();
+			} else {
+				// Initialize remote filesystem
+				logger.debug("Creating remote filesystem...");
+				remoteFileSystem = FileSystem.create(fileSystemConfig.getAdaptor(), fileSystemConfig.getLocation(),
+													 fileSystemConfig.getCredential(), fileSystemConfig.getProperties());
 
+				logger.debug("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
+			}
+		}
+	}
+
+	public Scheduler getScheduler() throws XenonException {
+		checkSchedulerStates();
 		return scheduler;
 	}
 	
@@ -197,16 +229,7 @@ public class XenonService {
 	}
 
 	public FileSystem getRemoteFileSystem() throws XenonException {
-		if (remoteFileSystem == null || !remoteFileSystem.isOpen()) {
-			// Initialize remote filesystem
-			logger.debug("Creating remote filesystem...");
-			ComputeResource resource = getConfig().defaultComputeResource();
-			AdaptorConfig fileSystemConfig = resource.getFilesystemConfig();
-			remoteFileSystem = FileSystem.create(fileSystemConfig.getAdaptor(), fileSystemConfig.getLocation(),
-					fileSystemConfig.getCredential(), fileSystemConfig.getProperties());
-
-			logger.debug("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
-		}
+		checkSchedulerStates();
 		return remoteFileSystem;
 	}
 

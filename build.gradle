@@ -8,6 +8,10 @@ plugins {
     id 'org.springframework.boot' version '1.5.6.RELEASE'
 }
 
+springBoot {
+  mainClass = 'nl.esciencecenter.computeservice.rest.Swagger2SpringBoot'
+}
+
 bootRepackage {
     mainClass = 'nl.esciencecenter.computeservice.rest.Swagger2SpringBoot'
 }
@@ -24,8 +28,7 @@ repositories {
 // In this section you declare the dependencies for your production and test code
 dependencies {
     // Xenon
-    compile "com.github.NLeSC:Xenon:master-SNAPSHOT"
-    //compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.0.0'
+    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.1.0'
 
     //Spring(boot)
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '1.5.6.RELEASE'

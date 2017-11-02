@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class ComputeResource {
 	@JsonProperty("scheduler")
 	private AdaptorConfig schedulerConfig;
-	@JsonProperty("filesystem")
+	@JsonProperty(value="filesystem", required=false)
 	private AdaptorConfig filesystemConfig;
 
 	@JsonProperty(value="cwlCommand", required=false)
