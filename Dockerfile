@@ -11,10 +11,10 @@ COPY ./settings.gradle /app/
 WORKDIR /app
 RUN ./gradlew build
 
-COPY ./config/docker-config.yml /app/config/config.yml
-COPY ./config/application.properties /app/config/application.propertiess
-
 RUN mkdir /home/xenon
 RUN pip install --upgrade pip && pip install cwltool
+
+COPY ./config/docker-config.yml /app/config/config.yml
+COPY ./config/application.properties /app/config/application.propertiess
 
 ENTRYPOINT cd /app && ./gradlew bootRun

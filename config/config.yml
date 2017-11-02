@@ -18,24 +18,17 @@ ComputeResources:
         cwlCommand: cwltool
         scheduler:
             adaptor: slurm
-            location: localhost:10022
+            location: ssh://localhost:10022
             credential:
                 user: xenon
                 password: amF2YWdhdA==
-        filesystem:
-            adaptor: sftp
-            location: localhost:10022
-            credential:
-                user: xenon
-                password: amF2YWdhdA==
+            #credentialsMap:
+            #    localhost:10022:
     local:
         cwlCommand: cwltool
         scheduler:
             adaptor: local
-            location: local://
-        filesystem:
-            adaptor: file
-            location: /
+            location: /home/bweel/Documents/projects/xenon-cwl-runner/running-jobs/
 
 #######
 # To use the docker slurm container instead
@@ -49,11 +42,11 @@ default: local
 # Comment the following sourceFileSystem entry
 # and uncomment the webdav one.
 sourceFileSystem:
-    adaptor: local
-    location: /
+   adaptor: file
+   location: /home/bweel/Documents/projects/xenon-cwl-runner/cwl/
 
 # sourceFileSystem:
-#    adaptor: webdav
-#    location: http://localhost:5050
+#     adaptor: webdav
+#     location: http://localhost:5050
 
       
