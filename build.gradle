@@ -28,7 +28,7 @@ repositories {
 // In this section you declare the dependencies for your production and test code
 dependencies {
     // Xenon
-    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.1.0'
+    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.2.0'
 
     //Spring(boot)
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '1.5.6.RELEASE'

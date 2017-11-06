@@ -68,10 +68,8 @@ public class CwlWorkflowTask implements Runnable {
 			description.setStdout("stdout.txt");
 			description.setStderr("stderr.txt");
 
-			Path fullRemotePath = service.getRemoteFileSystem().getWorkingDirectory()
-										 .resolve(remoteDirectory);
-			jobLogger.debug("Setting remote working directory to: " + fullRemotePath);
-			description.setWorkingDirectory(fullRemotePath.toString());
+			jobLogger.debug("Setting remote working directory to: " + remoteDirectory);
+			description.setWorkingDirectory(remoteDirectory.toString());
 			
 			jobLogger.debug("Executing description: " + description);
 
@@ -86,6 +84,7 @@ public class CwlWorkflowTask implements Runnable {
 				} catch (NotConnectedException e) {
 					if (tries <=3 ) {
 						logger.warn("Try: " + tries + ". Exception during job submission, forcing new scheduler for next attempt");
+						scheduler.close();
 						scheduler = service.forceNewScheduler();
 					} else {
 						logger.error("Failed to submit after " + tries + " tries, giving up");
