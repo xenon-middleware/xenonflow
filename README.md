@@ -14,7 +14,7 @@ To run a workflow through Xenon-flow is quite simple:
 
 ## 2. Download Xenon-flow
 ```
-git clone https://github.com/NLeSC/xenon-cwl.git
+git clone https://github.com/NLeSC/xenon-flow.git
 ```
 
 ## 3. Configure the server

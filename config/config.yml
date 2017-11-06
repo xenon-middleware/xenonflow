@@ -28,7 +28,7 @@ ComputeResources:
         cwlCommand: cwltool
         scheduler:
             adaptor: local
-            location: /home/bweel/Documents/projects/xenon-cwl-runner/running-jobs/
+            location: ~/Documents/projects/xenon-flow/running-jobs/
 
 #######
 # To use the docker slurm container instead
@@ -41,12 +41,12 @@ default: local
 # the local filesystem adaptor
 # Comment the following sourceFileSystem entry
 # and uncomment the webdav one.
-sourceFileSystem:
-   adaptor: file
-   location: /home/bweel/Documents/projects/xenon-cwl-runner/cwl/
+#sourceFileSystem:
+#   adaptor: file
+#   location: ~/Documents/projects/xenon-flow/cwl/
 
-# sourceFileSystem:
-#     adaptor: webdav
-#     location: http://localhost:5050
+sourceFileSystem:
+     adaptor: webdav
+     location: http://localhost:5050
 
       
