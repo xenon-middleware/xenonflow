@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.util.HashMap;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.commonwl.cwl.OutputParameter;
 import org.commonwl.cwl.Workflow;
@@ -54,9 +55,10 @@ public class CwlStageOutTask implements Runnable {
 		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
 		Job job = repository.findOne(jobId);
 		try {
-			XenonStager stager = new XenonStager(jobService, repository, service.getSourceFileSystem(), service.getRemoteFileSystem());
+			XenonStager stager = new XenonStager(jobService, repository, service.getTargetFileSystem(), service.getRemoteFileSystem());
 	        // Staging back output
-	        StagingManifest manifest = new StagingManifest(jobId, new Path("out/" + job.getId() + "/"));
+	        StagingManifest manifest = new StagingManifest(jobId, new Path(job.getId() + "/"));
+	        manifest.setBaseurl((String) job.getAdditionalInfo().get("baseurl"));
 	        
 	        Path remoteDirectory = job.getSandboxDirectory();
 	        Path outPath = remoteDirectory.resolve("stdout.txt");
@@ -122,7 +124,8 @@ public class CwlStageOutTask implements Runnable {
 
 	private WorkflowBinding addOutputStaging(StagingManifest manifest, Path localWorkflow, String outputContents) throws JsonParseException, JsonMappingException, IOException, XenonException {
 		Path workflowPath = service.getSourceFileSystem().getWorkingDirectory().resolve(localWorkflow);
-		Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()));
+		String extension = FilenameUtils.getExtension(workflowPath.getFileNameAsString());
+		Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()), extension);
     	
     	// Read the cwltool stdout to determine where the files are.
 		ObjectMapper mapper = new ObjectMapper(new JsonFactory());
@@ -147,9 +150,16 @@ public class CwlStageOutTask implements Runnable {
 				String fullPath = manifest.getTargetDirectory().resolve(localPath).toString();
 				fileOutput.put("path", fullPath);
 				
-				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(service.getSourceFileSystem().getLocation().toString());
-				b.pathSegment(fullPath);
-				fileOutput.put("location", b.build().toString());
+				if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
+					UriComponentsBuilder b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
+					b.pathSegment(service.getConfig().getTargetFilesystemConfig().getBaseurl());
+					b.pathSegment(fullPath);
+					fileOutput.put("location", b.build().toString());
+				} else {
+					UriComponentsBuilder b = UriComponentsBuilder.fromUriString(service.getTargetFileSystem().getLocation().toString());
+					b.pathSegment(fullPath);
+					fileOutput.put("location", b.build().toString());
+				}
     		} else if (parameter.getType().equals("Directory")) {
     			String paramId = null;
     			if (outputMap.containsKey(parameter.getId())) {

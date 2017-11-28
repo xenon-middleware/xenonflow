@@ -23,16 +23,12 @@ public class Parameter extends HashMap<String, Object> {
 
 	private String id;
 	private String type;
-	private String label;
 	
 	public Parameter(
 			@JsonProperty("id") String id,
-			@JsonProperty("type") String type,
-			@JsonProperty("label") String label
-			){
+			@JsonProperty("type") String type){
 		this.id = id;
 		this.type = type;
-		this.label = label;
 	}
 	
 	public String getType() {
@@ -49,13 +45,5 @@ public class Parameter extends HashMap<String, Object> {
 	
 	public void setId(String id) {
 		this.id = id;
-	}
-	
-	public String getLabel() {
-		return label;
-	}
-	
-	public void setLabel(String label) {
-		this.label = label;
 	}
 }

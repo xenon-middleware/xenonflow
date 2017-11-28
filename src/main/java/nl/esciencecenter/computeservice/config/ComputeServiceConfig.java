@@ -18,9 +18,7 @@ package nl.esciencecenter.computeservice.config;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -29,14 +27,15 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
+import nl.esciencecenter.computeservice.utils.JacksonUtils;
 import nl.esciencecenter.xenon.credentials.Credential;
 
 public class ComputeServiceConfig {
@@ -50,18 +49,9 @@ public class ComputeServiceConfig {
 	@JsonProperty("sourceFileSystem")
 	private AdaptorConfig sourceFileSystemConfig;
 	
-	private static final Set<String> yamlTypes = new HashSet<String>(Arrays.asList(new String[] {"yml", "yaml"}));
-	private static final Set<String> jsonTypes = new HashSet<String>(Arrays.asList(new String[] {"json"}));
+	@JsonProperty("targetFileSystem")
+	private TargetAdaptorConfig targetFileSystemConfig;
 	
-	private static ObjectMapper getMapper(String type) throws JsonParseException {
-		if(yamlTypes.contains(type)) {
-			return new ObjectMapper(new YAMLFactory());
-		} else if(jsonTypes.contains(type)) {
-			return new ObjectMapper(new JsonFactory());
-		} else {
-			throw new JsonParseException(null, "Could not find a mapper for file type: " + type);
-		}
-	}
 	
 	/**
 	 * Loads a XenonConfig from a yaml or json file. File type is deteremined by the file extension.
@@ -79,7 +69,7 @@ public class ComputeServiceConfig {
 		ComputeServiceConfig config = null;
 
 		try {
-			mapper = getMapper(extension);
+			mapper = JacksonUtils.getMapperForFileType(extension);
 			SimpleModule module = new SimpleModule();
 		
 			module.addDeserializer(Credential.class, new CredentialDeserializer());
@@ -132,9 +122,14 @@ public class ComputeServiceConfig {
         return config;
 	}
 	
-	public ComputeServiceConfig(@JsonProperty("ComputeResources") Map<String, ComputeResource> computeResources) {
+	@JsonCreator
+	public ComputeServiceConfig(@JsonProperty(value="ComputeResources", required=true) Map<String, ComputeResource> computeResources,
+								@JsonProperty(value="sourceFileSystem", required=true) AdaptorConfig sourceFileSystemConfig,
+								@JsonProperty(value="targetFileSystem", required=true) TargetAdaptorConfig targetFileSystemConfig) {
 		super();
 		this.computeResources = computeResources;
+		this.sourceFileSystemConfig = sourceFileSystemConfig;
+		this.targetFileSystemConfig = targetFileSystemConfig;
 	}
 	
 	public Map<String, ComputeResource> getComputeResources() {
@@ -167,6 +162,14 @@ public class ComputeServiceConfig {
 
 	public void setSourceFilesystemConfig(AdaptorConfig sourceFileSystemConfig) {
 		this.sourceFileSystemConfig = sourceFileSystemConfig;
+	}
+	
+	public TargetAdaptorConfig getTargetFilesystemConfig() {
+		return targetFileSystemConfig;
+	}
+
+	public void setTargetFilesystemConfig(TargetAdaptorConfig targetFileSystemConfig) {
+		this.targetFileSystemConfig = targetFileSystemConfig;
 	}
 
 	/*

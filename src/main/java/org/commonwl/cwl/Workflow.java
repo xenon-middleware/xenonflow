@@ -18,26 +18,16 @@ package org.commonwl.cwl;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
+import java.util.Arrays;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
-public class Workflow extends HashMap<String, Object> {
+public class Workflow extends Process {
 	private static final long serialVersionUID = -2170400805154307949L;
 	private InputParameter[] inputs;
 	private OutputParameter[] outputs;
-	
-	public static Workflow fromFile(File file) throws JsonParseException, JsonMappingException, IOException {
-		ObjectMapper mapper = new ObjectMapper(new YAMLFactory());		
-		
-		Workflow wf = mapper.readValue(file, Workflow.class);
-		
-		return wf;
-	}
 	
 	public Workflow(
 			@JsonProperty("inputs") InputParameter[] inputs,
@@ -63,12 +53,21 @@ public class Workflow extends HashMap<String, Object> {
 	public void setOutputs(OutputParameter[] outputs) {
 		this.outputs = outputs;
 	}
-
-	public static Workflow fromInputStream(InputStream inputStream) throws JsonParseException, JsonMappingException, IOException {
-		ObjectMapper mapper = new ObjectMapper(new YAMLFactory());		
-		
-		Workflow wf = mapper.readValue(inputStream, Workflow.class);
-		
+	
+	public static Workflow fromFile(File file) throws JsonParseException, JsonMappingException, IOException {
+		Process p = Process.fromFile(file);
+		Workflow wf = (Workflow)p;
 		return wf;
+	}
+	
+	public static Workflow fromInputStream(InputStream inputStream, String type) throws JsonParseException, JsonMappingException, IOException {
+		Process p = Process.fromInputStream(inputStream, type);
+		Workflow wf = (Workflow)p;
+		return wf;
+	}
+
+	@Override
+	public String toString() {
+		return "Workflow [inputs=" + Arrays.toString(inputs) + ", outputs=" + Arrays.toString(outputs) + "]";
 	}
 }

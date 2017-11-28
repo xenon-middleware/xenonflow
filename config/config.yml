@@ -25,10 +25,10 @@ ComputeResources:
             #credentialsMap:
             #    localhost:10022:
     local:
-        cwlCommand: cwltool
+        cwlCommand: /home/bweel/anaconda2/bin/cwltool
         scheduler:
             adaptor: local
-            location: ~/Documents/projects/xenon-flow/running-jobs/
+            location: /home/bweel/Documents/projects/xenon-flow/running-jobs/
 
 #######
 # To use the docker slurm container instead
@@ -41,12 +41,17 @@ default: local
 # the local filesystem adaptor
 # Comment the following sourceFileSystem entry
 # and uncomment the webdav one.
-#sourceFileSystem:
-#   adaptor: file
-#   location: ~/Documents/projects/xenon-flow/cwl/
-
 sourceFileSystem:
-     adaptor: webdav
-     location: http://localhost:5050
+   adaptor: file
+   location: /home/bweel/Documents/projects/xenon-flow/cwl/
+   
+targetFileSystem:
+   adaptor: file
+   location: /home/bweel/Documents/projects/xenon-flow/output/
+   hosted: true
+
+#sourceFileSystem:
+#     adaptor: webdav
+#     location: http://localhost:5050
 
       

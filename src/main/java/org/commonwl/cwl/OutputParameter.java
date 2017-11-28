@@ -26,10 +26,8 @@ public class OutputParameter extends Parameter {
 	
 	public OutputParameter(
 			@JsonProperty("id") String id,
-			@JsonProperty("type") String type,
-			@JsonProperty("label") String label
-			){
-		super(id, type, label);
+			@JsonProperty("type") String type){
+		super(id, type);
 	}
 
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
 
+import org.apache.commons.io.FilenameUtils;
 import org.commonwl.cwl.InputParameter;
 import org.commonwl.cwl.Workflow;
 import org.slf4j.Logger;
@@ -26,7 +27,6 @@ import nl.esciencecenter.computeservice.rest.service.staging.StringToFileStaging
 import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.Path;
-
 
 public class CwlStageInTask implements Runnable {
 
@@ -93,7 +93,8 @@ public class CwlStageInTask implements Runnable {
 				Path workflowPath = service.getSourceFileSystem().getWorkingDirectory().resolve(localWorkflow);
 
 				jobLogger.debug("Loading workflow from: " + workflowPath);
-	        	Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()));				
+				String extension = FilenameUtils.getExtension(workflowPath.getFileNameAsString());
+				Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()), extension);				
 
 				if (workflow == null || workflow.getInputs() == null) {
 					jobLogger.error("Error staging files, cannot read the workflow file!\nworkflow: " + workflow);

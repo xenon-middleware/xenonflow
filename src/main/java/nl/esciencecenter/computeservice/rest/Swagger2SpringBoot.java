@@ -1,5 +1,8 @@
 package nl.esciencecenter.computeservice.rest;
 
+import java.io.File;
+import java.io.IOException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +19,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 
+import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
+import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @Configuration
@@ -27,17 +34,43 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = { "nl.esciencecenter.computeservice.rest*",
 		"nl.esciencecenter.computeservice.cwl.*" })
-public class Swagger2SpringBoot implements CommandLineRunner, ApplicationListener<EmbeddedServletContainerInitializedEvent> {
+public class Swagger2SpringBoot extends WebMvcConfigurationSupport implements CommandLineRunner, ApplicationListener<EmbeddedServletContainerInitializedEvent> {
 	private static final Logger logger = LoggerFactory.getLogger(Swagger2SpringBoot.class);
 	
 	@Value("${server.address}")
 	String bindAdress;
+	
+	@Value("${xenon.config}")
+	private String xenonConfigFile;
 
 	@Bean
 	public static ThreadPoolTaskScheduler taskScheduler() {
 		final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.setPoolSize(5);
 		return scheduler;
+	}
+	
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		ComputeServiceConfig config;
+		try {
+			config = ComputeServiceConfig.loadFromFile(new File(xenonConfigFile));
+			TargetAdaptorConfig targetConfig = config.getTargetFilesystemConfig();
+			
+			if (targetConfig.isHosted()) {
+				if (targetConfig.getAdaptor().equals("file")) {
+					registry.addResourceHandler(targetConfig.getBaseurl() + "/**").addResourceLocations("file:" + targetConfig.getLocation());
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		registry.addResourceHandler("swagger-ui.html")
+				.addResourceLocations("classpath:/META-INF/resources/");
+
+		registry.addResourceHandler("/webjars/**")
+		        .addResourceLocations("classpath:/META-INF/resources/webjars/");
+		super.addResourceHandlers(registry);
 	}
 	
 	@Override

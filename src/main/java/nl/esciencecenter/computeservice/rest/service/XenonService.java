@@ -23,6 +23,7 @@ import ch.qos.logback.core.FileAppender;
 import nl.esciencecenter.computeservice.config.AdaptorConfig;
 import nl.esciencecenter.computeservice.config.ComputeResource;
 import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
+import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobDescription;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
@@ -59,6 +60,7 @@ public class XenonService {
 	private Scheduler scheduler = null;
 	private FileSystem remoteFileSystem = null;
 	private FileSystem sourceFileSystem = null;
+	private FileSystem targetFileSystem = null;
 
 	public XenonService(ThreadPoolTaskScheduler taskScheduler) throws IOException {
 		this.taskScheduler = taskScheduler;
@@ -250,6 +252,20 @@ public class XenonService {
 		}
 		return sourceFileSystem;
 	}
+	
+	public FileSystem getTargetFileSystem() throws XenonException {
+		if (targetFileSystem == null || !targetFileSystem.isOpen()) {
+			// Initialize local filesystem
+			TargetAdaptorConfig targetConfig = getConfig().getTargetFilesystemConfig();
+			logger.debug("Creating target filesystem..." + targetConfig.getAdaptor() + " location: "
+					+ targetConfig.getLocation());
+			logger.debug(targetConfig.getAdaptor() + " " + targetConfig.getLocation() + " " + targetConfig.getCredential()
+					+ " " + targetConfig.getProperties());
+			targetFileSystem = FileSystem.create(targetConfig.getAdaptor(), targetConfig.getLocation(),
+					targetConfig.getCredential(), targetConfig.getProperties());
+		}
+		return targetFileSystem;
+	}
 
 	public void setSourceFileSystem(FileSystem sourceFileSystem) {
 		this.sourceFileSystem = sourceFileSystem;
@@ -325,6 +341,9 @@ public class XenonService {
 		builder.pathSegment("log");
 		job.setLog(builder.build().toString());
 		
+		ServletUriComponentsBuilder b = ServletUriComponentsBuilder.fromCurrentRequestUri();
+		b.replacePath("/");
+		job.getAdditionalInfo().put("baseurl", b.build().toString());
 		job.getAdditionalInfo().put("createdAt", new Date());
 
 		job = repository.save(job);
