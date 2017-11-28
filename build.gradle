@@ -8,6 +8,8 @@ plugins {
     id 'org.springframework.boot' version '1.5.6.RELEASE'
 }
 
+version = '0.3-alpha'
+
 springBoot {
   mainClass = 'nl.esciencecenter.computeservice.rest.Swagger2SpringBoot'
 }

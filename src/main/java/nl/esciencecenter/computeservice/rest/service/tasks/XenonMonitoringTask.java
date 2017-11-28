@@ -109,6 +109,7 @@ public class XenonMonitoringTask implements Runnable {
 			// We re-request the job here because it may have changed while we were looping.
 			job = repository.findOne(job.getId());
 			String xenonJobId = job.getXenonId();
+			
 			if (xenonJobId != null && !xenonJobId.isEmpty()) {
 				try {
 					JobStatus status = scheduler.getJobStatus(xenonJobId);
@@ -128,9 +129,7 @@ public class XenonMonitoringTask implements Runnable {
 						jobService.setXenonExitcode(job.getId(), status.getExitCode());
 						jobService.setJobState(job.getId(), JobState.WAITING, JobState.FINISHED);
 					} else {
-						jobLogger.error(
-								"Exception during execution, Job is in an inconsistent state for workflowtask: " + job + "Excepected WAITING");
-						jobService.setJobState(job.getId(), job.getInternalState(), JobState.PERMANENT_FAILURE);
+						// The job is probably pending
 					}
 	
 					jobService.setXenonState(job.getId(), status.getState());
