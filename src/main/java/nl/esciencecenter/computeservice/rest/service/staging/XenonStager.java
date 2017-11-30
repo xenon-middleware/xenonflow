@@ -20,6 +20,7 @@ import nl.esciencecenter.computeservice.rest.model.JobState;
 import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.model.WorkflowBinding;
 import nl.esciencecenter.computeservice.rest.service.JobService;
+import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.CopyMode;
 import nl.esciencecenter.xenon.filesystems.CopyStatus;
@@ -31,12 +32,14 @@ public class XenonStager {
 	private FileSystem remoteFileSystem;
 	private JobService jobService;
 	private JobRepository repository;
+	private XenonService service;
 
-	public XenonStager(JobService jobService, JobRepository repository, FileSystem localFileSystem, FileSystem remoteFileSystem) {
+	public XenonStager(JobService jobService, JobRepository repository, FileSystem localFileSystem, FileSystem remoteFileSystem, XenonService service) {
 		this.localFileSystem = localFileSystem;
 		this.remoteFileSystem = remoteFileSystem;
 		this.jobService = jobService;
 		this.repository = repository;
+		this.service = service;
 	}
 
 	/**
@@ -77,7 +80,7 @@ public class XenonStager {
 				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
 				String copyId = sourceFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
 						false);
-				waitForCopy(copyId, sourceFileSystem, manifest);
+				waitForCopy(copyId, sourceFileSystem, manifest, stageObject);
 			} else if (stageObject instanceof StringToFileStagingObject) {
 				StringToFileStagingObject object = (StringToFileStagingObject) stageObject;
 				Path targetPath = targetDirectory.resolve(object.getTargetPath());
@@ -87,6 +90,8 @@ public class XenonStager {
 				jobLogger.debug("Input contents: " + contents);
 				out.write(contents);
 				out.close();
+				
+				stageObject.setBytesCopied(contents.length());
 			} else if (stageObject instanceof DirectoryStagingObject) {
 				DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
 				Path sourcePath = object.getSourcePath();
@@ -98,12 +103,12 @@ public class XenonStager {
 				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
 				String copyId = sourceFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
 						true);
-				waitForCopy(copyId, sourceFileSystem, manifest);
+				waitForCopy(copyId, sourceFileSystem, manifest, stageObject);
 			}
 		}
 	}
 
-	private void waitForCopy(String copyId, FileSystem sourceFileSystem, StagingManifest manifest) throws XenonException, StatePreconditionException {
+	private void waitForCopy(String copyId, FileSystem sourceFileSystem, StagingManifest manifest, StagingObject stageObject) throws XenonException, StatePreconditionException {
 		CopyStatus s = sourceFileSystem.waitUntilDone(copyId, 1000);
 		Job job = repository.findOne(manifest.getJobId());
 		while (!job.getInternalState().isCancellationActive() && !s.isDone()) {
@@ -119,6 +124,8 @@ public class XenonStager {
 		if (s.hasException()) {
 			throw s.getException();
 		}
+		
+		stageObject.setBytesCopied(s.bytesCopied());
 	}
 
 	/**
@@ -164,11 +171,25 @@ public class XenonStager {
 			Object outputObject = null;
 			if (stageObject instanceof FileStagingObject) {
 				FileStagingObject object = (FileStagingObject) stageObject;
-				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(localFileSystem.getLocation().toString());
-
-				b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+				UriComponentsBuilder b;
+				if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
+					b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
+					b.pathSegment(service.getConfig().getTargetFilesystemConfig().getBaseurl());
+					b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+				} else {
+					b = UriComponentsBuilder.fromUriString(localFileSystem.getLocation().toString());
+					b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+				}
+				
+				HashMap<String, Object> value = new HashMap<String, Object>();
+				value.put("location", b.build().toString());
+				value.put("basename", object.getTargetPath().getFileNameAsString());
+				value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath().toString()).toString());
+				value.put("class", "File");
+				value.put("size", object.getBytesCopied());
+				
 				outputTarget = object.getTargetPath().getFileNameAsString();
-				outputObject = b.build().toString();
+				outputObject = value;
 			} else if (stageObject instanceof DirectoryStagingObject) {
 				DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
 				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(localFileSystem.getLocation().toString());
@@ -180,6 +201,8 @@ public class XenonStager {
 				FileToStringStagingObject object = (FileToStringStagingObject) stageObject;
 				Path sourcePath = object.getSourcePath();
 				String contents = IOUtils.toString(remoteFileSystem.readFromFile(sourcePath), "UTF-8");
+				object.setBytesCopied(contents.length());
+				
 				jobLogger.debug("Read contents from " + sourcePath + ": " + contents);
 				outputTarget = object.getTargetString();
 				outputObject = contents;
@@ -187,6 +210,7 @@ public class XenonStager {
 				FileToMapStagingObject object = (FileToMapStagingObject) stageObject;
 				Path sourcePath = object.getSourcePath();
 				String contents = IOUtils.toString(remoteFileSystem.readFromFile(sourcePath), "UTF-8");
+				object.setBytesCopied(contents.length());
 				jobLogger.debug("Read contents from " + sourcePath + ": " + contents);
 
 				if (contents.length() > 0) {

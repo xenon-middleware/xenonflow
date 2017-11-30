@@ -50,10 +50,10 @@ public class XenonService {
 	private Path logBasePath;
 
 	@Autowired
-	JobRepository repository;
+	private JobRepository repository;
 	
 	@Autowired
-	JobService jobService;
+	private JobService jobService;
 	
 	private ThreadPoolTaskScheduler taskScheduler = null;
 	private ComputeServiceConfig config = null;

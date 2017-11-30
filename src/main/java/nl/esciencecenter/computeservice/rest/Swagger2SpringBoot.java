@@ -38,7 +38,7 @@ public class Swagger2SpringBoot extends WebMvcConfigurationSupport implements Co
 	private static final Logger logger = LoggerFactory.getLogger(Swagger2SpringBoot.class);
 	
 	@Value("${server.address}")
-	String bindAdress;
+	private String bindAdress;
 	
 	@Value("${xenon.config}")
 	private String xenonConfigFile;
@@ -57,10 +57,8 @@ public class Swagger2SpringBoot extends WebMvcConfigurationSupport implements Co
 			config = ComputeServiceConfig.loadFromFile(new File(xenonConfigFile));
 			TargetAdaptorConfig targetConfig = config.getTargetFilesystemConfig();
 			
-			if (targetConfig.isHosted()) {
-				if (targetConfig.getAdaptor().equals("file")) {
-					registry.addResourceHandler(targetConfig.getBaseurl() + "/**").addResourceLocations("file:" + targetConfig.getLocation());
-				}
+			if (targetConfig.isHosted() && targetConfig.getAdaptor().equals("file")) {
+				registry.addResourceHandler(targetConfig.getBaseurl() + "/**").addResourceLocations("file:" + targetConfig.getLocation());
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

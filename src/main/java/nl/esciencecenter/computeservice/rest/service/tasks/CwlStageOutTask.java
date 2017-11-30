@@ -55,7 +55,7 @@ public class CwlStageOutTask implements Runnable {
 		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
 		Job job = repository.findOne(jobId);
 		try {
-			XenonStager stager = new XenonStager(jobService, repository, service.getTargetFileSystem(), service.getRemoteFileSystem());
+			XenonStager stager = new XenonStager(jobService, repository, service.getTargetFileSystem(), service.getRemoteFileSystem(), service);
 	        // Staging back output
 	        StagingManifest manifest = new StagingManifest(jobId, new Path(job.getId() + "/"));
 	        manifest.setBaseurl((String) job.getAdditionalInfo().get("baseurl"));

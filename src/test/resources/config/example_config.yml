@@ -40,3 +40,7 @@ sourceFileSystem:
     credential:
         user: webdav
         password: dmFkYmV3
+
+targetFileSystem:
+   adaptor: file
+   location: /tmp/results/

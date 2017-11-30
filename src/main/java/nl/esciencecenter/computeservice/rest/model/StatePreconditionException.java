@@ -1,6 +1,7 @@
 package nl.esciencecenter.computeservice.rest.model;
 
 public class StatePreconditionException extends Exception {
+	private static final long serialVersionUID = 7561477622540055275L;
 
 	public StatePreconditionException() {
 		super();
@@ -17,10 +18,4 @@ public class StatePreconditionException extends Exception {
 	public StatePreconditionException(Throwable cause) {
         super(cause);
     }
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 7561477622540055275L;
-
 }

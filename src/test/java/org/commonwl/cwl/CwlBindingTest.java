@@ -15,6 +15,8 @@
  */
 package org.commonwl.cwl;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -35,9 +37,7 @@ public class CwlBindingTest {
 		
 		Workflow tool = mapper.readValue(new File("src/test/resources/cwl/echo.cwl"), Workflow.class);
 		
-		for(InputParameter input : tool.getInputs()){
-			System.out.println(input.getId());
-		}
+		assertEquals("First input should be inp", tool.getInputs()[0].getId(), "inp");
 	}
 
 }

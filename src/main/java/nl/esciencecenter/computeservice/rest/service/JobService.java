@@ -21,7 +21,7 @@ public class JobService {
 	private static final Logger logger = LoggerFactory.getLogger(JobService.class);
 	
 	@Autowired
-	JobRepository repository;
+	private JobRepository repository;
 	
 	@Transactional
 	public Job setJobState(String jobId, JobState from, JobState to) throws StatePreconditionException {

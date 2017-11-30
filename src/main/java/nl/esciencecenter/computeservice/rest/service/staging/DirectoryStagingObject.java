@@ -2,7 +2,7 @@ package nl.esciencecenter.computeservice.rest.service.staging;
 
 import nl.esciencecenter.xenon.filesystems.Path;
 
-public class DirectoryStagingObject implements StagingObject {
+public class DirectoryStagingObject extends BaseStagingObject {
 	private Path sourcePath;
 	private Path targetPath;
 

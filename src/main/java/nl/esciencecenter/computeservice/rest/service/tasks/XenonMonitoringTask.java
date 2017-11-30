@@ -45,9 +45,9 @@ public class XenonMonitoringTask implements Runnable {
 
 		cancelRunningJobs(scheduler);
 
-		startReadyJobs(scheduler);
+		startReadyJobs();
 		
-		startStageOutForFinishedJobs(scheduler);
+		startStageOutForFinishedJobs();
 
 		updateWaitingJobs(scheduler);
 
@@ -128,9 +128,8 @@ public class XenonMonitoringTask implements Runnable {
 						jobLogger.info("Jobs done.");
 						jobService.setXenonExitcode(job.getId(), status.getExitCode());
 						jobService.setJobState(job.getId(), JobState.WAITING, JobState.FINISHED);
-					} else {
-						// The job is probably pending
 					}
+					// If neither of the statements above holds then the job is probably pending.
 	
 					jobService.setXenonState(job.getId(), status.getState());
 				} catch (NoSuchJobException e) {
@@ -236,7 +235,7 @@ public class XenonMonitoringTask implements Runnable {
 		}
 	}
 
-	private void startStageOutForFinishedJobs(Scheduler scheduler) {
+	private void startStageOutForFinishedJobs() {
 		List<Job> finished = repository.findAllByInternalState(JobState.FINISHED);
 		for (Job job : finished) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
@@ -252,7 +251,7 @@ public class XenonMonitoringTask implements Runnable {
 		}
 	}
 
-	private void startReadyJobs(Scheduler scheduler) {
+	private void startReadyJobs() {
 		List<Job> ready = repository.findAllByInternalState(JobState.STAGING_READY);
 		for (Job job : ready) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());

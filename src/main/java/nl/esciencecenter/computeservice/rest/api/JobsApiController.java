@@ -32,10 +32,10 @@ public class JobsApiController implements JobsApi {
 	private static final Logger logger = LoggerFactory.getLogger(JobsApi.class);
 
 	@Autowired
-	XenonService xenonService;
+	private XenonService xenonService;
 	
 	@Autowired
-	JobRepository repository;
+	private JobRepository repository;
 	
 	@Override
 	public ResponseEntity<Job> cancelJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {

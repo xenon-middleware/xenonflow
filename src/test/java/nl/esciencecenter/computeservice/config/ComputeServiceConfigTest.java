@@ -15,19 +15,21 @@
  */
 package nl.esciencecenter.computeservice.config;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.io.File;
 
 import org.junit.Test;
-import org.springframework.util.Assert;
 
 public class ComputeServiceConfigTest {
 	@Test
 	public void testConfigLoad() throws Exception {
 		ComputeServiceConfig config = ComputeServiceConfig.loadFromFile(new File("src/test/resources/config/example_config.yml"));
-		Assert.notNull(config, "Configuration should not be null");
-		Assert.notNull(config.get("das5"), "ComputeResource das5 should exist");
-		Assert.notNull(config.defaultComputeResource(), "Default resource should exist");
-		Assert.notNull(config.getSourceFilesystemConfig(), "Local filesystem should exist");
+		assertNotNull("Configuration should not be null", config);
+		assertNotNull("ComputeResource das5 should exist", config.get("das5"));
+		assertNotNull("Default resource should exist", config.defaultComputeResource());
+		assertNotNull("Source filesystem should exist", config.getSourceFilesystemConfig());
+		assertNotNull("Target filesystem should exist", config.getTargetFilesystemConfig());
 	}
 	
 	@Test
@@ -49,12 +51,17 @@ public class ComputeServiceConfigTest {
 				+ " \"sourceFileSystem\": {"
 				+ "    \"adaptor\": \"webdav\","
 				+ "    \"location\": \"http://localhost:8080/\""
+				+ "  },"
+				+ " \"targetFileSystem\": {"
+				+ "    \"adaptor\": \"file\","
+				+ "    \"location\": \"/tmp/results\""
 				+ "  }"
 				+ "}", "json");
-		Assert.notNull(config, "Configuration should not be null");
-		Assert.notNull(config.get("das5"), "ComputeResource das5 should exist");
-		Assert.notNull(config.defaultComputeResource(), "Default resource should exist");
-		Assert.notNull(config.getSourceFilesystemConfig(), "Local filesystem should exist");
+		assertNotNull("Configuration should not be null", config);
+		assertNotNull("ComputeResource das5 should exist", config.get("das5"));
+		assertNotNull("Default resource should exist", config.defaultComputeResource());
+		assertNotNull("Source filesystem should exist", config.getSourceFilesystemConfig());
+		assertNotNull("Target filesystem should exist", config.getTargetFilesystemConfig());
 		assert (config.get("das5").getSchedulerConfig().getAdaptor().equals("local")); 
 	}
 }
