@@ -28,14 +28,18 @@ public class Workflow extends Process {
 	private static final long serialVersionUID = -2170400805154307949L;
 	private InputParameter[] inputs;
 	private OutputParameter[] outputs;
+	private Step[] steps;
+	private ProcessType type;
 	
 	public Workflow(
 			@JsonProperty("inputs") InputParameter[] inputs,
-			@JsonProperty("outputs") OutputParameter[] outputs
+			@JsonProperty("outputs") OutputParameter[] outputs,
+			@JsonProperty("steps") Step[] steps
 			){
 		super();
 		this.setInputs(inputs);
 		this.setOutputs(outputs);
+		this.setSteps(steps);
 	}
 
 	public InputParameter[] getInputs() {
@@ -54,6 +58,14 @@ public class Workflow extends Process {
 		this.outputs = outputs;
 	}
 	
+	public Step[] getSteps() {
+		return steps;
+	}
+
+	public void setSteps(Step[] steps) {
+		this.steps = steps;
+	}
+
 	public static Workflow fromFile(File file) throws JsonParseException, JsonMappingException, IOException {
 		Process p = Process.fromFile(file);
 		Workflow wf = (Workflow)p;
@@ -68,6 +80,15 @@ public class Workflow extends Process {
 
 	@Override
 	public String toString() {
-		return "Workflow [inputs=" + Arrays.toString(inputs) + ", outputs=" + Arrays.toString(outputs) + "]";
+		return "Workflow [type=" + this.type + ", inputs=" + Arrays.toString(inputs) + ", outputs=" + Arrays.toString(outputs) + "]";
+	}
+
+	@Override
+	public ProcessType getType() {
+		return this.type;
+	}
+
+	public void setType(ProcessType type) {
+		this.type = type;
 	}
 }

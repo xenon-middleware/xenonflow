@@ -1,7 +1,10 @@
-package org.commonwl.cwl;
+package org.commonwl.cwl.deserialization;
 
 import java.io.IOException;
 import java.util.Iterator;
+
+import org.commonwl.cwl.Process;
+import org.commonwl.cwl.Workflow;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;

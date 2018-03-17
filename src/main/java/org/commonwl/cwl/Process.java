@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 
 import org.apache.commons.io.FilenameUtils;
+import org.commonwl.cwl.deserialization.ProcessDeserializer;
+import org.commonwl.cwl.deserialization.WorkflowDeserializer;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -14,8 +16,19 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import nl.esciencecenter.computeservice.utils.JacksonUtils;
 
-public class Process extends HashMap<String, Object> {
+public abstract class Process extends HashMap<String, Object> {
 	private static final long serialVersionUID = -277384177779924611L;
+	
+	public enum ProcessType {
+		Workflow,
+		CommandLineTool
+	}
+	
+	public abstract ProcessType getType();
+	
+	public boolean isWorkflow() {
+		return this.getType() == ProcessType.Workflow;
+	}
 
 	public static Process fromFile(File file) throws JsonParseException, JsonMappingException, IOException {
 		String extension = FilenameUtils.getExtension(file.getName());
