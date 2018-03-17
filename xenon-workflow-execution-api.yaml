@@ -213,47 +213,6 @@ paths:
               Final process status is success
         '404':
           description: Job not found
-  /files/upload:
-    post:
-      summary: Upload a file
-      operationId: uploadFile
-      produces:
-        - application/json
-      consumes:
-        - application/octet-stream
-      parameters:
-        - in: body
-          name: BinaryData
-          description: A file to use for input to a workflow.
-          required: true
-          schema:
-            type: string
-            format: byte
-      responses:
-        '201':
-          description: OK
-          schema:
-            format: file
-          headers:
-            Location:
-              description: uri of the created file
-              type: string
-              format: uri
-  '/files/{fileId}':
-    get:
-      summary: Get the content of an (output) file
-      operationId: getFileByID
-      produces:
-        - binary/octet-stream
-      parameters:
-        - name: fileId
-          in: path
-          type: string
-          description: File ID
-          required: true
-      responses:
-        '200':
-          description: File Content
 definitions:
   workflow-binding:
     type: object
@@ -334,12 +293,12 @@ definitions:
   file:
     type: object
     required:
-      - class
-      - checksum
+      - id
+      - type
     properties:
-      class:
+      id:
+        type: string
+        example: input_file
+      type:
         type: string
         example: File
-      checksum:
-        type: string
-        example: null
