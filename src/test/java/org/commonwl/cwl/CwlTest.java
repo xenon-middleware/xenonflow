@@ -59,7 +59,7 @@ public class CwlTest {
 		Workflow workflow = Workflow.fromFile(new File("src/test/resources/cwl/count-lines.cwl"));
 		
 		Step firstStep = workflow.getSteps()[0];
-		WorkflowStep actualStep = firstStep.getRun();
+		RunCommand actualStep = firstStep.getRun();
 		
 		assertEquals("Workflow type of count-lines.cwl should be Workflow", "step1", firstStep.getId());
 		assertEquals("Workflow type of count-lines.cwl should be Workflow", "wc-tool.cwl", actualStep.getWorkflowPath());

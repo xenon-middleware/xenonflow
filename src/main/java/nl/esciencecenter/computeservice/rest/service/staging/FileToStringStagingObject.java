@@ -26,4 +26,9 @@ public class FileToStringStagingObject extends BaseStagingObject {
 	public void setTargetString(String targetString) {
 		this.targetString = targetString;
 	}
+
+	@Override
+	public String toString() {
+		return "FileToStringStagingObject [sourcePath=" + sourcePath + ", targetString=" + targetString + "]";
+	}
 }

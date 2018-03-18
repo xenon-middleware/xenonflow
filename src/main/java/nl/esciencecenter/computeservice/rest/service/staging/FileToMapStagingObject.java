@@ -26,4 +26,9 @@ public class FileToMapStagingObject extends BaseStagingObject {
 	public void setTargetString(String targetString) {
 		this.targetString = targetString;
 	}
+
+	@Override
+	public String toString() {
+		return "FileToMapStagingObject [sourcePath=" + sourcePath + ", targetString=" + targetString + "]";
+	}
 }

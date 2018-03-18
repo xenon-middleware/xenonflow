@@ -26,4 +26,9 @@ public class DirectoryStagingObject extends BaseStagingObject {
 	public void setTargetPath(Path targetPath) {
 		this.targetPath = targetPath;
 	}
+
+	@Override
+	public String toString() {
+		return "DirectoryStagingObject [sourcePath=" + sourcePath + ", targetPath=" + targetPath + "]";
+	}
 }

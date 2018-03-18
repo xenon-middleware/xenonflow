@@ -4,4 +4,6 @@ public interface StagingObject {
 
 	public void setBytesCopied(long bytes);
 	public long getBytesCopied();
+	
+	public String toString();
 }

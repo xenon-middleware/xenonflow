@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.commonwl.cwl.Step;
 import org.commonwl.cwl.Workflow;
-import org.commonwl.cwl.WorkflowStep;
+import org.commonwl.cwl.RunCommand;
 
 import nl.esciencecenter.xenon.filesystems.Path;
 
@@ -21,7 +21,7 @@ public class CWLUtils {
 		List<Path> paths = new LinkedList<Path>();
 
 		for (Step step : workflow.getSteps()) {
-			WorkflowStep run = step.getRun();
+			RunCommand run = step.getRun();
 			if (!run.isSubWorkflow()) {
 				if (CWLUtils.isLocalPath(run.getWorkflowPath())) {
 					paths.add(new Path(run.getWorkflowPath()));
@@ -43,7 +43,7 @@ public class CWLUtils {
 		List<String> paths = new LinkedList<String>();
 
 		for (Step step : workflow.getSteps()) {
-			WorkflowStep run = step.getRun();
+			RunCommand run = step.getRun();
 			if (!run.isSubWorkflow()) {
 				paths.add(run.getWorkflowPath());
 			} else if (run.getSubWorkflow().isWorkflow()) {

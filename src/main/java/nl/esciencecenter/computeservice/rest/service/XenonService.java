@@ -34,6 +34,7 @@ import nl.esciencecenter.computeservice.rest.service.tasks.CwlStageOutTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.CwlWorkflowTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.DeleteJobTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.XenonMonitoringTask;
+import nl.esciencecenter.computeservice.utils.LoggingUtils;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
@@ -291,41 +292,11 @@ public class XenonService {
 		return logBasePath.resolve(name + ".log").toString();
 	}
 
-	/**
-	 * Adding a specific file logger for a job. This is Logback specific!
-	 * 
-	 * Taken from:
-	 * https://stackoverflow.com/questions/7824620/logback-set-log-file-name-programmatically
-	 * 
-	 * @param name
-	 */
-	private void addFileAppenderToLogger(String name) {
-		LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-
-		FileAppender<ILoggingEvent> fileAppender = new FileAppender<ILoggingEvent>();
-		fileAppender.setContext(loggerContext);
-		fileAppender.setName(name);
-		// set the file name
-		fileAppender.setFile(getJobLogName(name));
-
-		PatternLayoutEncoder encoder = new PatternLayoutEncoder();
-		encoder.setContext(loggerContext);
-		encoder.setPattern("%d{yyyy-MMM-dd HH:mm:ss.SSS} %level - %msg%n");
-		encoder.start();
-
-		fileAppender.setEncoder(encoder);
-		fileAppender.start();
-
-		// attach the rolling file appender to the logger of your choice
-		ch.qos.logback.classic.Logger logbackLogger = loggerContext.getLogger(name);
-		logbackLogger.addAppender(fileAppender);
-	}
-
 	public Job submitJob(JobDescription body) throws StatePreconditionException, XenonException {
 		String uuid = UUID.randomUUID().toString();
 
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + uuid);
-		addFileAppenderToLogger("jobs." + uuid);
+		LoggingUtils.addFileAppenderToLogger("jobs." + uuid, getJobLogName("jobs." + uuid));
 
 		Job job = new Job();
 		job.setId(uuid);

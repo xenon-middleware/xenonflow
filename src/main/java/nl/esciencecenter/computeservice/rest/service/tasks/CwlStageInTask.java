@@ -5,13 +5,16 @@ import java.io.StringReader;
 import java.util.HashMap;
 
 import org.apache.commons.io.FilenameUtils;
+import org.commonwl.cwl.CwlException;
 import org.commonwl.cwl.InputParameter;
 import org.commonwl.cwl.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
@@ -23,9 +26,11 @@ import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.computeservice.rest.service.staging.DirectoryStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.FileStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.StagingManifest;
+import nl.esciencecenter.computeservice.rest.service.staging.StagingManifestFactory;
 import nl.esciencecenter.computeservice.rest.service.staging.StringToFileStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
+import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 
 public class CwlStageInTask implements Runnable {
@@ -64,75 +69,7 @@ public class CwlStageInTask implements Runnable {
 			XenonStager stager = new XenonStager(jobService, repository, service.getSourceFileSystem(), service.getRemoteFileSystem(), service);
 
 			// Staging files
-			StagingManifest manifest = new StagingManifest(jobId, job.getSandboxDirectory());
-
-	        // Add the workflow to the staging manifest
-	        Path localWorkflow = new Path(job.getWorkflow());
-	        Path workflowBaseName = new Path (localWorkflow.getFileNameAsString());
-	        
-	        // TODO: Recursively go through the workflow to find other cwl files
-	        // to stage. Or do we expect ppl to use in-line workflow files
-	        manifest.add(new FileStagingObject(localWorkflow, workflowBaseName));
-	        
-	        Path remoteJobOrder = null;
-	        if (job.hasInput()) {
-	        	remoteJobOrder = new Path("job-order.json");
-	        	
-	        	// Add files and directories from the input to the staging
-	        	// manifest and update the input to point to locations
-	        	// on the remote server
-	        	String jobOrderString = job.getInput().toString();
-	        	logger.debug("Old job order string: " + jobOrderString);
-	        	
-	        	// Read in the job order as a hashmap
-				ObjectMapper mapper = new ObjectMapper(new JsonFactory());
-				TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
-				HashMap<String, Object> jobOrder = mapper.readValue(new StringReader(jobOrderString), typeRef);
-				
-				// Read in the workflow to get the required inputs
-				Path workflowPath = service.getSourceFileSystem().getWorkingDirectory().resolve(localWorkflow);
-
-				jobLogger.debug("Loading workflow from: " + workflowPath);
-				String extension = FilenameUtils.getExtension(workflowPath.getFileNameAsString());
-				Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()), extension);				
-
-				if (workflow == null || workflow.getInputs() == null) {
-					jobLogger.error("Error staging files, cannot read the workflow file!\nworkflow: " + workflow);
-					logger.error("Error staging files, cannot read the workflow file!\nworkflow: " + workflow);
-					jobService.setJobState(job.getId(), JobState.STAGING_IN, JobState.SYSTEM_ERROR);
-					return;
-				}
-	        	
-				jobLogger.debug("Parsing inputs from: " + workflow.toString());
-	        	for (InputParameter parameter : workflow.getInputs()) {
-        			String paramId = null;
-        			if (jobOrder.containsKey(parameter.getId())) {
-        				paramId = parameter.getId();
-        			} else if (parameter.getId().startsWith("#")) {
-        				paramId = parameter.getId().split("/")[1];
-        			}
-        			
-        			if (parameter.getType().equals("File") || parameter.getType().equals("Directory")) {
-	    				// This should either work or throw an exception, we know about the problem (type erasure).
-	    				@SuppressWarnings("unchecked")
-						HashMap<String, Object> fileInput = (HashMap<String, Object>) jobOrder.get(paramId);
-	
-	    				Path localPath = new Path((String) fileInput.get("path"));
-	    				Path remotePath = new Path(localPath.getFileNameAsString());
-	    				fileInput.put("path", remotePath.toString());
-	
-		        		if (parameter.getType().equals("File")) {
-	        				manifest.add(new FileStagingObject(localPath, remotePath));
-		        		} else if (parameter.getType().equals("Directory")) {
-	        				manifest.add(new DirectoryStagingObject(localPath, remotePath));
-		        		}
-        			}
-	        	}
-	        	
-	        	String newJobOrderString = mapper.writeValueAsString(jobOrder);
-	        	logger.debug("New job order string: " + newJobOrderString);
-	        	manifest.add(new StringToFileStagingObject(newJobOrderString, remoteJobOrder));
-	        }
+			StagingManifest manifest = StagingManifestFactory.createStagingManifest(job, service.getSourceFileSystem(), jobLogger);
 	        
 	        stager.stageIn(manifest);
 	        
@@ -140,7 +77,11 @@ public class CwlStageInTask implements Runnable {
 	        jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_READY);
 
 	        jobLogger.info("StageIn complete.");
-		} catch (XenonException | IOException | StatePreconditionException e) {
+		} catch (CwlException | StatePreconditionException e) {
+			jobLogger.error("Error during stage-in: ", e);
+			logger.error("Error during stage-in: ", e);
+			jobService.setErrorAndState(jobId, e, JobState.STAGING_IN, JobState.SYSTEM_ERROR);
+		} catch (XenonException | IOException e) {
 			jobLogger.error("Error during stage-in: ", e);
 			logger.error("Error during stage-in: ", e);
 			jobService.setErrorAndState(jobId, e, JobState.STAGING_IN, JobState.PERMANENT_FAILURE);

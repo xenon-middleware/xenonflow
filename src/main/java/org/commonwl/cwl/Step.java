@@ -8,11 +8,11 @@ public class Step extends HashMap<String, Object> {
 	private static final long serialVersionUID = 4240257742680645608L;
 
 	private String id;
-	private WorkflowStep run;
+	private RunCommand run;
 
 	public Step(
 			@JsonProperty("id") String id,
-			@JsonProperty("run")WorkflowStep run){
+			@JsonProperty("run")RunCommand run){
 		this.id = id;
 		this.run = run;
 	}
@@ -25,11 +25,11 @@ public class Step extends HashMap<String, Object> {
 		this.id = id;
 	}
 
-	public WorkflowStep getRun() {
+	public RunCommand getRun() {
 		return run;
 	}
 
-	public void setRun(WorkflowStep run) {
+	public void setRun(RunCommand run) {
 		this.run = run;
 	}
 	

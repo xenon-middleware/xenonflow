@@ -1,14 +1,21 @@
 package nl.esciencecenter.computeservice.rest.model;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Objects;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import nl.esciencecenter.computeservice.utils.JacksonUtils;
 
 /**
  * WorkflowBinding
@@ -59,5 +66,15 @@ public class WorkflowBinding extends HashMap<String, Object> implements Serializ
 			logger.error("Error mapping WorkflowBinding to json: ", e);
 		}
 		return super.toString();
+	}
+	
+	public static WorkflowBinding fromFile(File file) throws JsonMappingException, IOException {
+		String extension = FilenameUtils.getExtension(file.getName());
+		
+		ObjectMapper mapper = JacksonUtils.getMapperForFileType(extension);
+		
+		WorkflowBinding wb = mapper.readValue(file, WorkflowBinding.class);
+		
+		return wb;
 	}
 }

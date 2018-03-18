@@ -26,4 +26,9 @@ public class FileStagingObject extends BaseStagingObject {
 	public void setTargetPath(Path targetPath) {
 		this.targetPath = targetPath;
 	}
+
+	@Override
+	public String toString() {
+		return "FileStagingObject [sourcePath=" + sourcePath + ", targetPath=" + targetPath + "]";
+	}
 }

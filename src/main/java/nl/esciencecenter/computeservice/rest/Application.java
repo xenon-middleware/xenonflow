@@ -34,8 +34,8 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = { "nl.esciencecenter.computeservice.rest*",
 		"nl.esciencecenter.computeservice.cwl.*" })
-public class Swagger2SpringBoot extends WebMvcConfigurationSupport implements CommandLineRunner, ApplicationListener<EmbeddedServletContainerInitializedEvent> {
-	private static final Logger logger = LoggerFactory.getLogger(Swagger2SpringBoot.class);
+public class Application extends WebMvcConfigurationSupport implements CommandLineRunner, ApplicationListener<EmbeddedServletContainerInitializedEvent> {
+	private static final Logger logger = LoggerFactory.getLogger(Application.class);
 	
 	@Value("${server.address}")
 	private String bindAdress;
@@ -85,7 +85,7 @@ public class Swagger2SpringBoot extends WebMvcConfigurationSupport implements Co
 	}
 
 	public static void main(String[] args) throws Exception {
-		new SpringApplication(Swagger2SpringBoot.class).run(args);
+		new SpringApplication(Application.class).run(args);
 	}
 
 	class ExitException extends RuntimeException implements ExitCodeGenerator {

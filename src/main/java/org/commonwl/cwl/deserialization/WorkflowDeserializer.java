@@ -11,7 +11,7 @@ import org.commonwl.cwl.OutputParameter;
 import org.commonwl.cwl.Process;
 import org.commonwl.cwl.Step;
 import org.commonwl.cwl.Workflow;
-import org.commonwl.cwl.WorkflowStep;
+import org.commonwl.cwl.RunCommand;
 import org.commonwl.cwl.Process.ProcessType;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -104,7 +104,7 @@ public class WorkflowDeserializer extends JsonDeserializer<Workflow> {
 					JsonNode stepNode = iter.next();
 					JsonNode runNode = stepNode.get("run");
 					
-					WorkflowStep s = new WorkflowStep();
+					RunCommand s = new RunCommand();
 					
 					if (runNode.isTextual()) {
 						s.setWorkflowPath(runNode.asText());
@@ -121,7 +121,7 @@ public class WorkflowDeserializer extends JsonDeserializer<Workflow> {
 					Entry<String, JsonNode> stepNode = iter.next();
 					JsonNode runNode = stepNode.getValue().get("run");
 					
-					WorkflowStep s = new WorkflowStep();
+					RunCommand s = new RunCommand();
 					if (runNode.isTextual()) {
 						s.setWorkflowPath(runNode.asText());
 					} else {
