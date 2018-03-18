@@ -3,11 +3,13 @@ package nl.esciencecenter.computeservice.rest.service.staging;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
 import org.commonwl.cwl.CwlException;
 import org.commonwl.cwl.InputParameter;
 import org.commonwl.cwl.Workflow;
+import org.commonwl.cwl.utils.CWLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +35,6 @@ public class StagingManifestFactory {
         Path localWorkflow = new Path(job.getWorkflow());
         Path workflowBaseName = new Path (localWorkflow.getFileNameAsString());
         
-        // TODO: Recursively go through the workflow to find other cwl files
-        // to stage. Or do we expect ppl to use in-line workflow files
 		// Read in the workflow to get the required inputs
 		Path workflowPath = sourceFileSystem.getWorkingDirectory().resolve(localWorkflow);
 
@@ -47,6 +47,13 @@ public class StagingManifestFactory {
 		}
 		
         manifest.add(new FileStagingObject(localWorkflow, workflowBaseName));
+        // Recursively go through the workflow and get all the local cwl files
+        List<Path> paths = CWLUtils.getLocalWorkflowPaths(workflow);
+        for (Path path : paths) {
+        	// TODO: The target path may be an absolute path or a weird location
+        	// So we should probably update it and update the cwl file as well
+        	manifest.add(new FileStagingObject(path, path));
+        }
         
         addInputToManifest(job, workflow, manifest, jobLogger);
         
@@ -56,6 +63,7 @@ public class StagingManifestFactory {
 	public static void addInputToManifest(Job job, Workflow workflow, StagingManifest manifest, Logger jobLogger) throws CwlException, JsonParseException, JsonMappingException, IOException, StatePreconditionException {
 		Path remoteJobOrder = null;
 		// TODO: Maybe also check if the workflow expects inputs
+		// Actually, the logic is the wrong way around currently
         if (job.hasInput()) {
         	remoteJobOrder = new Path("job-order.json");
         	
@@ -89,7 +97,10 @@ public class StagingManifestFactory {
     				throw new CwlException("Error staging files, cannot find: " + paramId + " in the job order.");
     			}
     			
-    			if (parameter.getType().equals("File") || parameter.getType().equals("Directory")) {
+    			// TODO: This can also be File[] or File?
+    			// File[] needs separate logic and File? could be handles nicer
+    			if (parameter.getType().equals("File") || parameter.getType().equals("File?") ||
+    					parameter.getType().equals("Directory") || parameter.getType().equals("Directory?")) {
     				// This should either work or throw an exception. We can't make this a checked cast
     				// so suppress the warning
     				@SuppressWarnings("unchecked")
@@ -99,11 +110,13 @@ public class StagingManifestFactory {
     				Path remotePath = new Path(localPath.getFileNameAsString());
     				fileInput.put("path", remotePath.toString());
 
-	        		if (parameter.getType().equals("File")) {
+	        		if (parameter.getType().equals("File") || parameter.getType().equals("File?")) {
         				manifest.add(new FileStagingObject(localPath, remotePath));
-	        		} else if (parameter.getType().equals("Directory")) {
+	        		} else if (parameter.getType().equals("Directory") || parameter.getType().equals("Directory?")) {
         				manifest.add(new DirectoryStagingObject(localPath, remotePath));
 	        		}
+    			} else if (parameter.getType().equals("File[]") || parameter.getType().equals("Directory[]")) {
+    				// TODO: Implement array inputs
     			}
         	}
         

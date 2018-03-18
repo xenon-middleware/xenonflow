@@ -88,4 +88,34 @@ public class CwlStageInTest {
 		List<String> expected = Arrays.asList("echo-file.cwl", "echo-file.json", "job-order.json");
 		assertEquals("Expecting arrays to be equal", expected, paths);
 	}
+	
+	@Test
+	public void createStagingManifestMultiFileTest() throws JsonMappingException, IOException, StatePreconditionException, CwlException, XenonException {
+		String uuid = UUID.randomUUID().toString();
+
+		Logger jobLogger = LoggerFactory.getLogger("jobs." + uuid);
+
+		Job job = new Job();
+		job.setId(uuid);
+		job.setWorkflow("src/test/resources/cwl/count-lines-remote.cwl");
+		job.setInput(WorkflowBinding.fromFile(new File("src/test/resources/cwl/count-lines-job.json")));
+		job.setName("createStagingManifestTest");
+		job.setInternalState(JobState.SUBMITTED);
+		
+		StagingManifest manifest = StagingManifestFactory.createStagingManifest(job, this.getSourceFileSystem(), jobLogger);
+		
+		List<String> paths = new ArrayList<String>();
+		for (StagingObject stageObject : manifest) {
+			if (stageObject instanceof FileStagingObject) {
+				FileStagingObject object = (FileStagingObject) stageObject;
+				paths.add(object.getTargetPath().toString());
+			} else if (stageObject instanceof StringToFileStagingObject) {
+				StringToFileStagingObject object = (StringToFileStagingObject) stageObject;
+				paths.add(object.getTargetPath().toString());
+			}
+		}
+		
+		List<String> expected = Arrays.asList("count-lines-remote.cwl", "parseInt-tool.cwl", "ipsum.txt", "job-order.json");
+		assertEquals("Expecting arrays to be equal", expected, paths);
+	}
 }
