@@ -117,6 +117,7 @@ public class JobsApiController implements JobsApi {
 
 	@Override
 	public ResponseEntity<Job> postJob(@ApiParam(value = "Input binding for workflow." ,required=true ) @RequestBody JobDescription body) {
+		logger.info("Request: " + body);
 		try {
 			Job job = xenonService.submitJob(body);
 			

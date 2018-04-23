@@ -12,14 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.FileAppender;
 import nl.esciencecenter.computeservice.config.AdaptorConfig;
 import nl.esciencecenter.computeservice.config.ComputeResource;
 import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
@@ -31,7 +28,6 @@ import nl.esciencecenter.computeservice.rest.model.JobState;
 import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.service.tasks.CwlStageInTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.CwlStageOutTask;
-import nl.esciencecenter.computeservice.rest.service.tasks.CwlWorkflowTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.DeleteJobTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.XenonMonitoringTask;
 import nl.esciencecenter.computeservice.utils.LoggingUtils;
@@ -57,16 +53,19 @@ public class XenonService {
 	private JobService jobService;
 	
 	private ThreadPoolTaskScheduler taskScheduler = null;
+	private ThreadPoolTaskExecutor executor = null;
 	private ComputeServiceConfig config = null;
 	private Scheduler scheduler = null;
 	private FileSystem remoteFileSystem = null;
 	private FileSystem sourceFileSystem = null;
 	private FileSystem targetFileSystem = null;
 
-	public XenonService(ThreadPoolTaskScheduler taskScheduler) throws IOException {
+	public XenonService(ThreadPoolTaskScheduler taskScheduler, ThreadPoolTaskExecutor executor) throws IOException {
 		this.taskScheduler = taskScheduler;
-
+		this.executor = executor;
 		// TODO: Watch the config file for changes?
+		
+		logger.debug("Got executor with pool size: " + this.executor.getCorePoolSize());
 	}
 
 	public void close() {
@@ -105,47 +104,33 @@ public class XenonService {
 		assert(resource != null);
 		assert(resource.getSchedulerConfig() != null);
 		
+		// Make sure everything is running.
+		checkSchedulerStates();
 
-		// Start up submitted jobs
-		List<Job> submitted = repository.findAllByInternalState(JobState.SUBMITTED);
-		submitted.addAll(repository.findAllByInternalState(JobState.STAGING_IN));
+		// Restart staging in for jobs that were staging in.
+		List<Job> submitted = repository.findAllByInternalState(JobState.STAGING_IN);
 		for (Job job : submitted) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 			// We re-request the job here because it may have changed while we were looping.
 			job = repository.findOne(job.getId());
 			jobLogger.info("Starting new job runner for job: " + job);
 			try {
-				taskScheduler.execute(new CwlStageInTask(job.getId(), this));
+				executor.execute(new CwlStageInTask(job.getId(), this));
 			} catch (XenonException e) {
 				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 			}
 		}
 		
-		// Start up ready jobs
-		List<Job> ready = repository.findAllByInternalState(JobState.STAGING_READY);
-		ready.addAll(repository.findAllByInternalState(JobState.XENON_SUBMIT));
-		for (Job job : ready) {
-			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
-			// We re-request the job here because it may have changed while we were looping.
-			job = repository.findOne(job.getId());
-			jobLogger.info("Starting new job runner for job: " + job);
-			try {
-				taskScheduler.execute(new CwlWorkflowTask(job.getId(), this));
-			} catch (XenonException e) {
-				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-			}
-		}
-		
-		// Start up ready jobs
+	
+		// Restart stage out for jobs that were staging out
 		List<Job> staging_out = repository.findAllByInternalState(JobState.STAGING_OUT);
 		for (Job job : staging_out) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 			// We re-request the job here because it may have changed while we were looping.
 			job = repository.findOne(job.getId());
 			try {
-				taskScheduler.execute(new CwlStageOutTask(job.getId(), (int) job.getAdditionalInfo().get("xenon.exitcode"), this));
+				executor.execute(new CwlStageOutTask(job.getId(), (int) job.getAdditionalInfo().get("xenon.exitcode"), this));
 			} catch (XenonException e) {
 				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
@@ -163,6 +148,14 @@ public class XenonService {
 
 	public void setTaskScheduler(ThreadPoolTaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
+	}
+	
+	public ThreadPoolTaskExecutor getExecutor() {
+		return executor;
+	}
+
+	public void setExecutor(ThreadPoolTaskExecutor executor) {
+		this.executor = executor;
 	}
 
 	public JobService getJobService() {
@@ -209,7 +202,6 @@ public class XenonService {
 				logger.debug("Creating remote filesystem...");
 				remoteFileSystem = FileSystem.create(fileSystemConfig.getAdaptor(), fileSystemConfig.getLocation(),
 													 fileSystemConfig.getCredential(), fileSystemConfig.getProperties());
-
 				logger.debug("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
 			}
 		}
@@ -219,7 +211,7 @@ public class XenonService {
 		checkSchedulerStates();
 		return scheduler;
 	}
-	
+
 	public Scheduler forceNewScheduler() throws XenonException {
 		if (scheduler != null) {
 			scheduler = null;
@@ -321,7 +313,9 @@ public class XenonService {
 
 		jobLogger.info("Submitted Job: " + job);
 		
-		taskScheduler.execute(new CwlStageInTask(job.getId(), this));
+//		logger.info("Currently executing: " + executor.getActiveCount() + " threads.");
+		
+		//executor.execute(new CwlStageInTask(job.getId(), this));
 
 		return job;
 	}
@@ -368,7 +362,7 @@ public class XenonService {
 				job = cancelJob(jobId);
 			}
 			
-			taskScheduler.execute(new DeleteJobTask(jobId, this));
+			executor.execute(new DeleteJobTask(jobId, this));
 		}
 		
 		return job;

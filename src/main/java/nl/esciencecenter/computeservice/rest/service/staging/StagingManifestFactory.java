@@ -28,7 +28,7 @@ import nl.esciencecenter.xenon.filesystems.Path;
 public class StagingManifestFactory {
 	private static Logger logger = LoggerFactory.getLogger(StagingManifestFactory.class);
 
-	public static StagingManifest createStagingManifest(Job job, FileSystem sourceFileSystem, Logger jobLogger) throws CwlException, XenonException, JsonParseException, JsonMappingException, IOException, StatePreconditionException {
+	public static StagingManifest createStagingManifest(Job job, FileSystem fileSystemWrapper, Logger jobLogger) throws CwlException, XenonException, JsonParseException, JsonMappingException, IOException, StatePreconditionException {
 		StagingManifest manifest = new StagingManifest(job.getId(), job.getSandboxDirectory());
 
         // Add the workflow to the staging manifest
@@ -36,28 +36,32 @@ public class StagingManifestFactory {
         Path workflowBaseName = new Path (localWorkflow.getFileNameAsString());
         
 		// Read in the workflow to get the required inputs
-		Path workflowPath = sourceFileSystem.getWorkingDirectory().resolve(localWorkflow);
+		Path workflowPath = fileSystemWrapper.getWorkingDirectory().resolve(localWorkflow);
 
 		jobLogger.debug("Loading workflow from: " + workflowPath);
 		String extension = FilenameUtils.getExtension(workflowPath.getFileNameAsString());
-		Workflow workflow = Workflow.fromInputStream(sourceFileSystem.readFromFile(workflowPath.toAbsolutePath()), extension);
+		Workflow workflow = Workflow.fromInputStream(fileSystemWrapper.readFromFile(workflowPath.toAbsolutePath()), extension);
 		
 		if (workflow == null || workflow.getSteps() == null) {
 			throw new CwlException("Error staging files, cannot read the workflow file!\nworkflow: " + workflow);
 		}
 		
         manifest.add(new FileStagingObject(localWorkflow, workflowBaseName));
-        // Recursively go through the workflow and get all the local cwl files
-        List<Path> paths = CWLUtils.getLocalWorkflowPaths(workflow);
-        for (Path path : paths) {
-        	// TODO: The target path may be an absolute path or a weird location
-        	// So we should probably update it and update the cwl file as well
-        	manifest.add(new FileStagingObject(path, path));
-        }
+        addSubWorkflowsToManifest(job, workflow, manifest, jobLogger);
         
         addInputToManifest(job, workflow, manifest, jobLogger);
         
         return manifest;
+	}
+	
+	public static void addSubWorkflowsToManifest(Job job, Workflow workflow, StagingManifest manifest, Logger jobLogger) {
+		// Recursively go through the workflow and get all the local cwl files
+        List<Path> paths = CWLUtils.getLocalWorkflowPaths(workflow);
+        for (Path path : paths) {
+        	// TODO: The target path may be an absolute path or a weird location
+        	// So we should probably update it and update the cwl file as well
+        	manifest.add(new FileStagingObject(path, path.getFileName()));
+        }
 	}
 	
 	public static void addInputToManifest(Job job, Workflow workflow, StagingManifest manifest, Logger jobLogger) throws CwlException, JsonParseException, JsonMappingException, IOException, StatePreconditionException {

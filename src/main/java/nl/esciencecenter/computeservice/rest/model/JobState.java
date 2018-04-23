@@ -51,6 +51,8 @@ public enum JobState {
 	private static final ImmutableList<JobState> cancellationStates;
 	private static final ImmutableList<JobState> remoteStates;
 	private static final ImmutableList<JobState> errorStates;
+	private static final ImmutableList<JobState> waitingStates;
+	private static final ImmutableList<JobState> runningStates;
 	private static final HashMap<JobState, String> stateStringMap;
 
 	static {
@@ -63,6 +65,10 @@ public enum JobState {
 		remoteStates = ImmutableList.of(JobState.WAITING, JobState.WAITING_CR, JobState.RUNNING, JobState.RUNNING_CR);
 		
 		errorStates = ImmutableList.of(JobState.SYSTEM_ERROR, JobState.TEMPORARY_FAILURE, JobState.PERMANENT_FAILURE);
+		
+		waitingStates = ImmutableList.of(JobState.SUBMITTED, JobState.STAGING_IN, JobState.STAGING_READY, JobState.XENON_SUBMIT , JobState.WAITING, JobState.STAGING_IN_CR, JobState.WAITING_CR);
+		
+		runningStates = ImmutableList.of(JobState.RUNNING, JobState.FINISHED, JobState.STAGING_OUT, JobState.RUNNING_CR , JobState.STAGING_OUT_CR);
 
 		stateStringMap = new HashMap<JobState, String>();
 		stateStringMap.put(JobState.SUBMITTED, "Waiting");
@@ -146,9 +152,17 @@ public enum JobState {
 	public String toCwlStateString() {
 		return stateStringMap.get(this);
 	}
+	
+	public boolean isWaiting() {
+		return waitingStates.contains(this);
+	}
 
 	public boolean isErrorState() {
 		return errorStates.contains(this);
+	}
+	
+	public boolean isRunning() {
+		return runningStates.contains(this);
 	}
 	
 	public boolean isSuccess() {

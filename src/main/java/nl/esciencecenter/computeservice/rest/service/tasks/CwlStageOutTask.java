@@ -54,7 +54,20 @@ public class CwlStageOutTask implements Runnable {
 	public void run() {
 		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
 		Job job = repository.findOne(jobId);
+		if (job.getInternalState().isFinal()) {
+			// The job is in a final state so it's likely failed
+			// or cancelled.
+			return;
+		}
+
 		try {
+			
+			if (job.getInternalState() == JobState.FINISHED){
+				job = jobService.setJobState(jobId, JobState.FINISHED, JobState.STAGING_OUT);
+			} else if (job.getInternalState() != JobState.STAGING_OUT) {
+				throw new StatePreconditionException("State is: " + job.getInternalState() + " but expected either FINISHED or STAGING_OUT");
+			}
+			
 			XenonStager stager = new XenonStager(jobService, repository, service.getTargetFileSystem(), service.getRemoteFileSystem(), service);
 	        // Staging back output
 	        StagingManifest manifest = new StagingManifest(jobId, new Path(job.getId() + "/"));
@@ -109,6 +122,9 @@ public class CwlStageOutTask implements Runnable {
 	    	
 	        jobLogger.info("StageOut complete.");
 	        
+	        
+	        // Re-get the job from the database here, because it may have changed in state
+	        job = repository.findOne(jobId);
 	        if (!job.getInternalState().isFinal()) {
 	        	if (exitcode == 0) {
 	        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);

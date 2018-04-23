@@ -11,11 +11,11 @@ plugins {
 version = '0.3-alpha'
 
 springBoot {
-  mainClass = 'nl.esciencecenter.computeservice.rest.Swagger2SpringBoot'
+  mainClass = 'nl.esciencecenter.computeservice.rest.Application'
 }
 
 bootRepackage {
-    mainClass = 'nl.esciencecenter.computeservice.rest.Swagger2SpringBoot'
+    mainClass = 'nl.esciencecenter.computeservice.rest.Application'
 }
 
 // In this section you declare where to find the dependencies of your project

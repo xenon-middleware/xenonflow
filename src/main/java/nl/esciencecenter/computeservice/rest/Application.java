@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -29,7 +30,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Configuration
 @EnableAutoConfiguration
 @EnableSwagger2
-@ComponentScan("nl.esciencecenter.computeservice.rest*")
+@ComponentScan(basePackages = {"nl.esciencecenter.computeservice.rest*"})
 @EntityScan(basePackages = { "nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.cwl.*" })
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = { "nl.esciencecenter.computeservice.rest*",
@@ -46,8 +47,15 @@ public class Application extends WebMvcConfigurationSupport implements CommandLi
 	@Bean
 	public static ThreadPoolTaskScheduler taskScheduler() {
 		final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-		scheduler.setPoolSize(5);
 		return scheduler;
+	}
+	
+	@Bean
+	public static ThreadPoolTaskExecutor taskExecutor() {
+		final ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+		executor.setCorePoolSize(5);
+		executor.setMaxPoolSize(25);
+		return executor;
 	}
 	
 	@Override

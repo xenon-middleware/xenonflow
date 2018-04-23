@@ -85,9 +85,12 @@ public class XenonStager {
 				StringToFileStagingObject object = (StringToFileStagingObject) stageObject;
 				Path targetPath = targetDirectory.resolve(object.getTargetPath());
 				jobLogger.info("Writing string to: " + targetPath);
-				PrintWriter out = new PrintWriter(targetFileSystem.writeToFile(targetPath));
+				
 				String contents = object.getSourceString();
+				
 				jobLogger.debug("Input contents: " + contents);
+				
+				PrintWriter out = new PrintWriter(targetFileSystem.writeToFile(targetPath));
 				out.write(contents);
 				out.close();
 				
