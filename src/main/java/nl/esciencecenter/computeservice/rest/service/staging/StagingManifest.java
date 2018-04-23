@@ -42,4 +42,8 @@ public class StagingManifest extends LinkedList<StagingObject> {
 	public void setBaseurl(String baseurl) {
 		this.baseurl = baseurl;
 	}
+
+	public StagingObject getByCopyid(String id) {
+		return this.stream().filter(o -> o.getCopyId() == id).findFirst().get();
+	}
 }

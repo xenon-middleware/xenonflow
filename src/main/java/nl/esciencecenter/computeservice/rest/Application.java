@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
@@ -16,8 +17,8 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -25,6 +26,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
 
 import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
 import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
+import nl.esciencecenter.computeservice.rest.model.JobRepository;
+import nl.esciencecenter.computeservice.rest.service.JobService;
+import nl.esciencecenter.computeservice.rest.service.XenonService;
+import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
+import nl.esciencecenter.computeservice.rest.service.tasks.XenonMonitoringTask;
+import nl.esciencecenter.xenon.XenonException;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @Configuration
@@ -43,6 +50,18 @@ public class Application extends WebMvcConfigurationSupport implements CommandLi
 	
 	@Value("${xenon.config}")
 	private String xenonConfigFile;
+	
+	@Autowired
+	ThreadPoolTaskScheduler taskScheduler;
+	
+	@Autowired
+	XenonStager sourceToRemoteStager;
+	
+	@Autowired
+	XenonStager remoteToTargetStager;
+	
+	@Autowired
+	XenonService xenonService;
 
 	@Bean
 	public static ThreadPoolTaskScheduler taskScheduler() {
@@ -51,11 +70,13 @@ public class Application extends WebMvcConfigurationSupport implements CommandLi
 	}
 	
 	@Bean
-	public static ThreadPoolTaskExecutor taskExecutor() {
-		final ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-		executor.setCorePoolSize(5);
-		executor.setMaxPoolSize(25);
-		return executor;
+	public static XenonStager sourceToRemoteStager(XenonService xenonService, JobRepository repository, JobService jobService) throws XenonException {
+		return new XenonStager(jobService, repository, xenonService.getSourceFileSystem(), xenonService.getRemoteFileSystem(), xenonService);
+	}
+	
+	@Bean
+	public static XenonStager remoteToTargetStager(XenonService xenonService, JobRepository repository, JobService jobService) throws XenonException {
+		return new XenonStager(jobService, repository, xenonService.getTargetFileSystem(), xenonService.getRemoteFileSystem(), xenonService);
 	}
 	
 	@Override
@@ -81,6 +102,10 @@ public class Application extends WebMvcConfigurationSupport implements CommandLi
 	
 	@Override
 	public void onApplicationEvent(EmbeddedServletContainerInitializedEvent event) {
+		// Running, waiting and finished jobs should be automatically picked up by the
+		// XenonWaitingTask
+		taskScheduler.scheduleAtFixedRate(new XenonMonitoringTask(xenonService, sourceToRemoteStager, remoteToTargetStager), 3000);
+
     	int port = event.getEmbeddedServletContainer().getPort();
 		logger.info("Server running at: http://" + bindAdress + ":" + port);
 	}

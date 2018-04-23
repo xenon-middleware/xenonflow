@@ -3,7 +3,6 @@ package nl.esciencecenter.computeservice.rest.service;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
@@ -12,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -26,10 +24,7 @@ import nl.esciencecenter.computeservice.rest.model.JobDescription;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
 import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
-import nl.esciencecenter.computeservice.rest.service.tasks.CwlStageInTask;
-import nl.esciencecenter.computeservice.rest.service.tasks.CwlStageOutTask;
 import nl.esciencecenter.computeservice.rest.service.tasks.DeleteJobTask;
-import nl.esciencecenter.computeservice.rest.service.tasks.XenonMonitoringTask;
 import nl.esciencecenter.computeservice.utils.LoggingUtils;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
@@ -53,19 +48,15 @@ public class XenonService {
 	private JobService jobService;
 	
 	private ThreadPoolTaskScheduler taskScheduler = null;
-	private ThreadPoolTaskExecutor executor = null;
 	private ComputeServiceConfig config = null;
 	private Scheduler scheduler = null;
 	private FileSystem remoteFileSystem = null;
 	private FileSystem sourceFileSystem = null;
 	private FileSystem targetFileSystem = null;
 
-	public XenonService(ThreadPoolTaskScheduler taskScheduler, ThreadPoolTaskExecutor executor) throws IOException {
+	public XenonService(ThreadPoolTaskScheduler taskScheduler) throws IOException {
 		this.taskScheduler = taskScheduler;
-		this.executor = executor;
 		// TODO: Watch the config file for changes?
-		
-		logger.debug("Got executor with pool size: " + this.executor.getCorePoolSize());
 	}
 
 	public void close() {
@@ -106,40 +97,6 @@ public class XenonService {
 		
 		// Make sure everything is running.
 		checkSchedulerStates();
-
-		// Restart staging in for jobs that were staging in.
-		List<Job> submitted = repository.findAllByInternalState(JobState.STAGING_IN);
-		for (Job job : submitted) {
-			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
-			// We re-request the job here because it may have changed while we were looping.
-			job = repository.findOne(job.getId());
-			jobLogger.info("Starting new job runner for job: " + job);
-			try {
-				executor.execute(new CwlStageInTask(job.getId(), this));
-			} catch (XenonException e) {
-				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-			}
-		}
-		
-	
-		// Restart stage out for jobs that were staging out
-		List<Job> staging_out = repository.findAllByInternalState(JobState.STAGING_OUT);
-		for (Job job : staging_out) {
-			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
-			// We re-request the job here because it may have changed while we were looping.
-			job = repository.findOne(job.getId());
-			try {
-				executor.execute(new CwlStageOutTask(job.getId(), (int) job.getAdditionalInfo().get("xenon.exitcode"), this));
-			} catch (XenonException e) {
-				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-			}
-		}
-		
-		// Running, waiting and finished jobs should be automatically picked up by the
-		// XenonWaitingTask
-		taskScheduler.scheduleAtFixedRate(new XenonMonitoringTask(this), 1500);
 	}
 
 	public ThreadPoolTaskScheduler getTaskScheduler() {
@@ -148,14 +105,6 @@ public class XenonService {
 
 	public void setTaskScheduler(ThreadPoolTaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
-	}
-	
-	public ThreadPoolTaskExecutor getExecutor() {
-		return executor;
-	}
-
-	public void setExecutor(ThreadPoolTaskExecutor executor) {
-		this.executor = executor;
 	}
 
 	public JobService getJobService() {
@@ -166,7 +115,7 @@ public class XenonService {
 		this.jobService = jobService;
 	}
 	
-	private void checkSchedulerStates() throws XenonException {
+	public void checkSchedulerStates() throws XenonException {
 		ComputeResource resource = getConfig().defaultComputeResource();
 		AdaptorConfig schedulerConfig = resource.getSchedulerConfig();
 		AdaptorConfig fileSystemConfig = resource.getFilesystemConfig();
@@ -362,7 +311,10 @@ public class XenonService {
 				job = cancelJob(jobId);
 			}
 			
-			executor.execute(new DeleteJobTask(jobId, this));
+			// this used to be run in a seperate thread
+			// so keeping the runnable part if we ever go back to that
+			DeleteJobTask deleteTask = new DeleteJobTask(jobId, this);
+			deleteTask.run();
 		}
 		
 		return job;

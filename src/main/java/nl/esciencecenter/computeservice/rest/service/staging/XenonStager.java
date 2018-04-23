@@ -3,7 +3,15 @@ package nl.esciencecenter.computeservice.rest.service.staging;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.util.AbstractMap;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Vector;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -21,6 +29,7 @@ import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.model.WorkflowBinding;
 import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
+import nl.esciencecenter.computeservice.rest.service.tasks.XenonMonitoringTask;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.CopyMode;
 import nl.esciencecenter.xenon.filesystems.CopyStatus;
@@ -28,11 +37,34 @@ import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 
 public class XenonStager {
+	private static final Logger logger = LoggerFactory.getLogger(XenonMonitoringTask.class);
+
 	private FileSystem localFileSystem;
 	private FileSystem remoteFileSystem;
 	private JobService jobService;
 	private JobRepository repository;
 	private XenonService service;
+	private HashMap<String, StagingJob> copyMap;
+	
+	private static class StagingJob {
+		private final StagingManifest manifest;
+		private final List<String> copyIds;
+		
+		public StagingJob(StagingManifest manifest, List<String> copyIds) {
+			super();
+			this.manifest = manifest;
+			this.copyIds = copyIds;
+		}
+	}
+	
+	private static final class StagingOutJob extends StagingJob {
+		private final int exitcode;
+		
+		public StagingOutJob(int exitcode, StagingManifest manifest, List<String> copyIds) {
+			super(manifest, copyIds);
+			this.exitcode = exitcode;
+		}
+	}
 
 	public XenonStager(JobService jobService, JobRepository repository, FileSystem localFileSystem, FileSystem remoteFileSystem, XenonService service) {
 		this.localFileSystem = localFileSystem;
@@ -40,6 +72,7 @@ public class XenonStager {
 		this.jobService = jobService;
 		this.repository = repository;
 		this.service = service;
+		this.copyMap = new LinkedHashMap<String, StagingJob>();		
 	}
 
 	/**
@@ -55,7 +88,7 @@ public class XenonStager {
 	 * @throws XenonException 
 	 * @throws StatePreconditionException 
 	 */
-	public void doStaging(StagingManifest manifest, FileSystem sourceFileSystem, FileSystem targetFileSystem) throws XenonException, StatePreconditionException {
+	public List<String> doStaging(StagingManifest manifest, FileSystem sourceFileSystem, FileSystem targetFileSystem) throws XenonException, StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 
 		// Make sure the target directory exists
@@ -67,6 +100,7 @@ public class XenonStager {
 		
 		Path sourceDirectory = sourceFileSystem.getWorkingDirectory().toAbsolutePath();
 
+		List<String> stagingIds = new LinkedList<String>();
 		// Copy all the files there
 		for (StagingObject stageObject : manifest) {
 			if (stageObject instanceof FileStagingObject) {
@@ -80,7 +114,9 @@ public class XenonStager {
 				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
 				String copyId = sourceFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
 						false);
-				waitForCopy(copyId, sourceFileSystem, manifest, stageObject);
+				stageObject.setCopyId(copyId);
+				stagingIds.add(copyId);
+//				waitForCopy(copyId, sourceFileSystem, manifest, stageObject);
 			} else if (stageObject instanceof StringToFileStagingObject) {
 				StringToFileStagingObject object = (StringToFileStagingObject) stageObject;
 				Path targetPath = targetDirectory.resolve(object.getTargetPath());
@@ -106,31 +142,112 @@ public class XenonStager {
 				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
 				String copyId = sourceFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
 						true);
-				waitForCopy(copyId, sourceFileSystem, manifest, stageObject);
+				stageObject.setCopyId(copyId);
+				stagingIds.add(copyId);
+//				waitForCopy(copyId, sourceFileSystem, manifest, stageObject);
+			}
+		}
+		
+		return stagingIds;
+	}
+
+//	private void waitForCopy(String copyId, FileSystem sourceFileSystem, StagingManifest manifest, StagingObject stageObject) throws XenonException, StatePreconditionException {
+//		CopyStatus s = sourceFileSystem.waitUntilDone(copyId, 1000);
+//		Job job = repository.findOne(manifest.getJobId());
+//		while (!job.getInternalState().isCancellationActive() && !s.isDone()) {
+//			job = repository.findOne(manifest.getJobId());
+//			s = sourceFileSystem.waitUntilDone(copyId, 1000);
+//		}
+//
+//		if (job.getInternalState().isCancellationActive()) {
+//			jobService.setJobState(job.getId(), job.getInternalState(), JobState.CANCELLED);
+//			return;
+//		}
+//
+//		if (s.hasException()) {
+//			throw s.getException();
+//		}
+//		
+//		stageObject.setBytesCopied(s.bytesCopied());
+//	}
+	
+	public void updateStaging() {
+		for(Iterator<Map.Entry<String,StagingJob>>stagingEntries=copyMap.entrySet().iterator();stagingEntries.hasNext();) {
+			Map.Entry<String,StagingJob> entry = stagingEntries.next();
+			String jobId = entry.getKey();
+			StagingJob stagingJob = entry.getValue();
+			
+			StagingManifest manifest = stagingJob.manifest;
+			List<String> copyIds = stagingJob.copyIds;
+			Job job = repository.findOne(jobId);
+			Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);	
+			FileSystem fileSystem = localFileSystem;
+			if (stagingJob instanceof StagingOutJob) {
+				fileSystem = remoteFileSystem;
+			}
+			
+			try {
+				// Check if the job has been cancelled
+				if (job.getInternalState().isCancellationActive()) {
+					for (String id: copyIds) {
+						fileSystem.cancel(id);
+					}
+					stagingEntries.remove();
+				}
+				
+				// Check the status of the copies of the job
+				for (Iterator<String> iterator=copyIds.iterator(); iterator.hasNext();) {
+					String id = iterator.next();
+					CopyStatus s = fileSystem.getStatus(id);
+					
+					if (s.isDone()) {
+						StagingObject stageObject = manifest.getByCopyid(id);
+						stageObject.setBytesCopied(s.bytesCopied());
+						iterator.remove();
+					} else if (s.hasException()) {
+						jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", s.getException());
+						iterator.remove();
+					}
+				}
+				
+				// All statuses have been updated, if there are no more copyIds were done with staging
+				if (copyIds.isEmpty()) {
+					// No longer staging files for this job
+					stagingEntries.remove();
+					if (job.getInternalState() == JobState.STAGING_IN) {
+						jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_READY);
+						jobLogger.info("StageIn complete.");
+					} else if (job.getInternalState() == JobState.STAGING_OUT){
+						if (manifest.size() > 0) {
+				    		WorkflowBinding files = postStageout(manifest);
+				    		jobService.setAdditionalInfo(jobId, "files", files);
+				    	} else {
+				    		jobLogger.warn("There are no files to stage.");
+				    	}
+				    	
+				        jobLogger.info("StageOut complete.");
+				        
+				        int exitcode = ((StagingOutJob)stagingJob).exitcode;
+				        // Re-get the job from the database here, because it may have changed in state
+				        job = repository.findOne(jobId);
+				        if (!job.getInternalState().isFinal()) {
+				        	if (exitcode == 0) {
+				        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
+				        	} else {
+				        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
+				        	}
+				        }
+					}
+				}
+			} catch (XenonException | StatePreconditionException | IOException e) {
+				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+				jobService.setErrorAndState(job.getId(), e, job.getInternalState(), JobState.SYSTEM_ERROR);
+				copyMap.remove(jobId);
 			}
 		}
 	}
-
-	private void waitForCopy(String copyId, FileSystem sourceFileSystem, StagingManifest manifest, StagingObject stageObject) throws XenonException, StatePreconditionException {
-		CopyStatus s = sourceFileSystem.waitUntilDone(copyId, 1000);
-		Job job = repository.findOne(manifest.getJobId());
-		while (!job.getInternalState().isCancellationActive() && !s.isDone()) {
-			job = repository.findOne(manifest.getJobId());
-			s = sourceFileSystem.waitUntilDone(copyId, 1000);
-		}
-
-		if (job.getInternalState().isCancellationActive()) {
-			jobService.setJobState(job.getId(), job.getInternalState(), JobState.CANCELLED);
-			return;
-		}
-
-		if (s.hasException()) {
-			throw s.getException();
-		}
-		
-		stageObject.setBytesCopied(s.bytesCopied());
-	}
-
+	
 	/**
 	 * Do the staging from local to remote
 	 * 
@@ -139,8 +256,13 @@ public class XenonStager {
 	 * @throws StatePreconditionException 
 	 * @throws XenonException 
 	 */
-	public void stageIn(StagingManifest manifest) throws XenonException, StatePreconditionException {
-		doStaging(manifest, localFileSystem, remoteFileSystem);
+	public boolean stageIn(StagingManifest manifest) throws XenonException, StatePreconditionException {	
+		List<String> stagingIds = doStaging(manifest, localFileSystem, remoteFileSystem);
+		
+		StagingJob stagingJob = new StagingJob(manifest, stagingIds);
+		copyMap.put(manifest.getJobId(), stagingJob);
+		
+		return true;
 	}
 
 	/**
@@ -157,16 +279,19 @@ public class XenonStager {
 	 * @throws XenonException 
 	 * @throws IOException 
 	 */
-	public WorkflowBinding stageOut(StagingManifest manifest) throws StatePreconditionException, IOException, XenonException {
-		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
-
+	public boolean stageOut(StagingManifest manifest, int exitcode) throws StatePreconditionException, IOException, XenonException {
 		try {
-			doStaging(manifest, remoteFileSystem, localFileSystem);
+			List<String> stagingIds = doStaging(manifest, remoteFileSystem, localFileSystem);
+			StagingOutJob stagingJob = new StagingOutJob(exitcode, manifest, stagingIds);
+			copyMap.put(manifest.getJobId(), stagingJob);
 		} catch (XenonException e) {
 			jobService.setErrorAndState(manifest.getJobId(), e, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
-			return null;
 		}
-
+		return true;
+	}
+	
+	public WorkflowBinding postStageout(StagingManifest manifest) throws IOException, XenonException {
+		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 		Job job = repository.findOne(manifest.getJobId());
 		WorkflowBinding binding = job.getOutput();
 		for (StagingObject stageObject : manifest) {
@@ -231,5 +356,10 @@ public class XenonStager {
 		}
 		return binding;
 		// jobService.setOutputBinding(manifest.getJobId(), binding);
+	}
+
+	public void setFileSystems(FileSystem localFileSystem, FileSystem remoteFileSystem) {
+		this.localFileSystem = localFileSystem;
+		this.remoteFileSystem = remoteFileSystem;
 	}
 }

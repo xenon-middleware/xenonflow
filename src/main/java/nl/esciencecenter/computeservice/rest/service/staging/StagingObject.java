@@ -6,4 +6,6 @@ public interface StagingObject {
 	public long getBytesCopied();
 	
 	public String toString();
+	public void setCopyId(String copyId);
+	public String getCopyId();
 }

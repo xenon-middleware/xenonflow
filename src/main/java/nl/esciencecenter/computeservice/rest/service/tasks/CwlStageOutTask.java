@@ -11,6 +11,7 @@ import org.commonwl.cwl.OutputParameter;
 import org.commonwl.cwl.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -30,6 +31,7 @@ import nl.esciencecenter.computeservice.rest.service.staging.FileStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
+import nl.esciencecenter.xenon.adaptors.NotConnectedException;
 import nl.esciencecenter.xenon.filesystems.Path;
 
 public class CwlStageOutTask implements Runnable {
@@ -41,12 +43,15 @@ public class CwlStageOutTask implements Runnable {
 	private JobRepository repository;
 	private Integer exitcode;
 	private JobService jobService;
+	private XenonStager stager;
 
-	public CwlStageOutTask(String jobId, Integer exitcode, XenonService service) throws XenonException {
+//	public CwlStageOutTask(String jobId, Integer exitcode, XenonService service) throws XenonException {
+	public CwlStageOutTask(String jobId, Integer exitcode, XenonStager stager, XenonService service) throws XenonException {
 		this.jobId = jobId;
 		this.service = service;
 		this.repository = service.getRepository();
 		this.jobService = service.getJobService();
+		this.stager = stager;
 		this.exitcode = exitcode;
 	}
 	
@@ -68,7 +73,7 @@ public class CwlStageOutTask implements Runnable {
 				throw new StatePreconditionException("State is: " + job.getInternalState() + " but expected either FINISHED or STAGING_OUT");
 			}
 			
-			XenonStager stager = new XenonStager(jobService, repository, service.getTargetFileSystem(), service.getRemoteFileSystem(), service);
+//			XenonStager stager = new XenonStager(jobService, repository, service.getTargetFileSystem(), service.getRemoteFileSystem(), service);
 	        // Staging back output
 	        StagingManifest manifest = new StagingManifest(jobId, new Path(job.getId() + "/"));
 	        manifest.setBaseurl((String) job.getAdditionalInfo().get("baseurl"));
@@ -113,25 +118,22 @@ public class CwlStageOutTask implements Runnable {
 		        }
 	    	}
 
-	    	if (manifest.size() > 0) {
-	    		WorkflowBinding files = stager.stageOut(manifest);
-	    		jobService.setAdditionalInfo(jobId, "files", files);
-	    	} else {
-	    		jobLogger.warn("There are no files to stage.");
-	    	}
-	    	
-	        jobLogger.info("StageOut complete.");
-	        
-	        
-	        // Re-get the job from the database here, because it may have changed in state
-	        job = repository.findOne(jobId);
-	        if (!job.getInternalState().isFinal()) {
-	        	if (exitcode == 0) {
-	        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
-	        	} else {
-	        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
-	        	}
-	        }
+	    	int tries = 0;
+			boolean success = false;
+			while(!success && tries < 3) {
+				try {
+					success = stager.stageOut(manifest, exitcode);
+					tries++;
+				} catch (NotConnectedException e) {
+					if (tries <=3 ) {
+						logger.warn("Try: " + tries + ". Exception during stage out, forcing new filesystem for next attempt");
+						stager.setFileSystems(service.getSourceFileSystem(), service.getRemoteFileSystem());
+					} else {
+						logger.error("Failed to submit after " + tries + " tries, giving up");
+					}
+					continue;
+				}
+			}
 		} catch (StatePreconditionException | IOException | XenonException e){
 			jobLogger.error("Error during stage out of " + job.getName() + "(" +job.getId() +")", e);
 			logger.error("Error during stage out of " + job.getName() + "(" +job.getId() +")", e);
