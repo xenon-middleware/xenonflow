@@ -3,15 +3,12 @@ package nl.esciencecenter.computeservice.rest.service.staging;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Vector;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -172,7 +169,7 @@ public class XenonStager {
 //	}
 	
 	public void updateStaging() {
-		for(Iterator<Map.Entry<String,StagingJob>>stagingEntries=copyMap.entrySet().iterator();stagingEntries.hasNext();) {
+		for(Iterator<Map.Entry<String,StagingJob>> stagingEntries=copyMap.entrySet().iterator(); stagingEntries.hasNext();) {
 			Map.Entry<String,StagingJob> entry = stagingEntries.next();
 			String jobId = entry.getKey();
 			StagingJob stagingJob = entry.getValue();
@@ -188,11 +185,12 @@ public class XenonStager {
 			
 			try {
 				// Check if the job has been cancelled
-				if (job.getInternalState().isCancellationActive()) {
+				if (job.getInternalState().isCancellationActive() || job.getInternalState().isDeletionActive()) {
 					for (String id: copyIds) {
 						fileSystem.cancel(id);
 					}
 					stagingEntries.remove();
+					continue;
 				}
 				
 				// Check the status of the copies of the job
@@ -217,6 +215,7 @@ public class XenonStager {
 					if (job.getInternalState() == JobState.STAGING_IN) {
 						jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_READY);
 						jobLogger.info("StageIn complete.");
+						logger.info(job.getId()+": staging in complete.");
 					} else if (job.getInternalState() == JobState.STAGING_OUT){
 						if (manifest.size() > 0) {
 				    		WorkflowBinding files = postStageout(manifest);
@@ -226,6 +225,7 @@ public class XenonStager {
 				    	}
 				    	
 				        jobLogger.info("StageOut complete.");
+				        logger.info(job.getId()+": staging out complete.");
 				        
 				        int exitcode = ((StagingOutJob)stagingJob).exitcode;
 				        // Re-get the job from the database here, because it may have changed in state
@@ -233,8 +233,10 @@ public class XenonStager {
 				        if (!job.getInternalState().isFinal()) {
 				        	if (exitcode == 0) {
 				        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
+				        		logger.info(job.getId()+": job completed successfully.");
 				        	} else {
 				        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
+				        		logger.info(job.getId()+": job completed with errors, exitcode: " + exitcode);
 				        	}
 				        }
 					}

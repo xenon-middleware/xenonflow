@@ -43,11 +43,11 @@ default: local
 # and uncomment the webdav one.
 sourceFileSystem:
    adaptor: file
-   location: /home/bweel/Software/projects/CWL/xenon-flow/
+   location: /home/bweel/Software/projects/cwl/xenon-flow/
    
 targetFileSystem:
    adaptor: file
-   location: /home/bweel/Software/projects/CWL/xenon-flow/output/
+   location: /home/bweel/Software/projects/cwl/xenon-flow/output/
    hosted: true
 
 #sourceFileSystem:

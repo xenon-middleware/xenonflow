@@ -20,6 +20,7 @@ public class CwlWorkflowTask implements Runnable {
 	private static final Logger logger = LoggerFactory.getLogger(CwlWorkflowTask.class);
 
 	private String jobId;
+	
 	private XenonService service;
 	private JobRepository repository;
 	private JobService jobService;

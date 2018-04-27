@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <property name="LOG_PATH" value="log"/>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+  
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+    <file>${LOG_PATH}/xenon-flow.log</file>
+  </appender>
+  
+  <appender name="REQUESTS" class="ch.qos.logback.core.FileAppender">
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+    <file>${LOG_PATH}/request.log</file>
+  </appender>
+  
+  <logger name="requests" level="INFO">
+  	<appender-ref ref="REQUESTS"/>
+  </logger>
+
+  <logger name="nl.esciencecenter" additivity="false" level="INFO">
+    <appender-ref ref="FILE"/>
+    <appender-ref ref="CONSOLE"/>
+  </logger>
+
+  <logger name="org.springframework" level="WARN">
+    <appender-ref ref="FILE"/>
+  </logger>
+
+  <logger name="org.hibernate" level="WARN">
+    <appender-ref ref="FILE"/>
+  </logger>
+
+  <logger name="org.eclipse" level="WARN">
+    <appender-ref ref="FILE"/>
+  </logger>
+
+  <logger name="jndi" level="WARN">
+    <appender-ref ref="FILE"/>
+  </logger>
+
+  <logger name="org.apache.http.wire" level="WARN">
+      <appender-ref ref="FILE"/>
+  </logger>
+
+  <root level="WARN">
+      <appender-ref ref="FILE"/>
+      <appender-ref ref="CONSOLE"/>
+  </root>
+
+</configuration>

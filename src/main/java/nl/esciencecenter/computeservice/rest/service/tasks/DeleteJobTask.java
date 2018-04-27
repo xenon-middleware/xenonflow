@@ -2,50 +2,62 @@ package nl.esciencecenter.computeservice.rest.service.tasks;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
 
 import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
+import nl.esciencecenter.computeservice.rest.model.JobState;
+import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
+import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
+import nl.esciencecenter.xenon.schedulers.JobStatus;
+import nl.esciencecenter.xenon.schedulers.Scheduler;
 
-public class DeleteJobTask implements Runnable {
+@Component
+public class DeleteJobTask {
 	private static final Logger logger = LoggerFactory.getLogger(DeleteJobTask.class);
 
-	private String jobId;
-	private XenonService service;
+	@Autowired
+	private XenonService xenonService;
+	
+	@Autowired
 	private JobRepository repository;
 
-	public DeleteJobTask(String jobId, XenonService service) throws XenonException {
-		this.jobId = jobId;
-		this.service = service;
-		this.repository = service.getRepository();
-	}
-
-	@Override
-	public void run() {
+	public void deleteJob(String jobId) {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
 		Job job = repository.findOne(jobId);
 		
 		if (job != null) {
-			if (!job.getInternalState().isFinal()) {
-				jobLogger.info("Waiting for job to be in a final state (probably cancelled)");
-				try {
-					while (!job.getInternalState().isFinal()) {
-						Thread.sleep(1000);
-						job = repository.findOne(jobId);
+			// Once we are in this function the staging has already been cancelled because of
+			// the order of execution in XenonMonitoringTask
+			// It can have any state, but we ignore it all and just cancel and delete everything
+			// afterwards the job will no longer exist.
+			try {				
+				// cancel the job if it's running.
+				String xenonJobId = job.getXenonId();
+				if (xenonJobId != null && !xenonJobId.isEmpty()) {
+					Scheduler scheduler = xenonService.getScheduler();
+					JobStatus status = scheduler.getJobStatus(xenonJobId);
+
+					if (status.isRunning()) {
+						status = scheduler.cancelJob(job.getXenonId());
+						logger.debug("Cancelled job: " + job.getId() + " new status: " + status);
 					}
-				} catch (InterruptedException e) {
-					jobLogger.info("Exception while deleting remote directory:", e);
-					logger.error("Exception while deleting remote directory:", e);
 				}
+			} catch (XenonException e) {
+				jobLogger.info("Exception while cancelling job:", e);
+				logger.error("Exception while concelling job:", e);
 			}
 			
 			try {
 				// delete remote directory
 				Path remoteDirectory = job.getSandboxDirectory();
-				FileSystem remoteFilesystem = service.getRemoteFileSystem();
+				FileSystem remoteFilesystem = xenonService.getRemoteFileSystem();
 				
 				if (remoteFilesystem.exists(remoteDirectory)) {
 					jobLogger.info("Deleting remote directory: " + remoteDirectory);
@@ -60,7 +72,7 @@ public class DeleteJobTask implements Runnable {
 			
 			try {
 				// delete local output directory if it exists
-				FileSystem localFilesystem = service.getSourceFileSystem();
+				FileSystem localFilesystem = xenonService.getSourceFileSystem();
 				Path localDirectory = localFilesystem.getWorkingDirectory().resolve("out/" + job.getId() + "/").toAbsolutePath();
 				
 				if (localFilesystem.exists(localDirectory)) {
@@ -70,15 +82,14 @@ public class DeleteJobTask implements Runnable {
 					jobLogger.info("Local directory: " + localFilesystem + " does not exist, skipping.");
 				}
 			} catch (XenonException e) {
-				jobLogger.info("Exception while deleting remote directory:", e);
-				logger.error("Exception while deleting remote directory:", e);
+				jobLogger.info("Exception while deleting local directory:", e);
+				logger.error("Exception while deleting local directory:", e);
 			}
 
 			// delete the job
 			jobLogger.info("Deleting job " + jobId);
 			logger.info("Deleting job " + jobId);
-			repository.delete(jobId);
-			
+			repository.delete(jobId);	
 		}
 	}
 

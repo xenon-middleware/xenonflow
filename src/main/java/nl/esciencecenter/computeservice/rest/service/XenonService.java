@@ -2,8 +2,6 @@ package nl.esciencecenter.computeservice.rest.service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
-import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
@@ -11,21 +9,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import nl.esciencecenter.computeservice.config.AdaptorConfig;
 import nl.esciencecenter.computeservice.config.ComputeResource;
 import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
 import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
-import nl.esciencecenter.computeservice.rest.model.Job;
-import nl.esciencecenter.computeservice.rest.model.JobDescription;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
-import nl.esciencecenter.computeservice.rest.model.JobState;
-import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
-import nl.esciencecenter.computeservice.rest.service.tasks.DeleteJobTask;
-import nl.esciencecenter.computeservice.utils.LoggingUtils;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
@@ -47,15 +37,13 @@ public class XenonService {
 	@Autowired
 	private JobService jobService;
 	
-	private ThreadPoolTaskScheduler taskScheduler = null;
 	private ComputeServiceConfig config = null;
 	private Scheduler scheduler = null;
 	private FileSystem remoteFileSystem = null;
 	private FileSystem sourceFileSystem = null;
 	private FileSystem targetFileSystem = null;
 
-	public XenonService(ThreadPoolTaskScheduler taskScheduler) throws IOException {
-		this.taskScheduler = taskScheduler;
+	public XenonService() throws IOException {
 		// TODO: Watch the config file for changes?
 	}
 
@@ -97,14 +85,6 @@ public class XenonService {
 		
 		// Make sure everything is running.
 		checkSchedulerStates();
-	}
-
-	public ThreadPoolTaskScheduler getTaskScheduler() {
-		return taskScheduler;
-	}
-
-	public void setTaskScheduler(ThreadPoolTaskScheduler taskScheduler) {
-		this.taskScheduler = taskScheduler;
 	}
 
 	public JobService getJobService() {
@@ -194,7 +174,7 @@ public class XenonService {
 		}
 		return sourceFileSystem;
 	}
-	
+
 	public FileSystem getTargetFileSystem() throws XenonException {
 		if (targetFileSystem == null || !targetFileSystem.isOpen()) {
 			// Initialize local filesystem
@@ -231,92 +211,5 @@ public class XenonService {
 
 	public String getJobLogName(String name) {
 		return logBasePath.resolve(name + ".log").toString();
-	}
-
-	public Job submitJob(JobDescription body) throws StatePreconditionException, XenonException {
-		String uuid = UUID.randomUUID().toString();
-
-		Logger jobLogger = LoggerFactory.getLogger("jobs." + uuid);
-		LoggingUtils.addFileAppenderToLogger("jobs." + uuid, getJobLogName("jobs." + uuid));
-
-		Job job = new Job();
-		job.setId(uuid);
-		job.setInput(body.getInput());
-		job.setName(body.getName());
-		job.setInternalState(JobState.SUBMITTED);
-		job.setWorkflow(body.getWorkflow());
-
-		ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
-		builder.pathSegment(job.getId());
-		job.setURI(builder.build().toString());
-
-		builder.pathSegment("log");
-		job.setLog(builder.build().toString());
-		
-		ServletUriComponentsBuilder b = ServletUriComponentsBuilder.fromCurrentRequestUri();
-		b.replacePath("/");
-		job.getAdditionalInfo().put("baseurl", b.build().toString());
-		job.getAdditionalInfo().put("createdAt", new Date());
-
-		job = repository.save(job);
-
-		jobLogger.info("Submitted Job: " + job);
-		
-//		logger.info("Currently executing: " + executor.getActiveCount() + " threads.");
-		
-		//executor.execute(new CwlStageInTask(job.getId(), this));
-
-		return job;
-	}
-	
-	public Job cancelJob(String jobId) throws StatePreconditionException {
-		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
-		
-		jobLogger.info("Trying to cancel job " + jobId);
-		
-		Job job = repository.findOne(jobId);
-		if (job != null && !job.getInternalState().isFinal()) {
-			switch (job.getInternalState()) {
-				case STAGING_IN:
-					jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_IN_CR);
-					break;
-				case WAITING:
-					jobService.setJobState(jobId, JobState.WAITING, JobState.WAITING_CR);
-					break;
-				case RUNNING:
-					jobService.setJobState(jobId, JobState.RUNNING, JobState.RUNNING_CR);
-					break;
-				case STAGING_OUT:
-					jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.STAGING_OUT_CR);
-					break;
-				default:
-					if (!job.getInternalState().isFinal()) {
-						jobService.setJobState(jobId, job.getInternalState(), JobState.CANCELLED);
-					}
-					break;
-			}
-		}
-		
-		return job;
-	}
-
-	public Job deleteJob(String jobId) throws XenonException, StatePreconditionException {
-		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
-		
-		jobLogger.info("Going to delete job " + jobId);
-		
-		Job job = repository.findOne(jobId);
-		if (job != null) {
-			if (!job.getInternalState().isFinal()) {
-				job = cancelJob(jobId);
-			}
-			
-			// this used to be run in a seperate thread
-			// so keeping the runnable part if we ever go back to that
-			DeleteJobTask deleteTask = new DeleteJobTask(jobId, this);
-			deleteTask.run();
-		}
-		
-		return job;
 	}
 }

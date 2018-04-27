@@ -2,8 +2,6 @@ package nl.esciencecenter.computeservice.rest.api;
 
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +16,6 @@ import nl.esciencecenter.computeservice.rest.model.Status;
 @CrossOrigin
 @Controller
 public class StatusApiController implements StatusApi {
-	private static final Logger logger = LoggerFactory.getLogger(StatusApiController.class);
-
 	@Autowired
 	private JobRepository repository;
 	

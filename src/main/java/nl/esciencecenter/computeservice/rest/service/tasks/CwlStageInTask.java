@@ -23,17 +23,18 @@ public class CwlStageInTask implements Runnable {
 	private static final Logger logger = LoggerFactory.getLogger(CwlStageInTask.class);
 	
 	private String jobId;
-	private XenonService service;
+	
+	private XenonService service;	
 	private JobRepository repository;
 	private JobService jobService;
-	private XenonStager stager;
+	private XenonStager sourceToRemoteStager;
 
-	public CwlStageInTask(String jobId, XenonStager stager, XenonService service) throws XenonException {
+	public CwlStageInTask(String jobId, XenonStager sourceToRemoteStager, XenonService service) throws XenonException {
 		this.jobId = jobId;
 		this.service = service;
+		this.sourceToRemoteStager = sourceToRemoteStager;
 		this.repository = service.getRepository();
 		this.jobService = service.getJobService();
-		this.stager = stager;
 	}
 	
 	@Override
@@ -60,12 +61,12 @@ public class CwlStageInTask implements Runnable {
 			boolean success = false;
 			while(!success && tries < 3) {
 				try {
-					success = stager.stageIn(manifest);
+					success = sourceToRemoteStager.stageIn(manifest);
 					tries++;
 				} catch (NotConnectedException e) {
 					if (tries <=3 ) {
 						logger.warn("Try: " + tries + ". Exception during stage in, forcing new filesystem for next attempt");
-						stager.setFileSystems(service.getSourceFileSystem(), service.getRemoteFileSystem());
+						sourceToRemoteStager.setFileSystems(service.getSourceFileSystem(), service.getRemoteFileSystem());
 					} else {
 						logger.error("Failed to submit after " + tries + " tries, giving up");
 					}

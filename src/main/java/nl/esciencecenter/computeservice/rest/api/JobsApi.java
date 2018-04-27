@@ -2,6 +2,8 @@ package nl.esciencecenter.computeservice.rest.api;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -65,7 +67,7 @@ public interface JobsApi {
 	@ApiOperation(value = "list of jobs", notes = "get a list of all jobs, running, cancelled, or otherwise.", response = Job.class, responseContainer = "List", tags = {})
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "list of jobs", response = Job.class) })
 	@RequestMapping(value = "/jobs", produces = { "application/json" }, method = RequestMethod.GET)
-	default ResponseEntity<List<Job>> getJobs() {
+	default ResponseEntity<List<Job>> getJobs(HttpServletRequest request) {
 		// do some magic!
 		return new ResponseEntity<List<Job>>(HttpStatus.OK);
 	}

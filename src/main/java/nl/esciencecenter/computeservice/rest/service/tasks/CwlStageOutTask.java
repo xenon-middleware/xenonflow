@@ -11,7 +11,6 @@ import org.commonwl.cwl.OutputParameter;
 import org.commonwl.cwl.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -39,19 +38,19 @@ public class CwlStageOutTask implements Runnable {
 	private static final Logger logger = LoggerFactory.getLogger(CwlStageOutTask.class);
 	
 	private String jobId;
+	private Integer exitcode;
 	private XenonService service;
 	private JobRepository repository;
-	private Integer exitcode;
 	private JobService jobService;
-	private XenonStager stager;
+	private XenonStager remoteToTargetStager;
 
 //	public CwlStageOutTask(String jobId, Integer exitcode, XenonService service) throws XenonException {
-	public CwlStageOutTask(String jobId, Integer exitcode, XenonStager stager, XenonService service) throws XenonException {
+	public CwlStageOutTask(String jobId, Integer exitcode, XenonStager remoteToTargetStager, XenonService service) throws XenonException {
 		this.jobId = jobId;
 		this.service = service;
+		this.remoteToTargetStager = remoteToTargetStager;
 		this.repository = service.getRepository();
 		this.jobService = service.getJobService();
-		this.stager = stager;
 		this.exitcode = exitcode;
 	}
 	
@@ -122,12 +121,12 @@ public class CwlStageOutTask implements Runnable {
 			boolean success = false;
 			while(!success && tries < 3) {
 				try {
-					success = stager.stageOut(manifest, exitcode);
+					success = remoteToTargetStager.stageOut(manifest, exitcode);
 					tries++;
 				} catch (NotConnectedException e) {
 					if (tries <=3 ) {
 						logger.warn("Try: " + tries + ". Exception during stage out, forcing new filesystem for next attempt");
-						stager.setFileSystems(service.getSourceFileSystem(), service.getRemoteFileSystem());
+						remoteToTargetStager.setFileSystems(service.getTargetFileSystem(), service.getRemoteFileSystem());
 					} else {
 						logger.error("Failed to submit after " + tries + " tries, giving up");
 					}

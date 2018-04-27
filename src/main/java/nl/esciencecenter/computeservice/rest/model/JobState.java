@@ -37,6 +37,15 @@ public enum JobState {
 	STAGING_OUT_CR("Staging_Out_Cr"),
 
 	CANCELLED("Cancelled"),
+	
+	// Deletion
+	STAGING_IN_DELR("Staging_In_Delr"),
+
+	WAITING_DELR("Waiting_Delr"),
+
+	RUNNING_DELR("Running_Delr"),
+
+	STAGING_OUT_DELR("Staging_Out_Delr"),
 
 	// Errors
 
@@ -49,6 +58,7 @@ public enum JobState {
 	private String value;
 	private static final ImmutableList<JobState> finalStates;
 	private static final ImmutableList<JobState> cancellationStates;
+	private static final ImmutableList<JobState> deletionStates;
 	private static final ImmutableList<JobState> remoteStates;
 	private static final ImmutableList<JobState> errorStates;
 	private static final ImmutableList<JobState> waitingStates;
@@ -61,6 +71,9 @@ public enum JobState {
 
 		cancellationStates = ImmutableList.of(JobState.STAGING_IN_CR, JobState.WAITING_CR, JobState.RUNNING_CR,
 				JobState.STAGING_OUT_CR);
+		
+		deletionStates = ImmutableList.of(JobState.STAGING_IN_DELR, JobState.WAITING_DELR, JobState.RUNNING_DELR,
+				JobState.STAGING_OUT_DELR);
 
 		remoteStates = ImmutableList.of(JobState.WAITING, JobState.WAITING_CR, JobState.RUNNING, JobState.RUNNING_CR);
 		
@@ -131,6 +144,17 @@ public enum JobState {
 	 */
 	public boolean isCancellationActive() {
 		return cancellationStates.contains(this);
+	}
+	
+	/**
+	 * Return whether the JobState indicates that the job has been marked for
+	 * deletion, but is not deleted yet. These are the _DELR states.
+	 * 
+	 * @return bool: True if a job in this state has been marked for
+	 *         deletion.
+	 */
+	public boolean isDeletionActive() {
+		return deletionStates.contains(this);
 	}
 
 	/**
