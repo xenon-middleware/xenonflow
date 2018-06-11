@@ -39,14 +39,16 @@ public class DeleteJobTask {
 			// afterwards the job will no longer exist.
 			try {				
 				// cancel the job if it's running.
-				String xenonJobId = job.getXenonId();
-				if (xenonJobId != null && !xenonJobId.isEmpty()) {
-					Scheduler scheduler = xenonService.getScheduler();
-					JobStatus status = scheduler.getJobStatus(xenonJobId);
+				if (job.getInternalState().isRemote()) {
+					String xenonJobId = job.getXenonId();
+					if (xenonJobId != null && !xenonJobId.isEmpty()) {
+						Scheduler scheduler = xenonService.getScheduler();
+						JobStatus status = scheduler.getJobStatus(xenonJobId);
 
-					if (status.isRunning()) {
-						status = scheduler.cancelJob(job.getXenonId());
-						logger.debug("Cancelled job: " + job.getId() + " new status: " + status);
+						if (status.isRunning()) {
+							status = scheduler.cancelJob(job.getXenonId());
+							logger.debug("Cancelled job: " + job.getId() + " new status: " + status);
+						}
 					}
 				}
 			} catch (XenonException e) {

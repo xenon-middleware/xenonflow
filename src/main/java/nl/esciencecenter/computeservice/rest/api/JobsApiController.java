@@ -239,7 +239,7 @@ public class JobsApiController implements JobsApi {
 		jobLogger.info("Going to delete job " + jobId);
 		
 		Job job = repository.findOne(jobId);
-		if (job != null && !job.getInternalState().isFinal()) {
+		if (job != null) {
 			switch (job.getInternalState()) {
 				case STAGING_IN:
 					jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_IN_DELR);
