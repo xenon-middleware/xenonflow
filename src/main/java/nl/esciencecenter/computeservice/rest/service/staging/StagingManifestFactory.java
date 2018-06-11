@@ -97,28 +97,16 @@ public class StagingManifestFactory {
     				paramId = parameter.getId();
     			}
     			
-    			if (!jobOrder.containsKey(paramId)) {
-    				throw new CwlException("Error staging files, cannot find: " + paramId + " in the job order.");
-    			}
-    			
-    			// TODO: This can also be File[] or File?
-    			// File[] needs separate logic and File? could be handles nicer
-    			if (parameter.getType().equals("File") || parameter.getType().equals("File?") ||
-    					parameter.getType().equals("Directory") || parameter.getType().equals("Directory?")) {
-    				// This should either work or throw an exception. We can't make this a checked cast
-    				// so suppress the warning
-    				@SuppressWarnings("unchecked")
-					HashMap<String, Object> fileInput = (HashMap<String, Object>) jobOrder.get(paramId);
-
-    				Path localPath = new Path((String) fileInput.get("path"));
-    				Path remotePath = new Path(localPath.getFileNameAsString());
-    				fileInput.put("path", remotePath.toString());
-
-	        		if (parameter.getType().equals("File") || parameter.getType().equals("File?")) {
-        				manifest.add(new FileStagingObject(localPath, remotePath));
-	        		} else if (parameter.getType().equals("Directory") || parameter.getType().equals("Directory?")) {
-        				manifest.add(new DirectoryStagingObject(localPath, remotePath));
-	        		}
+    			if (parameter.getType().equals("File?") || parameter.getType().equals("Directory?")) {
+    				if (jobOrder.containsKey(paramId)) {
+    					addFileOrDirectoryToManifest(manifest, parameter, jobOrder, paramId);
+    				}
+    			} else if (parameter.getType().equals("File") || parameter.getType().equals("Directory")) {
+    				if (!jobOrder.containsKey(paramId)) {
+        				throw new CwlException("Error staging files, cannot find: " + paramId + " in the job order.");
+        			} else {
+        				addFileOrDirectoryToManifest(manifest, parameter, jobOrder, paramId);
+        			}
     			} else if (parameter.getType().equals("File[]") || parameter.getType().equals("Directory[]")) {
     				// TODO: Implement array inputs
     			}
@@ -128,5 +116,22 @@ public class StagingManifestFactory {
     		logger.debug("New job order string: " + newJobOrderString);
     		manifest.add(new StringToFileStagingObject(newJobOrderString, remoteJobOrder));
         }
+	}
+	
+	private static void addFileOrDirectoryToManifest(StagingManifest manifest, InputParameter parameter, HashMap<String, Object> jobOrder, String paramId) {
+		// This should either work or throw an exception. We can't make this a checked cast
+		// so suppress the warning
+		@SuppressWarnings("unchecked")
+		HashMap<String, Object> fileInput = (HashMap<String, Object>) jobOrder.get(paramId);
+		
+		Path localPath = new Path((String) fileInput.get("path"));
+		Path remotePath = new Path(localPath.getFileNameAsString());
+		fileInput.put("path", remotePath.toString());
+
+		if (parameter.getType().equals("File") || parameter.getType().equals("File?")) {
+			manifest.add(new FileStagingObject(localPath, remotePath));
+		} else if (parameter.getType().equals("Directory") || parameter.getType().equals("Directory?")) {
+			manifest.add(new DirectoryStagingObject(localPath, remotePath));
+		}
 	}
 }
