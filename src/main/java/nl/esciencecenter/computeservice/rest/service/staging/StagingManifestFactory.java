@@ -37,6 +37,7 @@ public class StagingManifestFactory {
         
 		// Read in the workflow to get the required inputs
 		Path workflowPath = fileSystemWrapper.getWorkingDirectory().resolve(localWorkflow);
+		Path workflowBasePath = fileSystemWrapper.getWorkingDirectory().relativize(workflowPath.getParent());
 
 		jobLogger.debug("Loading workflow from: " + workflowPath);
 		String extension = FilenameUtils.getExtension(workflowPath.getFileNameAsString());
@@ -47,20 +48,25 @@ public class StagingManifestFactory {
 		}
 		
         manifest.add(new FileStagingObject(localWorkflow, workflowBaseName));
-        addSubWorkflowsToManifest(job, workflow, manifest, jobLogger);
+        addSubWorkflowsToManifest(job, workflow, manifest, workflowBasePath, jobLogger);
         
         addInputToManifest(job, workflow, manifest, jobLogger);
         
         return manifest;
 	}
 	
-	public static void addSubWorkflowsToManifest(Job job, Workflow workflow, StagingManifest manifest, Logger jobLogger) {
+	public static void addSubWorkflowsToManifest(Job job, Workflow workflow, StagingManifest manifest, Path workflowBasePath, Logger jobLogger) {
 		// Recursively go through the workflow and get all the local cwl files
         List<Path> paths = CWLUtils.getLocalWorkflowPaths(workflow);
         for (Path path : paths) {
         	// TODO: The target path may be an absolute path or a weird location
         	// So we should probably update it and update the cwl file as well
-        	manifest.add(new FileStagingObject(path, path.getFileName()));
+        	Path localPath = path;
+        	if (!localPath.isAbsolute()) {
+        		localPath = workflowBasePath.resolve(path);
+        	}
+        	Path remotePath = path;
+        	manifest.add(new FileStagingObject(localPath, remotePath));
         }
 	}
 	
