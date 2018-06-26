@@ -2,6 +2,7 @@ package org.commonwl.cwl.utils;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
@@ -107,6 +108,24 @@ public class CWLUtils {
 			// It's not a URL, so let's assume it's a path
 			// and fail down the line if it's not correct
 			return true;
+		}
+	}
+	
+	/**
+	 * Gets the local path from a file:// uri
+	 * 
+	 * @param uri
+	 *            - String
+	 * @return the path of the uri
+	 * @throws MalformedURLException 
+	 * @throws XenonflowException 
+	 */
+	public static Path getLocalPath(String uri) throws MalformedURLException, XenonflowException {
+		URL url = new URL(uri);
+		if (url.getProtocol().equals("file")) {
+			return new Path(url.getPath());
+		} else {
+			throw new XenonflowException(String.format("%s is not a file url:", uri));
 		}
 	}
 }

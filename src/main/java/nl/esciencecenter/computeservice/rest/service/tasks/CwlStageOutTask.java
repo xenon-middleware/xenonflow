@@ -9,6 +9,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.commonwl.cwl.OutputParameter;
 import org.commonwl.cwl.Workflow;
+import org.commonwl.cwl.utils.CWLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -23,11 +24,13 @@ import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
 import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.model.WorkflowBinding;
+import nl.esciencecenter.computeservice.rest.model.XenonflowException;
 import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.computeservice.rest.service.staging.DirectoryStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.FileStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.StagingManifest;
+import nl.esciencecenter.computeservice.rest.service.staging.StringToFileStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.adaptors.NotConnectedException;
@@ -133,13 +136,13 @@ public class CwlStageOutTask implements Runnable {
 					continue;
 				}
 			}
-		} catch (StatePreconditionException | IOException | XenonException e){
+		} catch (StatePreconditionException | IOException | XenonException | XenonflowException e){
 			jobLogger.error("Error during stage out of " + job.getName() + "(" +job.getId() +")", e);
 			logger.error("Error during stage out of " + job.getName() + "(" +job.getId() +")", e);
 		}
 	}
 
-	private WorkflowBinding addOutputStaging(StagingManifest manifest, Path localWorkflow, String outputContents) throws JsonParseException, JsonMappingException, IOException, XenonException {
+	private WorkflowBinding addOutputStaging(StagingManifest manifest, Path localWorkflow, String outputContents) throws JsonParseException, JsonMappingException, IOException, XenonException, XenonflowException {
 		Path workflowPath = service.getSourceFileSystem().getWorkingDirectory().resolve(localWorkflow);
 		String extension = FilenameUtils.getExtension(workflowPath.getFileNameAsString());
 		Workflow workflow = Workflow.fromInputStream(service.getSourceFileSystem().readFromFile(workflowPath.toAbsolutePath()), extension);
@@ -160,9 +163,26 @@ public class CwlStageOutTask implements Runnable {
 				@SuppressWarnings("unchecked")
 				HashMap<String, Object> fileOutput = (HashMap<String, Object>) outputMap.get(paramId);
 
-				Path remotePath = new Path((String) fileOutput.get("path")).toAbsolutePath();
-				Path localPath = new Path(remotePath.getFileNameAsString());
-				manifest.add(new FileStagingObject(remotePath, localPath));
+				Path remotePath = null;
+				Path localPath = null;
+				if (!fileOutput.containsKey("path") && !fileOutput.containsKey("location") && fileOutput.containsKey("content")) {
+					
+					if (fileOutput.containsKey("basename")) {
+						localPath = new Path((String)fileOutput.get("basename"));
+					} else { 
+						localPath = new Path(paramId+".txt");
+					}
+					
+					manifest.add(new StringToFileStagingObject((String) fileOutput.get("content"), localPath));
+				} else {
+					if (fileOutput.containsKey("path")) {
+						remotePath = new Path((String) fileOutput.get("path")).toAbsolutePath();
+					} else if (fileOutput.containsKey("location") && CWLUtils.isLocalPath((String)fileOutput.get("location"))) {
+						remotePath = CWLUtils.getLocalPath((String)fileOutput.get("location")).toAbsolutePath();
+					}
+					localPath = new Path(remotePath.getFileNameAsString());
+					manifest.add(new FileStagingObject(remotePath, localPath));
+				}
 			
 				String fullPath = manifest.getTargetDirectory().resolve(localPath).toString();
 				fileOutput.put("path", fullPath);
