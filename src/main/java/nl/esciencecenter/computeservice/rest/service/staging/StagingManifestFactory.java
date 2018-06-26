@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.commonwl.cwl.CwlException;
 import org.commonwl.cwl.InputParameter;
 import org.commonwl.cwl.Workflow;
@@ -104,6 +105,7 @@ public class StagingManifestFactory {
     				paramId = parameter.getId();
     			}
     			
+    			// TODO: Support secondaryFiles
     			if (parameter.getType().equals("File?") || parameter.getType().equals("Directory?")) {
     				if (jobOrder.containsKey(paramId)) {
     					addFileOrDirectoryToManifest(manifest, parameter, jobOrder, paramId);
@@ -116,6 +118,7 @@ public class StagingManifestFactory {
         			}
     			} else if (parameter.getType().equals("File[]") || parameter.getType().equals("Directory[]")) {
     				// TODO: Implement array inputs
+    				throw new NotImplementedException("File and Directory arrays are not yet implement (sorry!)");
     			}
         	}
         
