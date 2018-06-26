@@ -107,7 +107,11 @@ public class XenonStager {
 					sourcePath = sourceDirectory.resolve(object.getSourcePath()).toAbsolutePath();
 				}
 				Path targetPath = targetDirectory.resolve(object.getTargetPath());
-
+				Path targetDir = targetPath.getParent();
+				if (!targetFileSystem.exists(targetDir)) {
+					targetFileSystem.createDirectories(targetDir);
+				}
+				
 				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
 				String copyId = sourceFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
 						false);
@@ -117,8 +121,13 @@ public class XenonStager {
 			} else if (stageObject instanceof StringToFileStagingObject) {
 				StringToFileStagingObject object = (StringToFileStagingObject) stageObject;
 				Path targetPath = targetDirectory.resolve(object.getTargetPath());
-				jobLogger.info("Writing string to: " + targetPath);
+				Path targetDir = targetPath.getParent();
+
+				if (!targetFileSystem.exists(targetDir)) {
+					targetFileSystem.createDirectories(targetDir);
+				}
 				
+				jobLogger.info("Writing string to: " + targetPath);
 				String contents = object.getSourceString();
 				
 				jobLogger.debug("Input contents: " + contents);
@@ -135,7 +144,12 @@ public class XenonStager {
 					sourcePath = sourceDirectory.resolve(object.getSourcePath()).toAbsolutePath();
 				}
 				Path targetPath = targetDirectory.resolve(object.getTargetPath());
+				Path targetDir = targetPath.getParent();
 
+				if (!targetFileSystem.exists(targetDir)) {
+					targetFileSystem.createDirectories(targetDir);
+				}
+				
 				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
 				String copyId = sourceFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
 						true);
