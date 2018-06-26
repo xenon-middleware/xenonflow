@@ -26,6 +26,7 @@ import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobState;
 import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.rest.model.WorkflowBinding;
+import nl.esciencecenter.computeservice.rest.model.XenonflowException;
 import nl.esciencecenter.computeservice.rest.service.staging.FileStagingObject;
 import nl.esciencecenter.computeservice.rest.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.rest.service.staging.StagingManifestFactory;
@@ -60,7 +61,7 @@ public class CwlStageInTest {
 	}
 
 	@Test
-	public void createStagingManifestTest() throws JsonMappingException, IOException, StatePreconditionException, CwlException, XenonException {
+	public void createStagingManifestTest() throws JsonMappingException, IOException, StatePreconditionException, CwlException, XenonflowException, XenonException {
 		String uuid = UUID.randomUUID().toString();
 
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + uuid);
@@ -90,7 +91,7 @@ public class CwlStageInTest {
 	}
 	
 	@Test
-	public void createStagingManifestMultiFileTest() throws JsonMappingException, IOException, StatePreconditionException, CwlException, XenonException {
+	public void createStagingManifestMultiFileTest() throws JsonMappingException, IOException, StatePreconditionException, CwlException, XenonflowException, XenonException {
 		String uuid = UUID.randomUUID().toString();
 
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + uuid);

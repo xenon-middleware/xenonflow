@@ -10,6 +10,7 @@ import nl.esciencecenter.computeservice.rest.model.Job;
 import nl.esciencecenter.computeservice.rest.model.JobRepository;
 import nl.esciencecenter.computeservice.rest.model.JobState;
 import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
+import nl.esciencecenter.computeservice.rest.model.XenonflowException;
 import nl.esciencecenter.computeservice.rest.service.JobService;
 import nl.esciencecenter.computeservice.rest.service.XenonService;
 import nl.esciencecenter.computeservice.rest.service.staging.StagingManifest;
@@ -79,7 +80,7 @@ public class CwlStageInTask implements Runnable {
 			jobLogger.error("Error during stage-in: ", e);
 			logger.error("Error during stage-in: ", e);
 			jobService.setErrorAndState(jobId, e, JobState.STAGING_IN, JobState.SYSTEM_ERROR);
-		} catch (XenonException | IOException e) {
+		} catch (XenonException | XenonflowException | IOException e) {
 			jobLogger.error("Error during stage-in: ", e);
 			logger.error("Error during stage-in: ", e);
 			jobService.setErrorAndState(jobId, e, JobState.STAGING_IN, JobState.PERMANENT_FAILURE);
