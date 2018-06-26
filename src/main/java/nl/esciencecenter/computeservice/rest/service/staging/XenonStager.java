@@ -212,12 +212,14 @@ public class XenonStager {
 					String id = iterator.next();
 					CopyStatus s = fileSystem.getStatus(id);
 					
-					if (s.isDone()) {
+					if (s.hasException()) {
+						jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", s.getException());
+						logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", s.getException());
+						jobService.setErrorAndState(job.getId(), s.getException(), job.getInternalState(), JobState.PERMANENT_FAILURE);
+						copyMap.remove(jobId);
+					} else if (s.isDone()) {
 						StagingObject stageObject = manifest.getByCopyid(id);
 						stageObject.setBytesCopied(s.bytesCopied());
-						iterator.remove();
-					} else if (s.hasException()) {
-						jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", s.getException());
 						iterator.remove();
 					}
 				}
