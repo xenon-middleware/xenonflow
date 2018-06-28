@@ -57,8 +57,15 @@ public class WorkflowDeserializer extends JsonDeserializer<Workflow> {
 					} else {
 						HashMap<String, Object> parameter = mapper.readValue(mapper.treeAsTokens(inputNode.getValue()),
 					 		 											 mapper.getTypeFactory().constructType(typeRef));
-					
-						InputParameter i = new InputParameter(inputNode.getKey(), (String)parameter.get("type"));
+						
+						String type = "unknown";
+						try {
+							type = (String)parameter.get("type");
+						} catch(ClassCastException e) {
+							type = "complex";
+						}
+						
+						InputParameter i = new InputParameter(inputNode.getKey(), type);
 						i.putAll(parameter);
 						inputs.add(i);
 					}
@@ -86,7 +93,15 @@ public class WorkflowDeserializer extends JsonDeserializer<Workflow> {
 					} else {
 						HashMap<String, Object> parameter = mapper.readValue(mapper.treeAsTokens(outputNode.getValue()),
 										 							 		 mapper.getTypeFactory().constructType(typeRef));
-						OutputParameter o = new OutputParameter(outputNode.getKey(), (String)parameter.get("type"));
+						
+						String type = "unknown";
+						try {
+							type = (String)parameter.get("type");
+						} catch(ClassCastException e) {
+							type = "complex";
+						}
+						
+						OutputParameter o = new OutputParameter(outputNode.getKey(), type);
 						o.putAll(parameter);
 						outputs.add(o);
 					}
