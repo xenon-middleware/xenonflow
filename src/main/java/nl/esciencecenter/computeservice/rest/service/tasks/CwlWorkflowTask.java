@@ -68,6 +68,10 @@ public class CwlWorkflowTask implements Runnable {
 			description.setArguments(cwlArguments.toArray(new String[cwlArguments.size()]));
 			description.setStdout("stdout.txt");
 			description.setStderr("stderr.txt");
+			
+			int maxTimeMinutes = service.getConfig().defaultComputeResource().getMaxTime();
+			jobLogger.debug("Setting maximum running time to: " + maxTimeMinutes);
+			description.setMaxRuntime(maxTimeMinutes);
 
 			jobLogger.debug("Setting remote working directory to: " + remoteDirectory);
 			description.setWorkingDirectory(remoteDirectory.toString());

@@ -27,6 +27,9 @@ public class ComputeResource {
 
 	@JsonProperty(value="cwlCommand", required=false)
 	private String cwlCommand = "cwltool";
+	
+	@JsonProperty(value="maxTime", required=false)
+	private int maxTime;
 
 	public AdaptorConfig getSchedulerConfig() {
 		return schedulerConfig;
@@ -50,5 +53,13 @@ public class ComputeResource {
 
 	public void setCwlCommand(String cwlCommand) {
 		this.cwlCommand = cwlCommand;
+	}
+
+	public int getMaxTime() {
+		return maxTime;
+	}
+
+	public void setMaxTime(int maxTime) {
+		this.maxTime = maxTime;
 	}
 }
