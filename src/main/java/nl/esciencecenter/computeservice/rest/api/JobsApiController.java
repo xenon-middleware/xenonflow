@@ -25,14 +25,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import io.swagger.annotations.ApiParam;
-import nl.esciencecenter.computeservice.rest.model.Job;
-import nl.esciencecenter.computeservice.rest.model.JobDescription;
-import nl.esciencecenter.computeservice.rest.model.JobRepository;
-import nl.esciencecenter.computeservice.rest.model.JobState;
-import nl.esciencecenter.computeservice.rest.model.StatePreconditionException;
-import nl.esciencecenter.computeservice.rest.service.JobService;
-import nl.esciencecenter.computeservice.rest.service.XenonService;
-import nl.esciencecenter.computeservice.rest.service.tasks.DeleteJobTask;
+import nl.esciencecenter.computeservice.model.Job;
+import nl.esciencecenter.computeservice.model.JobDescription;
+import nl.esciencecenter.computeservice.model.JobRepository;
+import nl.esciencecenter.computeservice.model.JobState;
+import nl.esciencecenter.computeservice.model.StatePreconditionException;
+import nl.esciencecenter.computeservice.service.JobService;
+import nl.esciencecenter.computeservice.service.XenonService;
+import nl.esciencecenter.computeservice.service.tasks.DeleteJobTask;
 import nl.esciencecenter.computeservice.utils.LoggingUtils;
 import nl.esciencecenter.xenon.XenonException;
 

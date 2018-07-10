@@ -8,10 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
-import nl.esciencecenter.computeservice.rest.model.Job;
-import nl.esciencecenter.computeservice.rest.model.JobRepository;
-import nl.esciencecenter.computeservice.rest.model.JobState;
-import nl.esciencecenter.computeservice.rest.model.Status;
+import nl.esciencecenter.computeservice.model.Job;
+import nl.esciencecenter.computeservice.model.JobRepository;
+import nl.esciencecenter.computeservice.model.JobState;
+import nl.esciencecenter.computeservice.model.Status;
 
 @CrossOrigin
 @Controller

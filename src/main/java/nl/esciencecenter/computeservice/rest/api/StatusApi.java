@@ -9,7 +9,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import nl.esciencecenter.computeservice.rest.model.Status;
+import nl.esciencecenter.computeservice.model.Status;
 
 @Api(value = "status", description = "the status API")
 public interface StatusApi {

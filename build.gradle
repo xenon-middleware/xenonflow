@@ -5,10 +5,10 @@ plugins {
     id 'eclipse'
     id 'application'
     id 'org.hidetake.swagger.generator' version '2.4.2'
-    id 'org.springframework.boot' version '1.5.6.RELEASE'
+    id 'org.springframework.boot' version '1.5.8.RELEASE'
 }
 
-version = '0.3-alpha'
+version = '0.5'
 
 springBoot {
   mainClass = 'nl.esciencecenter.computeservice.rest.Application'
@@ -33,9 +33,9 @@ dependencies {
     compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.2.0'
 
     //Spring(boot)
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '1.5.6.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '1.5.6.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '1.5.6.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '1.5.8.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '1.5.8.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '1.5.8.RELEASE'
     compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.5.0'
     compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.5.0'
 
@@ -49,11 +49,11 @@ dependencies {
     compile group: 'javax.validation', name: 'validation-api', version: '1.1.0.Final'
 	
 	//JPA, hibernate and h2 database persistance libraries
-	compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '1.5.6.RELEASE'
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '1.5.8.RELEASE'
 	runtime group: 'com.h2database', name: 'h2', version: '1.4.196'
 	
 	//Unittest spring-boot all-inclusive package
-	testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.5.6.RELEASE'
+	testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.5.8.RELEASE'
 
 	// Admin Interface
 
@@ -63,8 +63,12 @@ dependencies {
     //Misc
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
     compile group: 'commons-io', name: 'commons-io', version: '2.5'
+    
+    //cli
+    compile group: 'com.beust', name: 'jcommander', version: '1.71'
+    
     testCompile 'junit:junit:4.12'
-    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.5.6.RELEASE'
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.5.8.RELEASE'
 }
 
 // Include some more files in the distribution zip
@@ -92,17 +96,25 @@ distributions {
     }
 }
 
-// Workaround for the 'line is too long' error
-// in the windows batch file that is generated.
-// Taken from https://gist.github.com/jlmelville/2bfe9277e9e2c0ff79b6
-tasks.withType(CreateStartScripts).each { task ->
-    task.doLast {
-        String text = task.windowsScript.text
-        text = text.replaceFirst(/(set CLASSPATH=%APP_HOME%\\lib\\).*/, { "${it[1]}*" })
-        task.windowsScript.write text
-    }
+task createAdminStartScript(type: CreateStartScripts) {
+	mainClassName = "nl.esciencecenter.computeservice.cli.XenonflowCLI"
+	classpath = startScripts.classpath
+	outputDir = startScripts.outputDir
+	applicationName = "xenonflow-admin"
 }
 
+applicationDistribution.into("bin") {
+	from (createAdminStartScript)
+}
+
+jar {
+    manifest {
+        // Make sure the app's jar can be used with a simple -cp
+        attributes(
+        	'Class-Path': configurations.runtime.collect { "${it.getName()}" }.join(' ')
+        )
+    }
+}
 
 test {
     testLogging {

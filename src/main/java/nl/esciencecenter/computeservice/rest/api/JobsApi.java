@@ -16,8 +16,8 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import nl.esciencecenter.computeservice.rest.model.Job;
-import nl.esciencecenter.computeservice.rest.model.JobDescription;
+import nl.esciencecenter.computeservice.model.Job;
+import nl.esciencecenter.computeservice.model.JobDescription;
 
 @Api(value = "jobs", description = "the jobs API")
 public interface JobsApi {

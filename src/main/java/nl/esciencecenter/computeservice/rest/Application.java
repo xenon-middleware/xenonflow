@@ -28,10 +28,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 
 import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
 import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
-import nl.esciencecenter.computeservice.rest.model.JobRepository;
-import nl.esciencecenter.computeservice.rest.service.JobService;
-import nl.esciencecenter.computeservice.rest.service.XenonService;
-import nl.esciencecenter.computeservice.rest.service.staging.XenonStager;
+import nl.esciencecenter.computeservice.model.JobRepository;
+import nl.esciencecenter.computeservice.service.JobService;
+import nl.esciencecenter.computeservice.service.XenonService;
+import nl.esciencecenter.computeservice.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
@@ -40,11 +40,10 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableSwagger2
 @EnableScheduling
 @EnableAsync
-@ComponentScan(basePackages = {"nl.esciencecenter.computeservice.rest*"})
-@EntityScan(basePackages = { "nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.cwl.*" })
+@ComponentScan(basePackages = {"nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.model*", "nl.esciencecenter.computeservice.service*"})
+@EntityScan(basePackages = { "nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.cwl*", "nl.esciencecenter.computeservice.model*", "nl.esciencecenter.computeservice.service*"})
 @EnableTransactionManagement
-@EnableJpaRepositories(basePackages = { "nl.esciencecenter.computeservice.rest*",
-		"nl.esciencecenter.computeservice.cwl.*" })
+@EnableJpaRepositories(basePackages = { "nl.esciencecenter.computeservice.model*", "nl.esciencecenter.computeservice.cwl*" })
 public class Application extends WebMvcConfigurerAdapter implements CommandLineRunner, ApplicationListener<EmbeddedServletContainerInitializedEvent> {
 	private static final Logger logger = LoggerFactory.getLogger(Application.class);
 	
