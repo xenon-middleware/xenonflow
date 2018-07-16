@@ -19,15 +19,24 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.log4j.Appender;
+import org.apache.log4j.Layout;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
+import org.apache.log4j.WriterAppender;
+import org.apache.log4j.spi.LoggingEvent;
 import org.commonwl.cwl.Process.ProcessType;
 import org.commonwl.cwl.utils.CWLUtils;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+
+import ch.qos.logback.core.OutputStreamAppender;
 
 public class CwlTest {
 
@@ -85,4 +94,10 @@ public class CwlTest {
 //		assertEquals("Expected 1 local path in count-lines-remote.cwl", expected, paths);
 //	}
 	
+	@Test
+	public void arraySchemaTest() throws JsonParseException, JsonMappingException, IOException {
+		Workflow workflow = Workflow.fromFile(new File("src/test/resources/cwl/array-input.cwl"));
+		
+		assertEquals("Expected file array as input", "File[]", workflow.getInputs()[0].getType());
+	}	
 }
