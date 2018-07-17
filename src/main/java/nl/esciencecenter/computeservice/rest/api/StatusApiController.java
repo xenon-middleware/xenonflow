@@ -23,7 +23,10 @@ public class StatusApiController implements StatusApi {
 	@Override
 	public ResponseEntity<Status> getStatus() {
 		List<Job> jobs = repository.findAll();
-		int errored = 0, running = 0, successful = 0, waiting = 0;
+		int errored = 0;
+		int running = 0;
+		int successful = 0;
+		int waiting = 0;
 		for (Job job : jobs) {
 			JobState i = job.getInternalState();
 			if (i.isErrorState()) {

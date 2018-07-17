@@ -104,7 +104,7 @@ public class XenonMonitoringTask {
 
 		cancelRunningJobs(scheduler);
 		
-		deleteJobs(scheduler);
+		deleteJobs();
 		
 		// Start calculating as soon as we can
 		// otherwise we will be staging all tasks in first
@@ -287,7 +287,7 @@ public class XenonMonitoringTask {
 		}
 	}
 	
-	private void deleteJobs(Scheduler scheduler) {
+	private void deleteJobs() {
 		List<Job> deleting = repository.findAllByInternalState(JobState.RUNNING_DELR);
 		deleting.addAll(repository.findAllByInternalState(JobState.STAGING_IN_DELR));
 		deleting.addAll(repository.findAllByInternalState(JobState.STAGING_OUT_DELR));

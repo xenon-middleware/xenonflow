@@ -99,10 +99,7 @@ public class CWLUtils {
 	public static boolean isLocalPath(String path) {
 		try {
 			URL url = new URL(path);
-			if (url.getProtocol().equals("file")) {
-				return true;
-			}
-			return false;
+			return url.getProtocol().equals("file");
 		} catch (MalformedURLException e) {
 			// It's not a URL, so let's assume it's a path
 			// and fail down the line if it's not correct

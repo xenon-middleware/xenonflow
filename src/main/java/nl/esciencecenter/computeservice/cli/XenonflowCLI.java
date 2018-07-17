@@ -3,7 +3,6 @@ package nl.esciencecenter.computeservice.cli;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -40,13 +39,7 @@ import nl.esciencecenter.xenon.XenonException;
 public class XenonflowCLI implements CommandLineRunner {
 
 	@Autowired
-	XenonService xenonService;
-	
-	@Autowired
 	private JobRepository repository;
-	
-	@Value("${xenon.config}")
-	private String xenonConfigFile;
 
 	@Bean
 	public static ThreadPoolTaskScheduler taskScheduler() {

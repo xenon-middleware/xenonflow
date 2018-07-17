@@ -34,14 +34,10 @@ import nl.esciencecenter.computeservice.service.staging.StagingObject;
 import nl.esciencecenter.computeservice.service.staging.StringToFileStagingObject;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
-import nl.esciencecenter.xenon.filesystems.Path;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {nl.esciencecenter.computeservice.rest.Application.class})
 public class CwlStageInTest {
-	@Value("${xenon.log.basepath}")
-	private Path logBasePath;
-	
 	@Value("${xenon.config}")
 	private String xenonConfigFile;
 	

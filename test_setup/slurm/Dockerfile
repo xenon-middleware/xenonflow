@@ -18,10 +18,11 @@ RUN /etc/my_init.d/00_regen_ssh_host_keys.sh
 
 # Upgrade OS
 RUN apt-get update && \
-  apt-get install -y slurm-llnl python git python-pip dos2unix
+  apt-get install -y --no-install-recommends build-essential slurm-llnl python git python-pip python-dev dos2unix && \
+  apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create a test user
-RUN /usr/sbin/useradd -p $(openssl passwd javagat) -d /home/xenon -m --shell /bin/bash xenon
+RUN "/usr/sbin/useradd" -p $(openssl passwd javagat) -d "/home/xenon" -m --shell "/bin/bash" xenon
 
 # Add it to sudoers list
 RUN usermod -aG sudo xenon
@@ -40,9 +41,7 @@ RUN mkdir /var/run/munge && \
   chown slurm -R /var/spool/slurmctld /etc/slurm-llnl/slurm.key
  
 WORKDIR /home/xenon
-RUN pip install --upgrade pip && pip install cwltool
-
-# Clean up install
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN pip install --upgrade pip==9.0.3 && pip install setuptools
+RUN pip install cwlref-runner
 
 CMD ["/sbin/my_init"]
