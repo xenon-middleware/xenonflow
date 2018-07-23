@@ -29,7 +29,7 @@ ComputeResources:
         maxTime: 20
         scheduler:
             adaptor: local
-            location: ${XENON_HOME}/running-jobs/
+            location: ${XENONFLOW_HOME}/running-jobs/
     das5:
         cwlCommand: /home/bweel/anaconda3/bin/cwltool-wrapper
         maxTime: 600
@@ -51,11 +51,11 @@ default: local
 # and uncomment the webdav one.
 sourceFileSystem:
    adaptor: file
-   location: ${XENON_HOME}
+   location: ${XENONFLOW_HOME}
    
 targetFileSystem:
    adaptor: file
-   location: ${XENON_HOME}/output/
+   location: ${XENONFLOW_HOME}/output/
    hosted: true
 
 #sourceFileSystem:
