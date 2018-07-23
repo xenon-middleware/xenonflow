@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +16,9 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -36,7 +39,8 @@ import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {nl.esciencecenter.computeservice.rest.Application.class})
+@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = {nl.esciencecenter.computeservice.rest.Application.class})
 public class CwlStageInTest {
 	@Value("${xenon.config}")
 	private String xenonConfigFile;
@@ -46,7 +50,14 @@ public class CwlStageInTest {
 	private FileSystem getSourceFileSystem() throws XenonException, IOException {
 		if (sourceFileSystem == null || !sourceFileSystem.isOpen()) {
 			
-			ComputeServiceConfig config = ComputeServiceConfig.loadFromFile(new File(xenonConfigFile));
+			String xenonflowHome = System.getenv("XENONFLOW_HOME");
+			
+			if (xenonflowHome == null) {
+				xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
+			}
+			
+			System.out.println("Loading config from:" + xenonConfigFile);
+			ComputeServiceConfig config = ComputeServiceConfig.loadFromFile(xenonConfigFile, xenonflowHome);
 			
 			// Initialize local filesystem
 			AdaptorConfig sourceConfig = config.getSourceFilesystemConfig();

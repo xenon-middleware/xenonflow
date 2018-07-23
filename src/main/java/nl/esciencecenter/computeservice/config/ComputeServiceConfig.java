@@ -15,9 +15,10 @@
  */
 package nl.esciencecenter.computeservice.config;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -63,8 +64,8 @@ public class ComputeServiceConfig {
 	 * @throws JsonMappingException When jackson has problems mapping the file to java objects
 	 * @throws IOException When the file is not found
 	 */
-	public static ComputeServiceConfig loadFromFile(File configFile) throws IOException {
-		String extension = FilenameUtils.getExtension(configFile.getName());
+	public static ComputeServiceConfig loadFromFile(String configFile, String xenonflowHome) throws IOException {
+		String extension = FilenameUtils.getExtension(configFile);
 		ObjectMapper mapper;
 		ComputeServiceConfig config = null;
 
@@ -75,20 +76,23 @@ public class ComputeServiceConfig {
 			module.addDeserializer(Credential.class, new CredentialDeserializer());
 			mapper.registerModule(module);
 
-			config = mapper.readValue(configFile, ComputeServiceConfig.class);
+			String contents = new String(Files.readAllBytes(Paths.get(configFile)));
+			contents = contents.replaceAll("\\$\\{XENONFLOW_HOME\\}", xenonflowHome);
+			contents = contents.replaceAll("\\$XENONFLOW_HOME", xenonflowHome);
+			config = mapper.readValue(contents, ComputeServiceConfig.class);
         
 			if (config.getDefaultComputeResourceName() == null) {
 				// use the first key as the default if it's not set in the file
 				config.setDefaultComputeResourceName(config.keySet().iterator().next());
 			}
 		} catch (JsonParseException e) {
-			logger.error("Error parsing configuration file: " + configFile.getName(), e);
+			logger.error("Error parsing configuration file: " + configFile, e);
 			throw e;
 		} catch (JsonMappingException e) {
-			logger.error("Error mapping configuration file: " + configFile.getName(), e);
+			logger.error("Error mapping configuration file: " + configFile, e);
 			throw e;
 		} catch (IOException e) {
-			logger.error("Error opening configuration file: " + configFile.getName(), e);
+			logger.error("Error opening configuration file: " + configFile, e);
 			throw e;
 		}
 		

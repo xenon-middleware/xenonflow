@@ -42,7 +42,7 @@ public class CwlStageInTask implements Runnable {
 	public void run(){
 		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
 		try {
-			Job job = repository.findOne(jobId);
+			Job job = repository.findById(jobId).get();
 			if (job.getInternalState().isFinal()) {
 				// The job is in a final state so it's likely failed
 				// or cancelled.

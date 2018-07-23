@@ -1,0 +1,7 @@
+{
+  "name": "test_sleep",
+  "workflow": "src/test/resources/cwl/sleep.cwl", 
+  "input": {
+    "time": "10m"
+  }
+}

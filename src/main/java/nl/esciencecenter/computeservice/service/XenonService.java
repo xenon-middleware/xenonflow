@@ -2,6 +2,7 @@ package nl.esciencecenter.computeservice.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 
 import javax.annotation.PostConstruct;
 
@@ -42,6 +43,8 @@ public class XenonService {
 	private FileSystem remoteFileSystem = null;
 	private FileSystem sourceFileSystem = null;
 	private FileSystem targetFileSystem = null;
+	
+	private String xenonflowHome = null;
 
 	public XenonService() throws IOException {
 		// TODO: Watch the config file for changes?
@@ -74,8 +77,15 @@ public class XenonService {
 	private void initialize() throws XenonException, IOException {
 		logger.debug("Loading xenon config from: " + xenonConfigFile);
 
+		xenonflowHome = System.getenv("XENONFLOW_HOME");
+		
+		if (xenonflowHome == null) {
+			xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
+		}
+		logger.info("Xenonflow is using as home: " + xenonflowHome);
+		
 		// Read xenon config
-		setConfig(ComputeServiceConfig.loadFromFile(new File(xenonConfigFile)));
+		setConfig(ComputeServiceConfig.loadFromFile(xenonConfigFile, xenonflowHome));
 		// Sanity Check the config file.
 		ComputeResource resource = getConfig().defaultComputeResource();
 
@@ -211,5 +221,9 @@ public class XenonService {
 
 	public String getJobLogName(String name) {
 		return logBasePath.resolve(name + ".log").toString();
+	}
+
+	public String getXenonflowHome() {
+		return xenonflowHome;
 	}
 }

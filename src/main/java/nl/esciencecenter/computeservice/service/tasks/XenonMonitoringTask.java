@@ -52,7 +52,7 @@ public class XenonMonitoringTask {
 		for (Job job : submitted) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 			// We re-request the job here because it may have changed while we were looping.
-			job = repository.findOne(job.getId());
+			job = repository.findById(job.getId()).get();
 			jobLogger.info("Starting new job runner for job: " + job);
 			try {
 				// this used to be run in a seperate thread
@@ -70,7 +70,7 @@ public class XenonMonitoringTask {
 		for (Job job : staging_out) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 			// We re-request the job here because it may have changed while we were looping.
-			job = repository.findOne(job.getId());
+			job = repository.findById(job.getId()).get();
 			try {
 				// this used to be run in a seperate thread
 				// so keeping the runnable part if we ever go back to that
@@ -176,7 +176,7 @@ public class XenonMonitoringTask {
 				Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 
 				// We re-request the job here because it may have changed while we were looping.
-				job = repository.findOne(job.getId());
+				job = repository.findById(job.getId()).get();
 				String xenonJobId = job.getXenonId();
 				
 				if (status.hasException()) {
@@ -219,7 +219,7 @@ public class XenonMonitoringTask {
 		for (Job job : cancelRunning) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 			// We re-request the job here because it may have changed while we were looping.
-			job = repository.findOne(job.getId());
+			job = repository.findById(job.getId()).get();
 			try {
 				String xenonJobId = job.getXenonId();
 				if (xenonJobId != null && !xenonJobId.isEmpty()) {
@@ -265,7 +265,7 @@ public class XenonMonitoringTask {
 		for (Job job : cancelWaiting) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 			// We re-request the job here because it may have changed while we were looping.
-			job = repository.findOne(job.getId());
+			job = repository.findById(job.getId()).get();
 			try {
 				String xenonJobId = job.getXenonId();
 				if (xenonJobId != null && !xenonJobId.isEmpty()) {
@@ -303,7 +303,7 @@ public class XenonMonitoringTask {
 
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 			// We re-request the job here because it may have changed while we were looping.
-			job = repository.findOne(job.getId());
+			job = repository.findById(job.getId()).get();
 			try {
 				job = jobService.setJobState(job.getId(), JobState.FINISHED, JobState.STAGING_OUT);
 				CwlStageOutTask stageOut = new CwlStageOutTask(job.getId(), (int) job.getAdditionalInfo().get("xenon.exitcode"), remoteToTargetStager, xenonService);
@@ -320,7 +320,7 @@ public class XenonMonitoringTask {
 		for (Job job : submitted) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 			// We re-request the job here because it may have changed while we were looping.
-			job = repository.findOne(job.getId());
+			job = repository.findById(job.getId()).get();
 			try {
 				job = jobService.setJobState(job.getId(), JobState.SUBMITTED, JobState.STAGING_IN);
 				CwlStageInTask stageIn = new CwlStageInTask(job.getId(), sourceToRemoteStager, xenonService);
@@ -337,7 +337,7 @@ public class XenonMonitoringTask {
 		for (Job job : ready) {
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 			// We re-request the job here because it may have changed while we were looping.
-			job = repository.findOne(job.getId());
+			job = repository.findById(job.getId()).get();
 			jobLogger.info("Starting new job runner for job: " + job.getId());
 			try {
 				jobService.setJobState(job.getId(), JobState.STAGING_READY, JobState.XENON_SUBMIT);

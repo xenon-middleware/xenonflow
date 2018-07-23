@@ -35,11 +35,11 @@ public class CwlWorkflowTask implements Runnable {
 	@Override
 	public void run() {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
-		Job job = repository.findOne(jobId);
+		Job job = repository.findById(jobId).get();
 		try {
 			Scheduler scheduler = service.getScheduler();
 
-			job = repository.findOne(jobId);
+			job = repository.findById(jobId).get();
 
 			if (job.getInternalState().isCancellationActive()) {
 				jobService.setJobState(jobId, job.getInternalState(), JobState.CANCELLED);

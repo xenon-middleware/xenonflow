@@ -26,7 +26,7 @@ public class DeleteJobTask {
 
 	public void deleteJob(String jobId) {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
-		Job job = repository.findOne(jobId);
+		Job job = repository.findById(jobId).get();
 		
 		if (job != null) {
 			// Once we are in this function the staging has already been cancelled because of
@@ -87,7 +87,7 @@ public class DeleteJobTask {
 			// delete the job
 			jobLogger.info("Deleting job " + jobId);
 			logger.info("Deleting job " + jobId);
-			repository.delete(jobId);	
+			repository.deleteById(jobId);	
 		}
 	}
 

@@ -18,13 +18,15 @@ package nl.esciencecenter.computeservice.config;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
+import java.nio.file.Paths;
 
 import org.junit.Test;
 
 public class ComputeServiceConfigTest {
 	@Test
 	public void testConfigLoad() throws Exception {
-		ComputeServiceConfig config = ComputeServiceConfig.loadFromFile(new File("src/test/resources/config/example_config.yml"));
+		String xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
+		ComputeServiceConfig config = ComputeServiceConfig.loadFromFile("src/test/resources/config/example_config.yml", xenonflowHome);
 		assertNotNull("Configuration should not be null", config);
 		assertNotNull("ComputeResource das5 should exist", config.get("das5"));
 		assertNotNull("Default resource should exist", config.defaultComputeResource());

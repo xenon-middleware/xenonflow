@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -103,11 +104,11 @@ public class JobsApiController implements JobsApi {
 	@Override
 	public ResponseEntity<Job> getJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
 		requestLogger.info("GET request received for job: " + jobId);
-		Job job = repository.findOne(jobId);
-		if (job == null) {
-			return new ResponseEntity<Job>(HttpStatus.NOT_FOUND);
+		Optional<Job> job = repository.findById(jobId);
+		if (job.isPresent()) {
+			return new ResponseEntity<Job>(job.get(), HttpStatus.OK);
 		} else {
-			return new ResponseEntity<Job>(job, HttpStatus.OK);
+			return new ResponseEntity<Job>(HttpStatus.NOT_FOUND);
 		}
 	}
 
@@ -207,7 +208,7 @@ public class JobsApiController implements JobsApi {
 		
 		jobLogger.info("Trying to cancel job " + jobId);
 		
-		Job job = repository.findOne(jobId);
+		Job job = repository.findById(jobId).get();
 		if (job != null && !job.getInternalState().isFinal()) {
 			switch (job.getInternalState()) {
 				case STAGING_IN:
@@ -238,7 +239,7 @@ public class JobsApiController implements JobsApi {
 		
 		jobLogger.info("Going to delete job " + jobId);
 		
-		Job job = repository.findOne(jobId);
+		Job job = repository.findById(jobId).get();
 		if (job != null) {
 			switch (job.getInternalState()) {
 				case STAGING_IN:

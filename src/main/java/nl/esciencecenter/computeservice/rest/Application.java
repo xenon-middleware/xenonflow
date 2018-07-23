@@ -1,7 +1,7 @@
 package nl.esciencecenter.computeservice.rest;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +11,7 @@ import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.boot.context.embedded.EmbeddedServletContainerInitializedEvent;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -24,7 +24,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
 import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
@@ -44,10 +44,10 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EntityScan(basePackages = { "nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.cwl*", "nl.esciencecenter.computeservice.model*", "nl.esciencecenter.computeservice.service*"})
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = { "nl.esciencecenter.computeservice.model*", "nl.esciencecenter.computeservice.cwl*" })
-public class Application extends WebMvcConfigurerAdapter implements CommandLineRunner, ApplicationListener<EmbeddedServletContainerInitializedEvent> {
+public class Application implements WebMvcConfigurer, CommandLineRunner, ApplicationListener<ApplicationReadyEvent> {
 	private static final Logger logger = LoggerFactory.getLogger(Application.class);
 	
-	@Value("${server.address}")
+	@Value("${local.server.address}")
 	private String bindAdress;
 	
 	@Value("${xenon.config}")
@@ -78,9 +78,14 @@ public class Application extends WebMvcConfigurerAdapter implements CommandLineR
 	
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		String xenonflowHome = System.getenv("XENONFLOW_HOME");
+		
+		if (xenonflowHome == null) {
+			xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
+		}
 		ComputeServiceConfig config;
 		try {
-			config = ComputeServiceConfig.loadFromFile(new File(xenonConfigFile));
+			config = ComputeServiceConfig.loadFromFile(xenonConfigFile, xenonflowHome);
 			TargetAdaptorConfig targetConfig = config.getTargetFilesystemConfig();
 			
 			if (targetConfig.isHosted() && targetConfig.getAdaptor().equals("file")) {
@@ -96,13 +101,6 @@ public class Application extends WebMvcConfigurerAdapter implements CommandLineR
 
 		registry.addResourceHandler("/webjars/**")
 		        .addResourceLocations("classpath:/META-INF/resources/webjars/");
-		super.addResourceHandlers(registry);
-	}
-	
-	@Override
-	public void onApplicationEvent(EmbeddedServletContainerInitializedEvent event) {
-    	int port = event.getEmbeddedServletContainer().getPort();
-		logger.info("Server running at: http://" + bindAdress + ":" + port);
 	}
 
 	@Override
@@ -124,5 +122,10 @@ public class Application extends WebMvcConfigurerAdapter implements CommandLineR
 			return 10;
 		}
 
+	}
+
+	@Override
+	public void onApplicationEvent(ApplicationReadyEvent event) {
+		logger.info("Server running at: http://" + bindAdress);
 	}
 }

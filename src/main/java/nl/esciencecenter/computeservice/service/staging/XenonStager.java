@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -164,9 +165,9 @@ public class XenonStager {
 
 //	private void waitForCopy(String copyId, FileSystem sourceFileSystem, StagingManifest manifest, StagingObject stageObject) throws XenonException, StatePreconditionException {
 //		CopyStatus s = sourceFileSystem.waitUntilDone(copyId, 1000);
-//		Job job = repository.findOne(manifest.getJobId());
+//		Optional<Job> job = repository.findById(manifest.getJobId());
 //		while (!job.getInternalState().isCancellationActive() && !s.isDone()) {
-//			job = repository.findOne(manifest.getJobId());
+//			job = repository.findById(manifest.getJobId());
 //			s = sourceFileSystem.waitUntilDone(copyId, 1000);
 //		}
 //
@@ -190,7 +191,7 @@ public class XenonStager {
 			
 			StagingManifest manifest = stagingJob.manifest;
 			List<String> copyIds = stagingJob.copyIds;
-			Job job = repository.findOne(jobId);
+			Job job = repository.findById(jobId).get();
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);	
 			FileSystem fileSystem = localFileSystem;
 			if (stagingJob instanceof StagingOutJob) {
@@ -245,7 +246,7 @@ public class XenonStager {
 				        
 				        int exitcode = ((StagingOutJob)stagingJob).exitcode;
 				        // Re-get the job from the database here, because it may have changed in state
-				        job = repository.findOne(jobId);
+				        job = repository.findById(jobId).get();
 				        if (!job.getInternalState().isFinal()) {
 				        	if (exitcode == 0) {
 				        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
@@ -310,7 +311,7 @@ public class XenonStager {
 	
 	public WorkflowBinding postStageout(StagingManifest manifest) throws IOException, XenonException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
-		Job job = repository.findOne(manifest.getJobId());
+		Job job = repository.findById(manifest.getJobId()).get();
 		WorkflowBinding binding = job.getOutput();
 		for (StagingObject stageObject : manifest) {
 			String outputTarget = null;
