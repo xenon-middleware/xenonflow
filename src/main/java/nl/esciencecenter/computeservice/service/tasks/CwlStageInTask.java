@@ -1,6 +1,7 @@
 package nl.esciencecenter.computeservice.service.tasks;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.commonwl.cwl.CwlException;
 import org.slf4j.Logger;
@@ -42,7 +43,15 @@ public class CwlStageInTask implements Runnable {
 	public void run(){
 		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
 		try {
-			Job job = repository.findById(jobId).get();
+			Optional<Job> j = repository.findById(jobId);
+			
+			if (!j.isPresent()) {
+				logger.error("Could not find job with id: " + jobId);
+				jobLogger.error("Could not find job with id: " + jobId);
+				return;
+			}
+			
+			Job job = j.get();
 			if (job.getInternalState().isFinal()) {
 				// The job is in a final state so it's likely failed
 				// or cancelled.

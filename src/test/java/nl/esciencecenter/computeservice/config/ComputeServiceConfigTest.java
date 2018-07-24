@@ -17,7 +17,6 @@ package nl.esciencecenter.computeservice.config;
 
 import static org.junit.Assert.assertNotNull;
 
-import java.io.File;
 import java.nio.file.Paths;
 
 import org.junit.Test;

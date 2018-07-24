@@ -1,7 +1,5 @@
 package nl.esciencecenter.client;
 
-import java.util.HashMap;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;

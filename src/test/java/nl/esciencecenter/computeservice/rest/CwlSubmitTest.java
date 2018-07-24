@@ -1,11 +1,10 @@
 package nl.esciencecenter.computeservice.rest;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.file.Files;
@@ -38,17 +37,20 @@ public class CwlSubmitTest {
 	private ObjectMapper mapper = new ObjectMapper();
 	
 	@Test
-	public void getJobsTest() throws Exception {
-		this.mockMvc.perform(get("/jobs")).andDo(print()).andExpect(status().isOk());
+	public void getJobsTest() {
+		assertThatCode(() -> {
+			this.mockMvc.perform(get("/jobs")).andExpect(status().isOk());
+		}).doesNotThrowAnyException();
 	}
 	
 	@Test
-	public void submitAndWaitEchoTest() throws Exception {
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/echo-test.json")));
-		
-		Job job = postJobAndWaitForFinal(contents);
+	public void submitAndWaitEchoTest() {
+		assertThatCode(() -> {
+			String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/echo-test.json")));
+			Job job = postJobAndWaitForFinal(contents);
 			
-		assertTrue(job.getState() == CWLState.SUCCESS);
+			assertTrue(job.getState() == CWLState.SUCCESS);
+		}).doesNotThrowAnyException();
 	}
 	
 	@Test
@@ -68,7 +70,7 @@ public class CwlSubmitTest {
 	
 	@Test
 	public void submitAndWaitEchoFailTest() throws Exception {	
-		String contents = new String("{\"name\":\"echo-fail\",\"workflow\":\"echo.cwl\",\"input\":{}}");
+		String contents = "{\"name\":\"echo-fail\",\"workflow\":\"echo.cwl\",\"input\":{}}";
 		Job job = postJobAndWaitForFinal(contents);
 		CWLState state = job.getState();
 		

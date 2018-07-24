@@ -165,9 +165,9 @@ public class XenonStager {
 
 //	private void waitForCopy(String copyId, FileSystem sourceFileSystem, StagingManifest manifest, StagingObject stageObject) throws XenonException, StatePreconditionException {
 //		CopyStatus s = sourceFileSystem.waitUntilDone(copyId, 1000);
-//		Optional<Job> job = repository.findById(manifest.getJobId());
+//		Job job = repository.findOne(manifest.getJobId());
 //		while (!job.getInternalState().isCancellationActive() && !s.isDone()) {
-//			job = repository.findById(manifest.getJobId());
+//			job = repository.findOne(manifest.getJobId());
 //			s = sourceFileSystem.waitUntilDone(copyId, 1000);
 //		}
 //
@@ -191,8 +191,15 @@ public class XenonStager {
 			
 			StagingManifest manifest = stagingJob.manifest;
 			List<String> copyIds = stagingJob.copyIds;
-			Job job = repository.findById(jobId).get();
-			Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);	
+			Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
+			
+			Optional<Job> j = repository.findById(jobId);		
+			if (!j.isPresent()) {
+				logger.error("Could not find job with id: " + jobId);
+				jobLogger.error("Could not find job with id: " + jobId);
+				return;
+			}
+			Job job = j.get();
 			FileSystem fileSystem = localFileSystem;
 			if (stagingJob instanceof StagingOutJob) {
 				fileSystem = remoteFileSystem;
@@ -235,7 +242,7 @@ public class XenonStager {
 						logger.info(job.getId()+": staging in complete.");
 					} else if (job.getInternalState() == JobState.STAGING_OUT){
 						if (manifest.size() > 0) {
-				    		WorkflowBinding files = postStageout(manifest);
+				    		WorkflowBinding files = postStageout(job, manifest);
 				    		jobService.setAdditionalInfo(jobId, "files", files);
 				    	} else {
 				    		jobLogger.warn("There are no files to stage.");
@@ -246,7 +253,14 @@ public class XenonStager {
 				        
 				        int exitcode = ((StagingOutJob)stagingJob).exitcode;
 				        // Re-get the job from the database here, because it may have changed in state
-				        job = repository.findById(jobId).get();
+				        
+				        j = repository.findById(jobId);		
+						if (!j.isPresent()) {
+							logger.error("Could not find job with id: " + jobId);
+							jobLogger.error("Could not find job with id: " + jobId);
+							return;
+						}
+						job = j.get();
 				        if (!job.getInternalState().isFinal()) {
 				        	if (exitcode == 0) {
 				        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
@@ -309,9 +323,8 @@ public class XenonStager {
 		return true;
 	}
 	
-	public WorkflowBinding postStageout(StagingManifest manifest) throws IOException, XenonException {
+	public WorkflowBinding postStageout(Job job, StagingManifest manifest) throws IOException, XenonException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
-		Job job = repository.findById(manifest.getJobId()).get();
 		WorkflowBinding binding = job.getOutput();
 		for (StagingObject stageObject : manifest) {
 			String outputTarget = null;
@@ -371,10 +384,8 @@ public class XenonStager {
 				}
 			}
 			binding.put(outputTarget, outputObject);
-			//jobService.setOutput(manifest.getJobId(), outputTarget, outputObject);
 		}
 		return binding;
-		// jobService.setOutputBinding(manifest.getJobId(), binding);
 	}
 
 	public void setFileSystems(FileSystem localFileSystem, FileSystem remoteFileSystem) {

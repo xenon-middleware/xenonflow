@@ -58,18 +58,18 @@ public class JobsApiController implements JobsApi {
 	@Override
 	public ResponseEntity<Job> cancelJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
 		requestLogger.info("CANCEL request received for job: " + jobId);
-		Job job;
+		Optional<Job> job;
 		try {
 			job = cancelJob(jobId);
 			if (job != null) {
 				HttpHeaders headers = new HttpHeaders();
 				ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
-				builder.replacePath("/jobs/" + job.getId());
+				builder.replacePath("/jobs/" + job.get().getId());
 				
 				logger.debug("Setting location header to: " + builder.build().toUri());
 				headers.setLocation(builder.build().toUri());
 				
-				return new ResponseEntity<Job>(job, headers, HttpStatus.OK);
+				return new ResponseEntity<Job>(job.get(), headers, HttpStatus.OK);
 			}
 			return new ResponseEntity<Job>(HttpStatus.NOT_FOUND);
 		} catch (StatePreconditionException e) {
@@ -84,8 +84,8 @@ public class JobsApiController implements JobsApi {
 	public ResponseEntity<Void> deleteJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
 		requestLogger.info("DELETE request received for job: " + jobId);
 		try {
-			Job job = deleteJob(jobId);
-			if (job != null) {
+			Optional<Job> j = deleteJob(jobId);
+			if (j.isPresent()) {
 				HttpHeaders headers = new HttpHeaders();
 				ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
 				
@@ -203,63 +203,68 @@ public class JobsApiController implements JobsApi {
 		return job;
 	}
 	
-	public Job cancelJob(String jobId) throws StatePreconditionException {
+	public Optional<Job> cancelJob(String jobId) throws StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
 		
 		jobLogger.info("Trying to cancel job " + jobId);
 		
-		Job job = repository.findById(jobId).get();
-		if (job != null && !job.getInternalState().isFinal()) {
-			switch (job.getInternalState()) {
-				case STAGING_IN:
-					jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_IN_CR);
-					break;
-				case WAITING:
-					jobService.setJobState(jobId, JobState.WAITING, JobState.WAITING_CR);
-					break;
-				case RUNNING:
-					jobService.setJobState(jobId, JobState.RUNNING, JobState.RUNNING_CR);
-					break;
-				case STAGING_OUT:
-					jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.STAGING_OUT_CR);
-					break;
-				default:
-					if (!job.getInternalState().isFinal()) {
-						jobService.setJobState(jobId, job.getInternalState(), JobState.CANCELLED);
-					}
-					break;
+		Optional<Job> j = repository.findById(jobId);
+		if (j.isPresent()) {
+			Job job = j.get();
+			if(!job.getInternalState().isFinal()) {
+				switch (job.getInternalState()) {
+					case STAGING_IN:
+						job = jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_IN_CR);
+						break;
+					case WAITING:
+						job = jobService.setJobState(jobId, JobState.WAITING, JobState.WAITING_CR);
+						break;
+					case RUNNING:
+						job = jobService.setJobState(jobId, JobState.RUNNING, JobState.RUNNING_CR);
+						break;
+					case STAGING_OUT:
+						job = jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.STAGING_OUT_CR);
+						break;
+					default:
+						if (!job.getInternalState().isFinal()) {
+							job = jobService.setJobState(jobId, job.getInternalState(), JobState.CANCELLED);
+						}
+						break;
+				}
 			}
+			return Optional.ofNullable(job);
 		}
-		
-		return job;
+		return j;
 	}
 
-	public Job deleteJob(String jobId) throws XenonException, StatePreconditionException {
+	public Optional<Job> deleteJob(String jobId) throws XenonException, StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
 		
 		jobLogger.info("Going to delete job " + jobId);
 		
-		Job job = repository.findById(jobId).get();
-		if (job != null) {
+		Optional<Job> j = repository.findById(jobId);
+		if (j.isPresent()) {
+			Job job = j.get();
 			switch (job.getInternalState()) {
 				case STAGING_IN:
-					jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_IN_DELR);
+					job = jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_IN_DELR);
 					break;
 				case WAITING:
-					jobService.setJobState(jobId, JobState.WAITING, JobState.WAITING_DELR);
+					job = jobService.setJobState(jobId, JobState.WAITING, JobState.WAITING_DELR);
 					break;
 				case RUNNING:
-					jobService.setJobState(jobId, JobState.RUNNING, JobState.RUNNING_DELR);
+					job = jobService.setJobState(jobId, JobState.RUNNING, JobState.RUNNING_DELR);
 					break;
 				case STAGING_OUT:
-					jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.STAGING_OUT_DELR);
+					job = jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.STAGING_OUT_DELR);
 					break;
 				default:
 					deleteJobTask.deleteJob(jobId);
 					break;
 			}
+			return Optional.ofNullable(job);
 		}
-		return job;
+		return j;
 	}
 	
 
