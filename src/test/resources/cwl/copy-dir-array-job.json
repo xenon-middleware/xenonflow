@@ -1,0 +1,14 @@
+{
+    "inp_dirs": [{
+        "class": "Directory",
+        "path": "input"
+    },
+    {
+        "class": "Directory",
+        "path": "input"
+    }],
+    "newnames" : [
+        "output1",
+        "output2"
+    ]
+}

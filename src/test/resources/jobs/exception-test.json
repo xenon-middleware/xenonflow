@@ -1,0 +1,7 @@
+{
+  "name": "test_echo",
+  "workflow": "src/test/resources/cwl/sleep.cwl", 
+  "input": {
+    "inp": "this_should_not_work"
+  }
+}

@@ -2,7 +2,6 @@ package nl.esciencecenter.computeservice.service.staging;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -11,14 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.io.IOUtils;
+import org.commonwl.cwl.Parameter;
+import org.h2.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.esciencecenter.computeservice.model.Job;
 import nl.esciencecenter.computeservice.model.JobRepository;
@@ -37,8 +33,8 @@ import nl.esciencecenter.xenon.filesystems.Path;
 public class XenonStager {
 	private static final Logger logger = LoggerFactory.getLogger(XenonMonitoringTask.class);
 
-	private FileSystem localFileSystem;
-	private FileSystem remoteFileSystem;
+	private FileSystem sourceFileSystem;
+	private FileSystem targetFileSystem;
 	private JobService jobService;
 	private JobRepository repository;
 	private XenonService service;
@@ -64,9 +60,9 @@ public class XenonStager {
 		}
 	}
 
-	public XenonStager(JobService jobService, JobRepository repository, FileSystem localFileSystem, FileSystem remoteFileSystem, XenonService service) {
-		this.localFileSystem = localFileSystem;
-		this.remoteFileSystem = remoteFileSystem;
+	public XenonStager(JobService jobService, JobRepository repository, FileSystem sourceFileSystem, FileSystem targetFileSystem, XenonService service) {
+		this.sourceFileSystem = sourceFileSystem;
+		this.targetFileSystem = targetFileSystem;
 		this.jobService = jobService;
 		this.repository = repository;
 		this.service = service;
@@ -86,7 +82,7 @@ public class XenonStager {
 	 * @throws XenonException 
 	 * @throws StatePreconditionException 
 	 */
-	public List<String> doStaging(StagingManifest manifest, FileSystem sourceFileSystem, FileSystem targetFileSystem) throws XenonException, StatePreconditionException {
+	public List<String> doStaging(StagingManifest manifest) throws XenonException, StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 
 		// Make sure the target directory exists
@@ -118,7 +114,6 @@ public class XenonStager {
 						false);
 				stageObject.setCopyId(copyId);
 				stagingIds.add(copyId);
-//				waitForCopy(copyId, sourceFileSystem, manifest, stageObject);
 			} else if (stageObject instanceof StringToFileStagingObject) {
 				StringToFileStagingObject object = (StringToFileStagingObject) stageObject;
 				Path targetPath = targetDirectory.resolve(object.getTargetPath());
@@ -156,32 +151,11 @@ public class XenonStager {
 						true);
 				stageObject.setCopyId(copyId);
 				stagingIds.add(copyId);
-//				waitForCopy(copyId, sourceFileSystem, manifest, stageObject);
 			}
 		}
 		
 		return stagingIds;
 	}
-
-//	private void waitForCopy(String copyId, FileSystem sourceFileSystem, StagingManifest manifest, StagingObject stageObject) throws XenonException, StatePreconditionException {
-//		CopyStatus s = sourceFileSystem.waitUntilDone(copyId, 1000);
-//		Job job = repository.findOne(manifest.getJobId());
-//		while (!job.getInternalState().isCancellationActive() && !s.isDone()) {
-//			job = repository.findOne(manifest.getJobId());
-//			s = sourceFileSystem.waitUntilDone(copyId, 1000);
-//		}
-//
-//		if (job.getInternalState().isCancellationActive()) {
-//			jobService.setJobState(job.getId(), job.getInternalState(), JobState.CANCELLED);
-//			return;
-//		}
-//
-//		if (s.hasException()) {
-//			throw s.getException();
-//		}
-//		
-//		stageObject.setBytesCopied(s.bytesCopied());
-//	}
 	
 	public void updateStaging() {
 		for(Iterator<Map.Entry<String,StagingJob>> stagingEntries=copyMap.entrySet().iterator(); stagingEntries.hasNext();) {
@@ -200,16 +174,12 @@ public class XenonStager {
 				return;
 			}
 			Job job = j.get();
-			FileSystem fileSystem = localFileSystem;
-			if (stagingJob instanceof StagingOutJob) {
-				fileSystem = remoteFileSystem;
-			}
 			
 			try {
 				// Check if the job has been cancelled
 				if (job.getInternalState().isCancellationActive() || job.getInternalState().isDeletionActive()) {
 					for (String id: copyIds) {
-						fileSystem.cancel(id);
+						sourceFileSystem.cancel(id);
 					}
 					stagingEntries.remove();
 					continue;
@@ -218,7 +188,7 @@ public class XenonStager {
 				// Check the status of the copies of the job
 				for (Iterator<String> iterator=copyIds.iterator(); iterator.hasNext();) {
 					String id = iterator.next();
-					CopyStatus s = fileSystem.getStatus(id);
+					CopyStatus s = sourceFileSystem.getStatus(id);
 					
 					if (s.hasException()) {
 						jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", s.getException());
@@ -237,13 +207,14 @@ public class XenonStager {
 					// No longer staging files for this job
 					stagingEntries.remove();
 					if (job.getInternalState() == JobState.STAGING_IN) {
-						jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_READY);
+						job = jobService.setJobState(jobId, JobState.STAGING_IN, JobState.STAGING_READY);
 						jobLogger.info("StageIn complete.");
 						logger.info(job.getId()+": staging in complete.");
 					} else if (job.getInternalState() == JobState.STAGING_OUT){
+						WorkflowBinding files = null;
 						if (manifest.size() > 0) {
-				    		WorkflowBinding files = postStageout(job, manifest);
-				    		jobService.setAdditionalInfo(jobId, "files", files);
+				    		files = postStageout(job, manifest);
+				    		jobLogger.info("Fixed output: " + files.toIndentedString());
 				    	} else {
 				    		jobLogger.warn("There are no files to stage.");
 				    	}
@@ -252,21 +223,13 @@ public class XenonStager {
 				        logger.info(job.getId()+": staging out complete.");
 				        
 				        int exitcode = ((StagingOutJob)stagingJob).exitcode;
-				        // Re-get the job from the database here, because it may have changed in state
-				        
-				        j = repository.findById(jobId);		
-						if (!j.isPresent()) {
-							logger.error("Could not find job with id: " + jobId);
-							jobLogger.error("Could not find job with id: " + jobId);
-							return;
-						}
-						job = j.get();
+
 				        if (!job.getInternalState().isFinal()) {
 				        	if (exitcode == 0) {
-				        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.SUCCESS);
+				        		job = jobService.completeJob(jobId, files, JobState.STAGING_OUT, JobState.SUCCESS);
 				        		logger.info(job.getId()+": job completed successfully.");
 				        	} else {
-				        		jobService.setJobState(jobId, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
+				        		job = jobService.completeJob(jobId, files, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
 				        		logger.info(job.getId()+": job completed with errors, exitcode: " + exitcode);
 				        	}
 				        }
@@ -290,7 +253,7 @@ public class XenonStager {
 	 * @throws XenonException 
 	 */
 	public boolean stageIn(StagingManifest manifest) throws XenonException, StatePreconditionException {	
-		List<String> stagingIds = doStaging(manifest, localFileSystem, remoteFileSystem);
+		List<String> stagingIds = doStaging(manifest);
 		
 		StagingJob stagingJob = new StagingJob(manifest, stagingIds);
 		copyMap.put(manifest.getJobId(), stagingJob);
@@ -314,7 +277,7 @@ public class XenonStager {
 	 */
 	public boolean stageOut(StagingManifest manifest, int exitcode) throws StatePreconditionException, IOException, XenonException {
 		try {
-			List<String> stagingIds = doStaging(manifest, remoteFileSystem, localFileSystem);
+			List<String> stagingIds = doStaging(manifest);
 			StagingOutJob stagingJob = new StagingOutJob(exitcode, manifest, stagingIds);
 			copyMap.put(manifest.getJobId(), stagingJob);
 		} catch (XenonException e) {
@@ -323,73 +286,167 @@ public class XenonStager {
 		return true;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public WorkflowBinding postStageout(Job job, StagingManifest manifest) throws IOException, XenonException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 		WorkflowBinding binding = job.getOutput();
+		
+		jobLogger.debug("Starting postStageout");
 		for (StagingObject stageObject : manifest) {
-			String outputTarget = null;
-			Object outputObject = null;
 			if (stageObject instanceof FileStagingObject) {
 				FileStagingObject object = (FileStagingObject) stageObject;
+				Parameter parameter = object.getParameter();
+				
+				String outputTarget = null;
+				Object outputObject = null;
+				
 				UriComponentsBuilder b;
 				if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
 					b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
 					b.pathSegment(service.getConfig().getTargetFilesystemConfig().getBaseurl());
 					b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
 				} else {
-					b = UriComponentsBuilder.fromUriString(localFileSystem.getLocation().toString());
+					b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());
 					b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
 				}
 				
-				HashMap<String, Object> value = new HashMap<String, Object>();
-				value.put("location", b.build().toString());
-				value.put("basename", object.getTargetPath().getFileNameAsString());
-				value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath().toString()).toString());
-				value.put("class", "File");
-				value.put("size", object.getBytesCopied());
+				if (parameter != null && binding.containsKey(parameter.getId())) {
+					if (parameter.getType().equals("File[]")) {
+						List<HashMap<String, Object>> values = (List<HashMap<String, Object>>) binding.get(parameter.getId());
+						for (HashMap<String, Object> value : values) {
+							value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+							value.put("location", b.build().toString());
+						}
+					
+						outputTarget = parameter.getId();
+						outputObject = values;
+					} else {
+						HashMap<String, Object> value = (HashMap<String, Object>) binding.get(parameter.getId());
+						value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+						value.put("location", b.build().toString());
+					
+						outputTarget = parameter.getId();
+						outputObject = value;
+					}
+				} else {
+					HashMap<String, Object> value = new HashMap<String, Object>();
+					value.put("location", b.build().toString());
+					value.put("basename", object.getTargetPath().getFileNameAsString());
+					value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+					value.put("class", "File");
+					value.put("size", object.getBytesCopied());
 				
-				outputTarget = object.getTargetPath().getFileNameAsString();
-				outputObject = value;
-			} else if (stageObject instanceof DirectoryStagingObject) {
-				DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
-				UriComponentsBuilder b = UriComponentsBuilder.fromUriString(localFileSystem.getLocation().toString());
-
-				b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-				outputTarget = object.getTargetPath().getFileNameAsString();
-				outputObject = b.build().toString();
-			} else if (stageObject instanceof FileToStringStagingObject) {
-				FileToStringStagingObject object = (FileToStringStagingObject) stageObject;
-				Path sourcePath = object.getSourcePath();
-				String contents = IOUtils.toString(remoteFileSystem.readFromFile(sourcePath), "UTF-8");
-				object.setBytesCopied(contents.length());
-				
-				jobLogger.debug("Read contents from " + sourcePath + ": " + contents);
-				outputTarget = object.getTargetString();
-				outputObject = contents;
-			} else if (stageObject instanceof FileToMapStagingObject) {
-				FileToMapStagingObject object = (FileToMapStagingObject) stageObject;
-				Path sourcePath = object.getSourcePath();
-				String contents = IOUtils.toString(remoteFileSystem.readFromFile(sourcePath), "UTF-8");
-				object.setBytesCopied(contents.length());
-				jobLogger.debug("Read contents from " + sourcePath + ": " + contents);
-
-				if (contents.length() > 0) {
-					ObjectMapper mapper = new ObjectMapper(new JsonFactory());
-					TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {
-					};
-					HashMap<String, Object> value = mapper.readValue(new StringReader(contents), typeRef);
-
-					outputTarget = object.getTargetString();
+					outputTarget = object.getTargetPath().getFileNameAsString();
 					outputObject = value;
 				}
+				binding.put(outputTarget, outputObject);
+			} else if (stageObject instanceof DirectoryStagingObject) {
+				fixDirectoryStagingObject(job, manifest, stageObject, binding, jobLogger);
 			}
-			binding.put(outputTarget, outputObject);
+//			} else if (stageObject instanceof FileToStringStagingObject) {
+//				FileToStringStagingObject object = (FileToStringStagingObject) stageObject;
+//				Path sourcePath = object.getSourcePath();
+//				String contents = IOUtils.toString(sourceFileSystem.readFromFile(sourcePath), "UTF-8");
+//				object.setBytesCopied(contents.length());
+//				
+//				jobLogger.debug("Read contents from " + sourcePath + ": " + contents);
+//				outputTarget = object.getTargetString();
+//				outputObject = contents;
+//			} else if (stageObject instanceof FileToMapStagingObject) {
+//				FileToMapStagingObject object = (FileToMapStagingObject) stageObject;
+//				Path sourcePath = object.getSourcePath();
+//				String contents = IOUtils.toString(sourceFileSystem.readFromFile(sourcePath), "UTF-8");
+//				object.setBytesCopied(contents.length());
+//				jobLogger.debug("Read contents from " + sourcePath + ": " + contents);
+//
+//				if (contents.length() > 0) {
+//					ObjectMapper mapper = new ObjectMapper(new JsonFactory());
+//					TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {
+//					};
+//					HashMap<String, Object> value = mapper.readValue(new StringReader(contents), typeRef);
+//
+//					outputTarget = object.getTargetString();
+//					outputObject = value;
+//				}
+//			}
 		}
 		return binding;
 	}
+	
+	@SuppressWarnings("unchecked")
+	public void fixDirectoryStagingObject(Job job, StagingManifest manifest,
+			StagingObject stageObject, WorkflowBinding binding, Logger jobLogger) {
+		DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
+		Parameter parameter = object.getParameter();
+		
+		UriComponentsBuilder b;
+		if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
+			b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
+			b.pathSegment(service.getConfig().getTargetFilesystemConfig().getBaseurl());
+			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+		} else {
+			b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());
+			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+		}
 
-	public void setFileSystems(FileSystem localFileSystem, FileSystem remoteFileSystem) {
-		this.localFileSystem = localFileSystem;
-		this.remoteFileSystem = remoteFileSystem;
+		String  outputTarget = object.getTargetPath().getFileNameAsString();
+		Object outputObject = null;
+		
+		if (parameter != null && binding.containsKey(parameter.getId())) {
+			if (parameter.getType().equals("Directory[]")) {
+				List<HashMap<String, Object>> values = (List<HashMap<String, Object>>) binding.get(parameter.getId());
+				for (HashMap<String, Object> value : values) {
+					Path dirPath = manifest.getTargetDirectory().resolve(object.getTargetPath());
+					value.put("path", dirPath.toString());
+					value.put("location", b.build().toString());
+					
+					if (value.containsKey("listing")) {
+						fixListingRecursive(b, value, dirPath);
+					}
+				}
+			
+				outputTarget = parameter.getId();
+				outputObject = values;
+			} else {
+				HashMap<String, Object> value = (HashMap<String, Object>) binding.get(parameter.getId());
+				value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+				value.put("location", b.build().toString());
+			
+				outputTarget = parameter.getId();
+				outputObject = value;
+			}
+		} else {
+			HashMap<String, Object> value = new HashMap<String, Object>();
+			value.put("location", b.build().toString());
+			value.put("basename", object.getTargetPath().getFileNameAsString());
+			value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+			value.put("class", "Directory");
+			
+			outputObject = value;
+		}
+		
+		binding.put(outputTarget, outputObject);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void fixListingRecursive(UriComponentsBuilder b, HashMap<String, Object> value, Path dirPath) {
+		List<HashMap<String, Object>> listing = (List<HashMap<String, Object>>)value.get("listing");
+		for (HashMap<String, Object> dirItem : listing) {
+			UriComponentsBuilder c = b.cloneBuilder();
+			Path dirItemPath = new Path((String)dirItem.get("path")).getFileName();
+			c.pathSegment(dirItemPath.getFileNameAsString());
+			
+			dirItem.put("path", dirPath.resolve(dirItemPath).toString());
+			dirItem.put("location", c.build().toString());
+			
+			if (dirItem.containsKey("listing")) {
+				fixListingRecursive(c, dirItem, dirItemPath);
+			}
+		}
+	}
+
+	public void setFileSystems(FileSystem sourceFileSystem, FileSystem targetFileSystem) {
+		this.sourceFileSystem = sourceFileSystem;
+		this.targetFileSystem = targetFileSystem;
 	}
 }

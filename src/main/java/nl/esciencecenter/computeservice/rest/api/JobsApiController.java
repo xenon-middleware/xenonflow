@@ -35,7 +35,6 @@ import nl.esciencecenter.computeservice.service.JobService;
 import nl.esciencecenter.computeservice.service.XenonService;
 import nl.esciencecenter.computeservice.service.tasks.DeleteJobTask;
 import nl.esciencecenter.computeservice.utils.LoggingUtils;
-import nl.esciencecenter.xenon.XenonException;
 
 @CrossOrigin
 @Controller
@@ -61,7 +60,7 @@ public class JobsApiController implements JobsApi {
 		Optional<Job> job;
 		try {
 			job = cancelJob(jobId);
-			if (job != null) {
+			if (job.isPresent()) {
 				HttpHeaders headers = new HttpHeaders();
 				ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
 				builder.replacePath("/jobs/" + job.get().getId());
@@ -95,7 +94,7 @@ public class JobsApiController implements JobsApi {
 				return new ResponseEntity<Void>(headers, HttpStatus.OK);
 			}
 			return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
-		} catch (XenonException | StatePreconditionException e) {
+		} catch (StatePreconditionException e) {
 			logger.error("Error job deletion request: ", e);
 			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -165,7 +164,7 @@ public class JobsApiController implements JobsApi {
 			headers.setLocation(builder.build().toUri());
 			
 			return new ResponseEntity<Job>(job, headers, HttpStatus.CREATED);
-		} catch (XenonException | StatePreconditionException e) {
+		} catch (StatePreconditionException e) {
 			logger.error("Error while posting job", e);
 			Job job = new Job();
 			job.getAdditionalInfo().put("exception", e);
@@ -173,7 +172,7 @@ public class JobsApiController implements JobsApi {
 		}
 	}
 	
-	public Job submitJob(JobDescription body, String uuid) throws StatePreconditionException, XenonException {
+	public Job submitJob(JobDescription body, String uuid) throws StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + uuid);
 		LoggingUtils.addFileAppenderToLogger("jobs." + uuid, xenonService.getJobLogName("jobs." + uuid));
 
@@ -237,7 +236,7 @@ public class JobsApiController implements JobsApi {
 		return j;
 	}
 
-	public Optional<Job> deleteJob(String jobId) throws XenonException, StatePreconditionException {
+	public Optional<Job> deleteJob(String jobId) throws StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
 		
 		jobLogger.info("Going to delete job " + jobId);

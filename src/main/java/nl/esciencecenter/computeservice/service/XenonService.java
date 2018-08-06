@@ -74,7 +74,7 @@ public class XenonService {
 
 	@PostConstruct
 	private void initialize() throws XenonException, IOException {
-		logger.debug("Loading xenon config from: " + xenonConfigFile);
+		logger.info("Loading xenon config from: " + xenonConfigFile);
 
 		xenonflowHome = System.getenv("XENONFLOW_HOME");
 		

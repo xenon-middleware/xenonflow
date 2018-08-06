@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -106,7 +107,7 @@ public class XenonflowCLI implements CommandLineRunner {
 	
 	public static void main(String[] args) throws Exception {
 		System.setProperty("spring.devtools.livereload.enabled", "false");
-		new SpringApplicationBuilder(XenonflowCLI.class).logStartupInfo(false).web(false).run(args);
+		new SpringApplicationBuilder(XenonflowCLI.class).logStartupInfo(false).web(WebApplicationType.NONE).run(args);
 	}
 
 	@Override

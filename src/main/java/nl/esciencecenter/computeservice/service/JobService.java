@@ -2,12 +2,11 @@ package nl.esciencecenter.computeservice.service;
 
 import java.util.Date;
 
-import javax.transaction.Transactional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import nl.esciencecenter.computeservice.model.Job;
 import nl.esciencecenter.computeservice.model.JobRepository;
@@ -65,12 +64,12 @@ public class JobService {
         job.getAdditionalInfo().put("xenon.remote.directory", remoteDirectory.toString());
         job = repository.save(job);
 	}
-	
+
 	@Transactional
 	public void setOutput(String jobId, String outputTarget, Object outputObject) {
 		Job job = repository.findOneForUpdate(jobId);
     	job.getOutput().put(outputTarget, outputObject);
-    	repository.save(job);
+    	job = repository.save(job);
 	}
 
 	@Transactional
@@ -78,34 +77,62 @@ public class JobService {
 		Job job = repository.findOneForUpdate(jobId);
 		job.setXenonId(xenonJobId);
 		job.getAdditionalInfo().put("xenon.id", xenonJobId);
-		repository.save(job);
+		job = repository.save(job);
 	}
 
 	@Transactional
 	public void setXenonState(String jobId, String state) {
 		Job job = repository.findOneForUpdate(jobId);
 		job.getAdditionalInfo().put("xenon.state", state);
-		repository.save(job);
+		job = repository.save(job);
 	}
 
 	@Transactional
 	public void setXenonExitcode(String jobId, Integer exitCode) {
 		Job job = repository.findOneForUpdate(jobId);
 		job.getAdditionalInfo().put("xenon.exitcode", exitCode);
-		repository.save(job);
+		job = repository.save(job);
 	}
 
 	@Transactional
-	public void setOutputBinding(String jobId, WorkflowBinding binding) {
+	public Job setOutputBinding(String jobId, WorkflowBinding binding) {    	
+		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
+		
 		Job job = repository.findOneForUpdate(jobId);
-    	job.setOutput(binding);
-    	repository.save(job);
+		job.setOutput(binding);
+		
+	
+        job = repository.save(job);
+        
+        jobLogger.info("Job " + jobId + " now has ouptut: " + job.getOutput());
+        return job;    	
+    	
 	}
 
 	@Transactional
 	public void setAdditionalInfo(String jobId, String key, Object info) {
 		Job job = repository.findOneForUpdate(jobId);
 		job.getAdditionalInfo().put(key, info);
-		repository.save(job);
+		job = repository.save(job);
+	}
+
+	@Transactional
+	public Job completeJob(String jobId, WorkflowBinding files, JobState from, JobState to) throws StatePreconditionException {
+		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
+		
+		Job job = repository.findOneForUpdate(jobId);
+		job.changeState(from, to);
+		
+		if (files != null) {
+			job.setOutput(files);
+		}
+		if (to.isFinal()) {
+			job.getAdditionalInfo().put("finalizedAt", new Date());
+		}
+		
+        job = repository.save(job);
+        
+        jobLogger.info("Job " + jobId + " now has state: " + to);
+        return job;
 	}
 }

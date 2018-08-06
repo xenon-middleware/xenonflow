@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -41,6 +42,7 @@ import nl.esciencecenter.xenon.filesystems.FileSystem;
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = {nl.esciencecenter.computeservice.rest.Application.class})
+@TestPropertySource(locations="classpath:test.properties")
 public class CwlStageInTest {
 	@Value("${xenon.config}")
 	private String xenonConfigFile;
@@ -80,7 +82,7 @@ public class CwlStageInTest {
 		job.setInternalState(JobState.SUBMITTED);
 		job.setWorkflow("src/test/resources/cwl/echo-file.cwl");
 		
-		StagingManifest manifest = StagingManifestFactory.createStagingManifest(job, this.getSourceFileSystem(), jobLogger);
+		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), jobLogger);
 		
 		List<String> paths = new ArrayList<String>();
 		for (StagingObject stageObject : manifest) {
@@ -110,7 +112,7 @@ public class CwlStageInTest {
 		job.setName("createStagingManifestTest");
 		job.setInternalState(JobState.SUBMITTED);
 		
-		StagingManifest manifest = StagingManifestFactory.createStagingManifest(job, this.getSourceFileSystem(), jobLogger);
+		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), jobLogger);
 		
 		List<String> paths = new ArrayList<String>();
 		for (StagingObject stageObject : manifest) {

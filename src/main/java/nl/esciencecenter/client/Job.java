@@ -1,6 +1,8 @@
 package nl.esciencecenter.client;
 
 import java.io.Serializable;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Objects;
@@ -9,12 +11,14 @@ import javax.persistence.Column;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.swagger.annotations.ApiModelProperty;
 import nl.esciencecenter.computeservice.model.WorkflowBinding;
+import nl.esciencecenter.xenon.filesystems.Path;
 
 /**
  * Job
@@ -74,6 +78,15 @@ public class Job implements Serializable {
 			additionalInfo = new HashMap<String, Object>();
 		}
 		return additionalInfo;
+	}
+	
+	@JsonIgnore
+	public Path getSandboxDirectory() {
+		String dirString = hasName() ? getName() + "-" + getId() : getId();
+		String niceString = Normalizer.normalize(dirString.toLowerCase(), Form.NFD)
+		        .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+		        .replaceAll("[^\\p{Alnum}]+", "-");
+		return new Path(niceString);
 	}
 
 	/**

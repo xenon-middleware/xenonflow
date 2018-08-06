@@ -1,21 +1,30 @@
 package nl.esciencecenter.computeservice.service.staging;
 
+import org.commonwl.cwl.Parameter;
+
 public class BaseStagingObject implements StagingObject {
 
 	protected long bytesCopied = 0;
 	protected String copyId;
+	protected Parameter parameter;
 
-	@Override
+	@SuppressWarnings("unused")
+	private BaseStagingObject() {
+		
+	}
+
+	public BaseStagingObject(Parameter parameter) {
+		this.parameter = parameter;
+	}
+
 	public void setBytesCopied(long bytes) {
 		bytesCopied = bytes;
 	}
 
-	@Override
 	public long getBytesCopied() {
 		return bytesCopied;
 	}
 
-	@Override
 	public void setCopyId(String copyId) {
 		this.copyId = copyId;
 	}
@@ -24,4 +33,11 @@ public class BaseStagingObject implements StagingObject {
 		return copyId;
 	}
 
+	public void setParameter(Parameter parameter) {
+		this.parameter = parameter;
+	}
+
+	public Parameter getParameter() {
+		return parameter;
+	}
 }

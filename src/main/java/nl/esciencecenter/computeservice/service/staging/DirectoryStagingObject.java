@@ -1,12 +1,15 @@
 package nl.esciencecenter.computeservice.service.staging;
 
+import org.commonwl.cwl.Parameter;
+
 import nl.esciencecenter.xenon.filesystems.Path;
 
 public class DirectoryStagingObject extends BaseStagingObject {
 	private Path sourcePath;
 	private Path targetPath;
 
-	public DirectoryStagingObject(Path sourcePath, Path targetPath) {
+	public DirectoryStagingObject(Path sourcePath, Path targetPath, Parameter parameter) {
+		super(parameter);
 		this.sourcePath = sourcePath;
 		this.targetPath = targetPath;
 	}
@@ -29,6 +32,7 @@ public class DirectoryStagingObject extends BaseStagingObject {
 
 	@Override
 	public String toString() {
-		return "DirectoryStagingObject [sourcePath=" + sourcePath + ", targetPath=" + targetPath + "]";
+		return "DirectoryStagingObject [sourcePath=" + sourcePath + ", targetPath=" + targetPath
+				+ ", parameter=" + parameter + "]";
 	}
 }

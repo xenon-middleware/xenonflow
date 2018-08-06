@@ -15,7 +15,7 @@
 #
 ComputeResources:
     local:
-        cwlCommand: /home/bweel/anaconda2/envs/cwltool/bin/cwltool-wrapper
+        cwlCommand: /Users/bweel/miniconda2/envs/cwltool/bin/cwltool-wrapper
         maxTime: 20
         scheduler:
             adaptor: local

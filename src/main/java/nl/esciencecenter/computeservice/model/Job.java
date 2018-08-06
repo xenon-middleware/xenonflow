@@ -31,8 +31,9 @@ public class Job implements Serializable {
 	 */
 	private static final long serialVersionUID = -651298299479062306L;
 
-	@JsonProperty("id")
+	
 	@Id
+	@JsonProperty("id")
 	private String id = null;
 
 	@JsonProperty("name")

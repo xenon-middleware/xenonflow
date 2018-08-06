@@ -65,7 +65,7 @@ public class CwlStageInTask implements Runnable {
 			}
 			
 			// Staging files
-			StagingManifest manifest = StagingManifestFactory.createStagingManifest(job, service.getSourceFileSystem(), jobLogger);
+			StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, service.getSourceFileSystem(), jobLogger);
 	        
 			int tries = 0;
 			boolean success = false;

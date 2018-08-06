@@ -1,0 +1,11 @@
+{
+  "name": "test-copy-dir",
+  "workflow": "src/test/resources/cwl/copy-dir.cwl", 
+  "input": {
+    "inp": {
+        "class": "Directory",
+    	"path": "src/test/resources/"
+    },
+    "newname" : "newresourcs"
+  }
+}

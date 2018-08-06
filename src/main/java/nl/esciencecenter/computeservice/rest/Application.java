@@ -73,7 +73,7 @@ public class Application implements WebMvcConfigurer, CommandLineRunner, Applica
 	
 	@Bean
 	public static XenonStager remoteToTargetStager(XenonService xenonService, JobRepository repository, JobService jobService) throws XenonException {
-		return new XenonStager(jobService, repository, xenonService.getTargetFileSystem(), xenonService.getRemoteFileSystem(), xenonService);
+		return new XenonStager(jobService, repository, xenonService.getRemoteFileSystem(), xenonService.getTargetFileSystem(), xenonService);
 	}
 	
 	@Override

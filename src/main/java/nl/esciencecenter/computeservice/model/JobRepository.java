@@ -22,7 +22,6 @@ import javax.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -31,7 +30,7 @@ public interface JobRepository extends CrudRepository<Job, String> {
 	
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select j from Job j where j.id = ?1")
-	Job findOneForUpdate(String jobId);
+	Job findOneForUpdate(String id);
 	
 	List<Job> findAllByInternalState(JobState internalState);
 }

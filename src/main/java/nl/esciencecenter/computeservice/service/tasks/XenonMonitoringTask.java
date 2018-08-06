@@ -146,11 +146,9 @@ public class XenonMonitoringTask {
 					try {
 						if (status.getExitCode() != 0) {
 							jobLogger.error("Job has finished with errors.");
-							jobService.setXenonExitcode(job.getId(), status.getExitCode());
 							jobService.setJobState(job.getId(), JobState.RUNNING, JobState.FINISHED);
 						} else {
 							jobLogger.info("Jobs done.");
-							jobService.setXenonExitcode(job.getId(), status.getExitCode());
 							jobService.setJobState(job.getId(), JobState.RUNNING, JobState.FINISHED);
 						}
 					} catch (StatePreconditionException e) {
