@@ -17,10 +17,10 @@ ComputeResources:
     local:
         scheduler:
             adaptor: local
-            location: local://
+            location: /running-jobs
         filesystem:
             adaptor: file
-            location: /
+            location: /running-jobs
     docker-slurm:
         scheduler:
             adaptor: slurm
@@ -34,6 +34,11 @@ default: local
 sourceFileSystem:
     adaptor: file
     location: /
+
+targetFileSystem:
+    adaptor: file
+    location: /output
+    hosted: true
 
 #sourceFileSystem:
 #    adaptor: webdav

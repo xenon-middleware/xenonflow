@@ -21,6 +21,10 @@ RUN pip install --upgrade pip==9.0.3 && \
     pip install cwltool
 
 COPY ./config/docker-config.yml /app/config/config.yml
-COPY ./config/application.properties /app/config/application.propertiess
+
+RUN mkdir /running-jobs
+RUN mkdir /output
+
+EXPOSE 8080
 
 ENTRYPOINT cd /app && ./gradlew bootRun

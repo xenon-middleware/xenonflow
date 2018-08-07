@@ -195,6 +195,34 @@ public class CwlSubmitTest {
 	
 	@Test
 	@SuppressWarnings("unchecked")
+	public void submitAndWaitCopyDirectoryArray2Test() throws Exception {
+		logger.info("Starting copy directory array test");
+		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-dir-array2-test.json")));
+		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+		CWLState state = job.getState();
+		
+		assertTrue(state == CWLState.SUCCESS);
+		
+		assertTrue(job.getOutput().containsKey("out"));
+		List<Object> out = (List<Object>) job.getOutput().get("out");
+		assertEquals(2, out.size());
+		
+		HashMap<String, Object> dir = (HashMap<String, Object>) out.get(0);
+		assertTrue(dir.containsKey("class"));
+		assertEquals("Directory", (String)dir.get("class"));
+		assertTrue(dir.containsKey("location"));
+		
+		HashMap<String, Object> dir2 = (HashMap<String, Object>) out.get(1);
+		assertTrue(dir2.containsKey("class"));
+		assertEquals("Directory", (String)dir2.get("class"));
+		assertTrue(dir2.containsKey("location"));
+		
+		assertTrue(xenonService.getTargetFileSystem().exists(new Path((String) dir.get("path"))));
+		assertTrue(xenonService.getTargetFileSystem().exists(new Path((String) dir2.get("path"))));
+	}
+	
+	@Test
+	@SuppressWarnings("unchecked")
 	public void submitAndWaitCopyFileArrayTest() throws Exception {
 		logger.info("Starting copy file array test");
 		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-file-array-test.json")));

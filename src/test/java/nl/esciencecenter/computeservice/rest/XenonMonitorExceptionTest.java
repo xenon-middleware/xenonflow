@@ -2,10 +2,6 @@ package nl.esciencecenter.computeservice.rest;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Date;
 import java.util.UUID;
@@ -21,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import nl.esciencecenter.client.CWLState;
 import nl.esciencecenter.client.Job;
@@ -29,7 +24,6 @@ import nl.esciencecenter.computeservice.model.JobRepository;
 import nl.esciencecenter.computeservice.model.JobState;
 import nl.esciencecenter.computeservice.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.model.WorkflowBinding;
-import nl.esciencecenter.computeservice.service.XenonService;
 import nl.esciencecenter.computeservice.utils.CwlTestUtils;
 
 @RunWith(SpringRunner.class)
@@ -41,10 +35,7 @@ public class XenonMonitorExceptionTest {
 
 	@Autowired
     private MockMvc mockMvc;
-	
-	@Autowired
-	private XenonService xenonService;
-	
+		
 	@Autowired
 	private JobRepository repository;
 

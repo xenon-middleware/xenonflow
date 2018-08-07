@@ -1,6 +1,7 @@
 package nl.esciencecenter.computeservice.cli;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -41,6 +42,9 @@ public class XenonflowCLI implements CommandLineRunner {
 
 	@Autowired
 	private JobRepository repository;
+	
+	private CommonParameters common = new CommonParameters();
+	private CommandShow show = new CommandShow();
 
 	@Bean
 	public static ThreadPoolTaskScheduler taskScheduler() {
@@ -68,8 +72,9 @@ public class XenonflowCLI implements CommandLineRunner {
 	public JCommander initialize(String...arguments) {
 		JCommander jc = JCommander.newBuilder()
 			.programName("xenonflow-admin")
-			.addObject(new CommonParameters())
+			.addObject(common)
 			.addCommand("list", new CommandList())
+			.addCommand("show", show)
 			.addCommand("clear-database", new CommandClearDatabase())
 			.build();
 		
@@ -93,6 +98,14 @@ public class XenonflowCLI implements CommandLineRunner {
 				List<Job> jobs = repository.findAll();
 				for (Job job : jobs) {
 					System.out.println(job.getId() + " (" + job.getName() + ")");
+				}
+				break;
+			case "show":
+				Optional<Job> job = repository.findById(show.id);
+				if(job.isPresent()) {
+					System.out.println(job.get().toConsoleString());
+				} else {
+					System.out.println("Job " + show.id + " does not exist");
 				}
 				break;
 			case "clear-database":

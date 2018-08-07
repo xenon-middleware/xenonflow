@@ -25,7 +25,7 @@ ComputeResources:
             #credentialsMap:
             #    localhost:10022:
     local:
-        cwlCommand: /home/bweel/anaconda2/envs/cwltool/bin/cwltoil-wrapper
+        cwlCommand: /Users/bweel/miniconda2/envs/cwltool/bin/cwltoil-wrapper
         maxTime: 20
         scheduler:
             adaptor: local

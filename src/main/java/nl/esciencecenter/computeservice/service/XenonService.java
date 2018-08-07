@@ -22,7 +22,7 @@ import nl.esciencecenter.xenon.filesystems.Path;
 import nl.esciencecenter.xenon.schedulers.Scheduler;
 
 @Service
-public class XenonService {
+public class XenonService implements AutoCloseable {
 	private static final Logger logger = LoggerFactory.getLogger(XenonService.class);
 
 	@Value("${xenon.config}")
@@ -66,10 +66,6 @@ public class XenonService {
 		scheduler = null;
 		sourceFileSystem = null;
 		remoteFileSystem = null;
-	}
-
-	public void finalize() {
-		close();
 	}
 
 	@PostConstruct
