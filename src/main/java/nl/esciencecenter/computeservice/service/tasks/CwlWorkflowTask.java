@@ -1,9 +1,6 @@
 package nl.esciencecenter.computeservice.service.tasks;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +11,6 @@ import nl.esciencecenter.computeservice.model.JobState;
 import nl.esciencecenter.computeservice.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.service.JobService;
 import nl.esciencecenter.computeservice.service.XenonService;
-import nl.esciencecenter.xenon.filesystems.PosixFilePermission;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.adaptors.NotConnectedException;
 import nl.esciencecenter.xenon.filesystems.Path;

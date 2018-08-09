@@ -28,61 +28,71 @@ public class CwlTestUtils {
 		created.clear();
 	}
 
-	public static Job waitForStatus(String location, CWLState status, MockMvc mockMvc) throws Exception {
+	public static Job waitForStatus(String location, CWLState status, MockMvc mockMvc, String headerName, String apiToken) throws Exception {
 		CWLState state = null;
 		Job job = null;
 		while(state == null || !state.equals(status)) {
-			MockHttpServletResponse res = mockMvc.perform(get(location)).andExpect(status().is2xxSuccessful()).andReturn().getResponse();
+			MockHttpServletResponse res = mockMvc.perform(
+					get(location)
+					.header(headerName, apiToken)
+				).andExpect(status().is2xxSuccessful()).andReturn().getResponse();
 			job = mapper.readValue(res.getContentAsString(), Job.class);
 			state = job.getState();
-			Thread.sleep(1000);
+			Thread.sleep(1100);
 		}
 		return job;
 	}
 	
-	public static Job waitForFinal(String location, MockMvc mockMvc) throws Exception {
+	public static Job waitForFinal(String location, MockMvc mockMvc, String headerName, String apiToken) throws Exception {
 		CWLState state = CWLState.WAITING;
 		Job job = null;
 		while(!state.isFinal()) {
-			MockHttpServletResponse res = mockMvc.perform(get(location)).andExpect(status().is2xxSuccessful()).andReturn().getResponse();
+			MockHttpServletResponse res = mockMvc.perform(
+					get(location)
+					.header(headerName, apiToken)
+				).andExpect(status().is2xxSuccessful()).andReturn().getResponse();
 			job = mapper.readValue(res.getContentAsString(), Job.class);
 			state = job.getState();
 			
 			if (state.isFinal()) {
 				 return job;
 			}
-			Thread.sleep(1000);
+			Thread.sleep(1100);
 		}
 		return job;
 	}
 	
-	public static Job waitForRunning(String location, MockMvc mockMvc) throws Exception {
+	public static Job waitForRunning(String location, MockMvc mockMvc, String headerName, String apiToken) throws Exception {
 		CWLState state = CWLState.WAITING;
 		while(!state.isRunning()) {
-			MockHttpServletResponse res = mockMvc.perform(get(location)).andExpect(status().is2xxSuccessful()).andReturn().getResponse();
+			MockHttpServletResponse res = mockMvc.perform(
+					get(location)
+					.header(headerName, apiToken)
+				).andExpect(status().is2xxSuccessful()).andReturn().getResponse();
 			Job job = mapper.readValue(res.getContentAsString(), Job.class);
 			state = job.getState();
 			
 			if (state.isRunning()) {
 				 return job;
 			}
-			Thread.sleep(1000);
+			Thread.sleep(1100);
 		}
 		return null;
 	}
 	
-	public static Job postJobAndWaitForFinal(String contents, MockMvc mockMvc)
+	public static Job postJobAndWaitForFinal(String contents, MockMvc mockMvc, String headerName, String apiToken)
 			throws Exception {
 		
-		MockHttpServletResponse response = CwlTestUtils.postJob(contents, mockMvc);
+		MockHttpServletResponse response = CwlTestUtils.postJob(contents, mockMvc, headerName, apiToken);
 		
 		String location = response.getHeader("location");
 		
-		return CwlTestUtils.waitForFinal(location, mockMvc);
+		return CwlTestUtils.waitForFinal(location, mockMvc, headerName, apiToken);
 	}
 	
-	public static MockHttpServletResponse postJob(String contents, MockMvc mockMvc) throws Exception {
+	public static MockHttpServletResponse postJob(String contents, MockMvc mockMvc, String headerName, String apiToken) throws Exception {
 		MockHttpServletResponse response = mockMvc.perform(post("/jobs")
+				.header(headerName, apiToken)
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(contents)

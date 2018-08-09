@@ -59,7 +59,7 @@ public class JobsApiController implements JobsApi {
 	private DeleteJobTask deleteJobTask;
 	
 	@Override
-	@Throttling(type = ThrottlingType.RemoteAddr, limit = 1, timeUnit = TimeUnit.SECONDS)
+	@Throttling(type = ThrottlingType.RemoteAddr, limit = 5, timeUnit = TimeUnit.SECONDS)
 	public ResponseEntity<Job> cancelJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
 		requestLogger.info("CANCEL request received for job: " + jobId);
 		Optional<Job> job;
@@ -147,7 +147,7 @@ public class JobsApiController implements JobsApi {
 	}
 
 	@Override
-	@Throttling(type = ThrottlingType.RemoteAddr, limit = 1, timeUnit = TimeUnit.SECONDS)
+	@Throttling(type = ThrottlingType.RemoteAddr, limit = 5, timeUnit = TimeUnit.SECONDS)
 	public ResponseEntity<Job> postJob(@ApiParam(value = "Input binding for workflow." ,required=true ) @RequestBody JobDescription body) {
 		requestLogger.info("POST request received with description: " + body);
 		try {

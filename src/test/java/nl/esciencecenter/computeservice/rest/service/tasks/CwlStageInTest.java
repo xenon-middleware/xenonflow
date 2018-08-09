@@ -95,7 +95,7 @@ public class CwlStageInTest {
 			}
 		}
 		
-		List<String> expected = Arrays.asList("echo-file.cwl", "echo-file.json", "job-order.json");
+		List<String> expected = Arrays.asList("cwlcommand", "echo-file.cwl", "echo-file.json", "job-order.json");
 		assertEquals("Expecting arrays to be equal", expected, paths);
 	}
 	
@@ -125,7 +125,7 @@ public class CwlStageInTest {
 			}
 		}
 		
-		List<String> expected = Arrays.asList("count-lines-remote.cwl", "parseInt-tool.cwl", "ipsum.txt", "job-order.json");
+		List<String> expected = Arrays.asList("cwlcommand", "count-lines-remote.cwl", "parseInt-tool.cwl", "ipsum.txt", "job-order.json");
 		assertEquals("Expecting arrays to be equal", expected, paths);
 	}
 }

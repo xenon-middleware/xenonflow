@@ -5,7 +5,7 @@ plugins {
     id 'eclipse'
     id 'application'
     id 'org.hidetake.swagger.generator' version '2.4.2'
-    id 'org.springframework.boot' version '2.0.3.RELEASE'
+    id 'org.springframework.boot' version '2.0.4.RELEASE'
     id 'io.spring.dependency-management' version '1.0.5.RELEASE'
     id 'jacoco'
 }
@@ -37,10 +37,10 @@ dependencies {
     compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.2.0'
 
     //Spring(boot)
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.0.3.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.0.3.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '2.0.3.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '2.0.3.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.0.4.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.0.4.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '2.0.4.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '2.0.4.RELEASE'
     compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.5.0'
     compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.5.0'
 
@@ -53,12 +53,12 @@ dependencies {
     compile group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
 	
 	//JPA, hibernate and h2 database persistance libraries
-	compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.0.3.RELEASE'
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.0.4.RELEASE'
 	runtime group: 'com.h2database', name: 'h2', version: '1.4.196'
 	
 	// Security
 	compile group: 'com.weddini.throttling', name: 'spring-boot-throttling-starter', version: '0.0.9'
-	compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.0.3.RELEASE'
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.0.4.RELEASE'
 	
 	// Admin Interface
 
@@ -74,7 +74,7 @@ dependencies {
     compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.0'
     
     testCompile 'junit:junit:4.12'
-    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.0.3.RELEASE'
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.0.4.RELEASE'
 }
 
 // Include some more files in the distribution zip

@@ -19,6 +19,7 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -47,10 +48,20 @@ public class CwlSubmitTest {
 	@Autowired
 	private XenonService xenonService;
 	
+	@Value("${xenonflow.http.auth-token-header-name}")
+	private String headerName;
+
+	@Value("${xenonflow.http.auth-token}")
+	private String apiToken;
+	
 	@After
 	public void deleteJob() throws Exception {
 		for (String jobId : CwlTestUtils.getCreated()) {
-			this.mockMvc.perform(delete("/jobs/"+jobId));
+			this.mockMvc.perform(
+					delete("/jobs/"+jobId)
+					.header(headerName, apiToken)
+				);
+			Thread.sleep(1100);
 		}
 		CwlTestUtils.clearCreated();
 	}
@@ -58,7 +69,10 @@ public class CwlSubmitTest {
 	@Test
 	public void getJobsTest() {
 		assertThatCode(() -> {
-			this.mockMvc.perform(get("/jobs")).andExpect(status().isOk());
+			this.mockMvc.perform(
+					get("/jobs")
+					.header(headerName, apiToken)
+			).andExpect(status().isOk());
 		}).doesNotThrowAnyException();
 	}
 	
@@ -67,7 +81,7 @@ public class CwlSubmitTest {
 		logger.info("Starting echo test");
 		assertThatCode(() -> {
 			String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/echo-test.json")));
-			Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+			Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 			
 			assertTrue(job.getState() == CWLState.SUCCESS);
 		}).doesNotThrowAnyException();
@@ -78,7 +92,7 @@ public class CwlSubmitTest {
 		logger.info("Starting fail test");
 		assertThatCode(() -> {
 			String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/fail-test.json")));
-			Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+			Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 			
 			assertTrue(job.getState() == CWLState.PERMANENT_FAILURE);
 		}).doesNotThrowAnyException();
@@ -88,10 +102,11 @@ public class CwlSubmitTest {
 	public void submitAndWaitLogTest() throws Exception {
 		logger.info("Starting log test");
 		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/echo-test.json")));
-		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		
 		assertThatCode(() -> {
 			this.mockMvc.perform(get(job.getLog())
+					.header(headerName, apiToken)
 					.accept(MediaType.TEXT_PLAIN)
 			).andExpect(status().is2xxSuccessful());
 		}).doesNotThrowAnyException();
@@ -102,13 +117,17 @@ public class CwlSubmitTest {
 		logger.info("Starting does not exist test");
 		assertThatCode(() -> {
 			this.mockMvc.perform(get("/jobs/this_id_does_not_exist")
-					.accept(MediaType.APPLICATION_JSON)
+						.header(headerName, apiToken)
+						.accept(MediaType.APPLICATION_JSON)
 			).andExpect(status().is(404));
 			
-			this.mockMvc.perform(get("/jobs/this_id_does_not_exist/log")).andExpect(status().is(404));
+			this.mockMvc.perform(get("/jobs/this_id_does_not_exist/log")
+					.header(headerName, apiToken)).andExpect(status().is(404));
 			
-			this.mockMvc.perform(post("/jobs/this_id_does_not_exist/cancel")).andExpect(status().is(404));
-			this.mockMvc.perform(delete("/jobs/this_id_does_not_exist")).andExpect(status().is(404));
+			this.mockMvc.perform(post("/jobs/this_id_does_not_exist/cancel")
+					.header(headerName, apiToken)).andExpect(status().is(404));
+			this.mockMvc.perform(delete("/jobs/this_id_does_not_exist")
+					.header(headerName, apiToken)).andExpect(status().is(404));
 		}).doesNotThrowAnyException();
 	}
 	
@@ -119,12 +138,14 @@ public class CwlSubmitTest {
 			
 			String contents = new String("{}");
 			mockMvc.perform(post("/jobs")
+					.header(headerName, apiToken)
 					.accept(MediaType.APPLICATION_JSON)
 					.contentType(MediaType.APPLICATION_JSON)
 					.content(contents)).andExpect(status().is4xxClientError());
 			
 			contents = new String("{ \"name\": \"test\"}");
 			mockMvc.perform(post("/jobs")
+					.header(headerName, apiToken)
 					.accept(MediaType.APPLICATION_JSON)
 					.contentType(MediaType.APPLICATION_JSON)
 					.content(contents)).andExpect(status().is4xxClientError());
@@ -136,7 +157,7 @@ public class CwlSubmitTest {
 	public void submitAndWaitCopyTest() throws Exception {	
 		logger.info("Starting copy test");
 		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-test.json")));
-		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
 		assertTrue(state == CWLState.SUCCESS);
@@ -153,7 +174,7 @@ public class CwlSubmitTest {
 		logger.info("Starting copy directory test");
 		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-dir-test.json")));
 		
-		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
 		assertTrue(state == CWLState.SUCCESS);
@@ -170,7 +191,7 @@ public class CwlSubmitTest {
 	public void submitAndWaitCopyDirectoryArrayTest() throws Exception {
 		logger.info("Starting copy directory array test");
 		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-dir-array-test.json")));
-		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
 		assertTrue(state == CWLState.SUCCESS);
@@ -198,7 +219,7 @@ public class CwlSubmitTest {
 	public void submitAndWaitCopyDirectoryArray2Test() throws Exception {
 		logger.info("Starting copy directory array test");
 		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-dir-array2-test.json")));
-		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
 		assertTrue(state == CWLState.SUCCESS);
@@ -226,7 +247,7 @@ public class CwlSubmitTest {
 	public void submitAndWaitCopyFileArrayTest() throws Exception {
 		logger.info("Starting copy file array test");
 		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-file-array-test.json")));
-		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
 		assertTrue(state == CWLState.SUCCESS);
@@ -253,7 +274,7 @@ public class CwlSubmitTest {
 	public void submitAndWaitEchoFailTest() throws Exception {	
 		logger.info("Starting echo failure test");
 		String contents = "{\"name\":\"echo-fail\",\"workflow\":\"echo.cwl\",\"input\":{}}";
-		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
 		assertTrue(state.isErrorState());
@@ -264,12 +285,13 @@ public class CwlSubmitTest {
 		logger.info("Starting cancel immediately test");
 		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/sleep-test.json")));
 
-		MockHttpServletResponse response = CwlTestUtils.postJob(contents, mockMvc);
+		MockHttpServletResponse response = CwlTestUtils.postJob(contents, mockMvc, headerName, apiToken);
 		
 		String location = response.getHeader("location");
-		this.mockMvc.perform(post(location+"/cancel")).andExpect(status().is2xxSuccessful());
+		this.mockMvc.perform(post(location+"/cancel")
+				.header(headerName, apiToken)).andExpect(status().is2xxSuccessful());
 				
-		Job job = CwlTestUtils.waitForFinal(location, mockMvc);
+		Job job = CwlTestUtils.waitForFinal(location, mockMvc, headerName, apiToken);
 		
 		assertTrue(job.getState() == CWLState.CANCELLED);
 	}
@@ -280,14 +302,15 @@ public class CwlSubmitTest {
 		logger.info("Starting cancel test");
 		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/sleep-test.json")));
 		
-		MockHttpServletResponse response = CwlTestUtils.postJob(contents, mockMvc);
+		MockHttpServletResponse response = CwlTestUtils.postJob(contents, mockMvc, headerName, apiToken);
 		String location = response.getHeader("location");
 
-		Job job = CwlTestUtils.waitForRunning(location, mockMvc);
-		Thread.sleep(1000);
-		this.mockMvc.perform(post(location+"/cancel")).andExpect(status().is2xxSuccessful());
+		Job job = CwlTestUtils.waitForRunning(location, mockMvc, headerName, apiToken);
+		Thread.sleep(1100);
+		this.mockMvc.perform(post(location+"/cancel")
+				.header(headerName, apiToken)).andExpect(status().is2xxSuccessful());
 		
-		job = CwlTestUtils.waitForFinal(location, mockMvc);
+		job = CwlTestUtils.waitForFinal(location, mockMvc, headerName, apiToken);
 		assertTrue(job.getState() == CWLState.CANCELLED);
 	}
 	
@@ -318,10 +341,12 @@ public class CwlSubmitTest {
 		logger.info("Starting delete test");
 		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/echo-test.json")));
 		
-		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc);
+		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		String location = job.getUri();
-		this.mockMvc.perform(delete(location)).andExpect(status().is2xxSuccessful());
+		this.mockMvc.perform(delete(location)
+				.header(headerName, apiToken)).andExpect(status().is2xxSuccessful());
 		
-		this.mockMvc.perform(get(location)).andExpect(status().isNotFound());
+		this.mockMvc.perform(get(location)
+				.header(headerName, apiToken)).andExpect(status().isNotFound());
 	}
 }

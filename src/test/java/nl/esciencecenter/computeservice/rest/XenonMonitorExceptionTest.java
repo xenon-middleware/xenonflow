@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -38,6 +39,12 @@ public class XenonMonitorExceptionTest {
 		
 	@Autowired
 	private JobRepository repository;
+	
+	@Value("${xenonflow.http.auth-token-header-name}")
+	private String headerName;
+
+	@Value("${xenonflow.http.auth-token}")
+	private String apiToken;
 
 	@Test
 	public void jobDoesNotExistRunningTest() {
@@ -46,7 +53,7 @@ public class XenonMonitorExceptionTest {
 			job.setInternalState(JobState.RUNNING);
 			
 			job = repository.save(job);
-			Job job2 = CwlTestUtils.waitForFinal(job.getUri(), mockMvc);
+			Job job2 = CwlTestUtils.waitForFinal(job.getUri(), mockMvc, headerName, apiToken);
 			
 			assertEquals(CWLState.SYSTEM_ERROR, job2.getState());
 		}).doesNotThrowAnyException();
@@ -59,7 +66,7 @@ public class XenonMonitorExceptionTest {
 			job.setInternalState(JobState.RUNNING_CR);
 			
 			job = repository.save(job);
-			Job job2 = CwlTestUtils.waitForFinal(job.getUri(), mockMvc);
+			Job job2 = CwlTestUtils.waitForFinal(job.getUri(), mockMvc, headerName, apiToken);
 			
 			assertEquals(CWLState.CANCELLED, job2.getState());
 		}).doesNotThrowAnyException();
