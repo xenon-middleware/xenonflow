@@ -25,7 +25,10 @@ ComputeResources:
             #credentialsMap:
             #    localhost:10022:
     local:
-        cwlCommand: /Users/bweel/miniconda2/envs/cwltool/bin/cwltoil-wrapper
+        cwlCommand: |
+            #!/usr/bin/env bash
+
+            source /Users/bweel/miniconda2/bin/activate cwltool && cwltool $@
         maxTime: 20
         scheduler:
             adaptor: local

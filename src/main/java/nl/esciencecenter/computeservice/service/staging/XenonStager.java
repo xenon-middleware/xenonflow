@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.commonwl.cwl.Parameter;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ import nl.esciencecenter.xenon.filesystems.CopyMode;
 import nl.esciencecenter.xenon.filesystems.CopyStatus;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
+import nl.esciencecenter.xenon.filesystems.PosixFilePermission;
 
 public class XenonStager {
 	private static final Logger logger = LoggerFactory.getLogger(XenonMonitoringTask.class);
@@ -130,8 +132,16 @@ public class XenonStager {
 				PrintWriter out = new PrintWriter(targetFileSystem.writeToFile(targetPath));
 				out.write(contents);
 				out.close();
-				
+
 				stageObject.setBytesCopied(contents.length());
+				
+				if (stageObject instanceof CommandScriptStagingObject) {
+					Set<PosixFilePermission> permissions = targetFileSystem.getAttributes(targetPath).getPermissions();
+					permissions.add(PosixFilePermission.OWNER_EXECUTE);
+					permissions.add(PosixFilePermission.GROUP_EXECUTE);
+					permissions.add(PosixFilePermission.OTHERS_EXECUTE);
+					targetFileSystem.setPosixFilePermissions(targetPath, permissions);
+				}
 			} else if (stageObject instanceof DirectoryStagingObject) {
 				DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
 				Path sourcePath = object.getSourcePath();

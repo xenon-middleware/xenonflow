@@ -44,7 +44,7 @@ public class StagingManifestFactory {
 		Path workflowBasePath;
 	}
 	
-	public static StagingManifest createStagingInManifest(Job job, FileSystem fileSystem, Logger jobLogger) throws CwlException, XenonException, JsonParseException, JsonMappingException, IOException, StatePreconditionException, XenonflowException {
+	public static StagingManifest createStagingInManifest(Job job, FileSystem fileSystem, String cwlCommandScript, Logger jobLogger) throws CwlException, XenonException, JsonParseException, JsonMappingException, IOException, StatePreconditionException, XenonflowException {
 		StagingManifest manifest = new StagingManifest(job.getId(), job.getSandboxDirectory());
 
 		WorkflowDescription wfd = loadLocalWorkflow(job, fileSystem, jobLogger);
@@ -52,6 +52,13 @@ public class StagingManifestFactory {
 		if (wfd.workflow == null || wfd.workflow.getSteps() == null) {
 			throw new CwlException("Error staging files, cannot read the workflow file!\nworkflow: " + wfd.workflow);
 		}
+		
+		if (cwlCommandScript == null) {
+			manifest.add(new CommandScriptStagingObject("#!/usr/bin/env bash\n\ncwltool $@", new Path("cwlcommand"), null));
+		} else {
+			manifest.add(new CommandScriptStagingObject(cwlCommandScript, new Path("cwlcommand"), null));
+		}
+		
         manifest.add(new FileStagingObject(wfd.localPath, wfd.workflowBaseName, null));
         addSubWorkflowsToManifest(wfd.workflow, manifest, wfd.workflowBasePath, fileSystem, jobLogger);
 

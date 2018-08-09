@@ -82,7 +82,7 @@ public class CwlStageInTest {
 		job.setInternalState(JobState.SUBMITTED);
 		job.setWorkflow("src/test/resources/cwl/echo-file.cwl");
 		
-		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), jobLogger);
+		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), null, jobLogger);
 		
 		List<String> paths = new ArrayList<String>();
 		for (StagingObject stageObject : manifest) {
@@ -112,7 +112,7 @@ public class CwlStageInTest {
 		job.setName("createStagingManifestTest");
 		job.setInternalState(JobState.SUBMITTED);
 		
-		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), jobLogger);
+		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), null, jobLogger);
 		
 		List<String> paths = new ArrayList<String>();
 		for (StagingObject stageObject : manifest) {

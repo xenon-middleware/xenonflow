@@ -83,7 +83,7 @@ public class XenonMonitoringTask {
 		}
 	}
 
-	@Scheduled(fixedRateString ="${xenon.update.rate}", initialDelay=1500)
+	@Scheduled(fixedRateString = "${xenon.update.rate}", initialDelay=1500)
 	public void update() {
 		Scheduler scheduler;
 		try {

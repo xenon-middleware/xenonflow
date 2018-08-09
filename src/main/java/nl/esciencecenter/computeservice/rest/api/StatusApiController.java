@@ -1,12 +1,16 @@
 package nl.esciencecenter.computeservice.rest.api;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
+
+import com.weddini.throttling.Throttling;
+import com.weddini.throttling.ThrottlingType;
 
 import nl.esciencecenter.computeservice.model.Job;
 import nl.esciencecenter.computeservice.model.JobRepository;
@@ -21,6 +25,7 @@ public class StatusApiController implements StatusApi {
 	
 
 	@Override
+	@Throttling(type = ThrottlingType.RemoteAddr, limit = 1, timeUnit = TimeUnit.SECONDS)
 	public ResponseEntity<Status> getStatus() {
 		List<Job> jobs = repository.findAll();
 		int errored = 0;

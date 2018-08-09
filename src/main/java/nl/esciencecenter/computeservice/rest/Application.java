@@ -16,12 +16,21 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -40,11 +49,13 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableSwagger2
 @EnableScheduling
 @EnableAsync
+@EnableWebSecurity
 @ComponentScan(basePackages = {"nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.model*", "nl.esciencecenter.computeservice.service*"})
 @EntityScan(basePackages = { "nl.esciencecenter.computeservice.rest*", "nl.esciencecenter.computeservice.cwl*", "nl.esciencecenter.computeservice.model*", "nl.esciencecenter.computeservice.service*"})
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = { "nl.esciencecenter.computeservice.model*", "nl.esciencecenter.computeservice.cwl*" })
-public class Application implements WebMvcConfigurer, CommandLineRunner, ApplicationListener<ApplicationReadyEvent> {
+@Order(1)
+public class Application extends WebSecurityConfigurerAdapter implements WebMvcConfigurer, CommandLineRunner, ApplicationListener<ApplicationReadyEvent> {
 	private static final Logger logger = LoggerFactory.getLogger(Application.class);
 	
 	@Value("${local.server.address}")
@@ -52,6 +63,35 @@ public class Application implements WebMvcConfigurer, CommandLineRunner, Applica
 	
 	@Value("${xenon.config}")
 	private String xenonConfigFile;
+	
+	@Value("${xenonflow.http.auth-token-header-name}")
+    private String principalRequestHeader;
+
+    @Value("${xenonflow.http.auth-token}")
+    private String principalRequestValue;
+
+    @Override
+    protected void configure(HttpSecurity httpSecurity) throws Exception {
+        APIKeyAuthFilter filter = new APIKeyAuthFilter(principalRequestHeader);
+        filter.setAuthenticationManager(new AuthenticationManager() {
+
+            @Override
+            public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+                String principal = (String) authentication.getPrincipal();
+                if (!principalRequestValue.equals(principal))
+                {
+                    throw new BadCredentialsException("The API key was not found or not the expected value.");
+                }
+                authentication.setAuthenticated(true);
+                return authentication;
+            }
+        });
+        httpSecurity.
+            antMatcher("/**").
+            csrf().disable().
+            sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).
+            and().addFilter(filter).authorizeRequests().anyRequest().authenticated();
+    }
 	
 	@Bean
 	public static ThreadPoolTaskScheduler taskScheduler() {

@@ -64,8 +64,10 @@ public class CwlStageInTask implements Runnable {
 				throw new StatePreconditionException("State is: " + job.getInternalState() + " but expected either SUBMITTED or STAGING_IN");
 			}
 			
+			
+			String cwlCommand = service.getConfig().defaultComputeResource().getCwlCommand();
 			// Staging files
-			StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, service.getSourceFileSystem(), jobLogger);
+			StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, service.getSourceFileSystem(), cwlCommand, jobLogger);
 	        
 			int tries = 0;
 			boolean success = false;

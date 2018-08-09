@@ -26,7 +26,7 @@ public class ComputeResource {
 	private AdaptorConfig filesystemConfig;
 
 	@JsonProperty(value="cwlCommand", required=false)
-	private String cwlCommand = "cwltool";
+	private String cwlCommand = null;
 	
 	@JsonProperty(value="maxTime", required=false)
 	private int maxTime;
