@@ -31,7 +31,13 @@ Xenon-flow configuration consists of
 2. `targetFileSystem`: Any filesystem supported by Xenon can be used here
 3. `ComputeResources`: A map of compute resource descriptions for Xenon
 4. Each resource has the following settings:
-    1. `cwlCommand`: The command to run cwl workflows, usually cwltool
+    1. `cwlCommand`: A script to run the cwl runner, allowing for python environments to be started first.
+    	* Default:
+    		```
+    		#!/usr/bin/env bash
+    		
+    		cwltool $@
+    		```
     2. `scheduler`: A Xenon scheduler
     3. `filesystem` A Xenon filesystem
     4. Both the scheduler and filesystem have to following format:
@@ -110,6 +116,6 @@ Note that the input map contains a key `inp` which refers to the corresponding i
 ```
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -H "api-key: <insert api key here>" -d '{"name": "My First Workflow","workflow": "$PWD/cwl/echo.cwl","input": {"inp": "Hello CWL Server!"}}' http://localhost:8080/jobs
+curl -X POST -H "Content-Type: application/json" -H "api-key: <insert api key here>" -d '{"name": "My First Workflow","workflow": "$PWD/cwl/echo.cwl","input": {"inp": "Hello CWL Server!"}}' https://localhost:8443/jobs
 ```
 
