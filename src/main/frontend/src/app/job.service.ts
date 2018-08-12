@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Job } from './job';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
+import { WINDOW } from './window.provider';
 
 export interface WorkflowInput {
   [x: string]: object;
@@ -19,16 +20,19 @@ export interface JobDescription {
 export class JobService {
   private _selectedJob: BehaviorSubject<Job>;
   private _updateList: BehaviorSubject<boolean>;
-  private api = 'https://localhost:8443/jobs';
+  private api;
   private headers: HttpHeaders;
 
   constructor(
-    private http: HttpClient
+    private http: HttpClient,
+    @Inject(WINDOW) private window: Window
   ) {
     this._selectedJob = <BehaviorSubject<Job>>new BehaviorSubject(null);
     this._updateList = <BehaviorSubject<boolean>>new BehaviorSubject(false);
     this.headers = new HttpHeaders();
     this.headers = this.headers.set('api-key', 'in1uP28Y1Et9YGp95VLYzhm5Jgd$M!r0CKI7#@^RHwbVcHGa');
+
+    this.api = this.window.location.origin + '/jobs';
   }
 
   get selectedJob() {

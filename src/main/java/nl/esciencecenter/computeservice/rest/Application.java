@@ -147,14 +147,14 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		registry.addResourceHandler("swagger-ui.html")
+		registry.addResourceHandler("/swagger/**")
 				.addResourceLocations("classpath:/META-INF/resources/");
 
 		registry.addResourceHandler("/webjars/**")
 		        .addResourceLocations("classpath:/META-INF/resources/webjars/");
 		
 		registry.addResourceHandler("/admin/**")
-        .addResourceLocations("classpath:/main/resources/xenonflow-admin/");
+			.addResourceLocations("classpath:xenonflow-admin/");
 	}
 
 	@Override

@@ -2,6 +2,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { RouterModule } from '@angular/router';    
 
 import { AppComponent } from './app.component';
 import { JobDetailComponent } from './job-detail/job-detail.component';
@@ -9,6 +10,7 @@ import { JobListComponent } from './job-list/job-list.component';
 import { JobStateIconComponent } from './job-state-icon/job-state-icon.component';
 import { StateAlertPipe } from './state-alert.pipe';
 import { StateNamePipe } from './state-name.pipe';
+import { WINDOW_PROVIDERS } from './window.provider';
 
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
@@ -29,9 +31,12 @@ library.add(faPause, faCog, faCheck, faBan, faTimes, faExclamationTriangle);
     BrowserModule,
     HttpClientModule,
     FontAwesomeModule,
-    NgbModule.forRoot()
+    NgbModule.forRoot(),
+    RouterModule.forRoot([])
   ],
-  providers: [],
+  providers: [
+    WINDOW_PROVIDERS
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
