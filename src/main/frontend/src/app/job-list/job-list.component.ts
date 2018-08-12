@@ -14,6 +14,7 @@ export class JobListComponent implements OnInit {
 
   jobs: Job[];
   error: string;
+  activeJobId: string;
 
   constructor(
     private jobService: JobService,
@@ -21,6 +22,9 @@ export class JobListComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.jobService.selectedJob.subscribe(x => {
+      this.activeJobId = x ? x.id : null
+    });
     this.getAllJobs();
     interval(2500)
       .subscribe(() => {

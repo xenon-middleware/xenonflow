@@ -8,7 +8,7 @@
     <div class="sidebar-nav">
       <button class="btn btn-danger btn-right w-98" (click)="deleteAllJobs(confirmDelete)">Delete All Jobs</button>
       <ul class="nav jobs">
-        <li *ngFor="let job of jobs" class="job {{job.state | lowercase}}" id="{{job.id}}" (click)="onSelect(job)">
+        <li *ngFor="let job of jobs" class="job {{job.state | lowercase}}" id="{{job.id}}" (click)="onSelect(job)" [class.active]="activeJobId == job.id">
           <h5>{{job.name}}</h5>
           <span>Started: {{job.additionalInfo.startedAt | date: 'yyyy-MM-dd HH:mm:ss'}}</span>
           <div class="state {{job.state | lowercase}} {{job.state | stateAlert}}">

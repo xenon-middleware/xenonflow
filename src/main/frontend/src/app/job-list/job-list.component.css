@@ -30,11 +30,16 @@ div#job-list {
     margin-left: 5px;
     margin-right: 5px;
   }
+
+  li.job.active {
+    background-color: lightyellow;
+  }
   
   li.job {
     margin: 5px;
     border: solid 1px;
     border-radius: 5px;
+    cursor: pointer;
   }
   
   li.job h5 {
