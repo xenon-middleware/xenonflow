@@ -1,0 +1,8 @@
+<span class="job-status">
+  <fa-icon *ngIf="job.state == 'Waiting'" [icon]="faPause"></fa-icon>
+  <fa-icon *ngIf="job.state == 'Running'" [icon]="faCog"></fa-icon>
+  <fa-icon *ngIf="job.state == 'Success'" [icon]="faCheck"></fa-icon>
+  <fa-icon *ngIf="job.state == 'Cancelled'" [icon]="faBan"></fa-icon>
+  <fa-icon *ngIf="job.state == 'PermanentFailure' || job.state =='SystemError'" [fixedWidth]="true" [icon]="faTimes"></fa-icon>
+  <fa-icon *ngIf="job.state == 'TemporaryFailure'" [icon]="faExclamationTriangle"></fa-icon>
+</span>

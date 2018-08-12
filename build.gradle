@@ -8,6 +8,7 @@ plugins {
     id 'org.springframework.boot' version '2.0.4.RELEASE'
     id 'io.spring.dependency-management' version '1.0.5.RELEASE'
     id 'jacoco'
+    id "com.moowork.node" version "1.2.0"
 }
 
 version = '0.5'
@@ -54,7 +55,7 @@ dependencies {
 	
 	//JPA, hibernate and h2 database persistance libraries
 	compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.0.4.RELEASE'
-	runtime group: 'com.h2database', name: 'h2', version: '1.4.196'
+	runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
 	
 	// Security
 	compile group: 'com.weddini.throttling', name: 'spring-boot-throttling-starter', version: '0.0.9'
@@ -164,4 +165,44 @@ generateSwaggerCode {
 //    outputDir = file('src')
 //    configFile = file('config.json')
 //    components = ['models', 'apis']
+}
+
+def webappDir = "$projectDir/src/main/frontend"
+node {
+  // Version of node to use.
+  version = '10.8.0'
+  // Version of npm to use.
+  npmVersion = '6.3.0'
+  // Version of Yarn to use.
+  yarnVersion = '1.9.4'
+  // If true, it will download node using above parameters.
+  // If false, it will try to use globally installed node.
+  download = true
+  // Set the work directory for unpacking node
+  workDir = file("${webappDir}/nodejs")
+  // Set the work directory for NPM
+  npmWorkDir = file("${webappDir}/npm")
+  // Set the work directory for Yarn
+  yarnWorkDir = file("${webappDir}")
+  // Set the work directory where node_modules should be located
+  nodeModulesDir = file("${webappDir}")
+}
+
+sourceSets {
+	main {
+		resources {
+			srcDirs = ["$webappDir/dist", "$projectDir/src/main/resources"]
+		}
+	}
+}
+
+processResources {
+	dependsOn "buildAngular"
+}
+
+task buildAngular(type: YarnTask) {
+  dependsOn "yarn"
+  args = ['run', 'build']
+  inputs.dir "$webappDir"
+  outputs.dir("$webappDir/dist/xenonflow-admin")
 }

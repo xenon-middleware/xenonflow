@@ -1,0 +1,37 @@
+<div class="left-panel-border">
+  <div id="job-list" class="navbar-default sidebar">
+    <div class="job-list-header">
+      <h4>All Jobs</h4>
+      <a class="btn btn-primary btn-right" href="#" (click)="onSelect(null)">NEW JOB</a>
+    </div>
+    <div class="hr"></div>
+    <div class="sidebar-nav">
+      <button class="btn btn-danger btn-right w-98" (click)="deleteAllJobs(confirmDelete)">Delete All Jobs</button>
+      <ul class="nav jobs">
+        <li *ngFor="let job of jobs" class="job {{job.state | lowercase}}" id="{{job.id}}" (click)="onSelect(job)">
+          <h5>{{job.name}}</h5>
+          <span>Started: {{job.additionalInfo.startedAt | date: 'yyyy-MM-dd HH:mm:ss'}}</span>
+          <div class="state {{job.state | lowercase}} {{job.state | stateAlert}}">
+            {{job.state | stateName}}
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<ng-template #confirmDelete let-e="close" let-c="dismiss" let-d="dismiss">
+    <div class="modal-header">
+        <h4 class="modal-title">Confirm Delete</h4>
+        <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+            <span aria-hidden="true">&times;</span>
+          </button>
+    </div>
+    <div class="modal-body">
+        Are you sure you want to delete all jobs on the server? This cannot be undone.
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-default" (click)="c('Cancel')">Cancel</button>
+        <a class="btn btn-danger btn-ok" (click)="e('Delete')">Delete</a>
+    </div>
+</ng-template>

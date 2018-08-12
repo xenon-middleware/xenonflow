@@ -1,0 +1,101 @@
+div#job-list {
+    margin: 5px 0px;
+  }
+  
+  div #job-list .job-list-header {
+    padding: 5px 10px;
+    line-height: 38px;
+  }
+  
+  div #job-list .job-list-header .btn-right {
+    float: right;
+  }
+  
+  div#job-list .job-list-header h4 {
+    margin: 0px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  
+  div#job-list .jobs {
+    display: inline-block;
+  }
+  
+  div#job-list ul {
+    width: 100%;
+  }
+  
+  div#job-list div.hr {
+    border-bottom: solid 1px;
+    margin-left: 5px;
+    margin-right: 5px;
+  }
+  
+  li.job {
+    margin: 5px;
+    border: solid 1px;
+    border-radius: 5px;
+  }
+  
+  li.job h5 {
+    padding: 5px;
+    margin: 0;
+  }
+  
+  li.job span {
+    padding: 5px;
+    margin: 0;
+    font-size: 0.8em;
+  }
+  
+  li.job .state {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    text-align: center;
+    border-top: 1px solid;
+  }
+  
+  li.job.cancelled, li.job.temporaryfailure {
+    border-color: #8a6d3b;
+  }
+  
+  li.job.waiting, li.job.running {
+    border-color: #31708f;
+  }
+  
+  li.job.waiting, li.job.running {
+    border-color: #31708f;
+  }
+  
+  li.job.success {
+    border-color: #155724;
+  }
+  
+  li.job.permanentfailure, li.job.systemerror {
+    border-color: #a94442;
+  }
+  
+  
+  li.job .cancelled, li.job .temporaryfailure {
+    border-top-color: #8a6d3b;
+  }
+  
+  li.job .waiting, li.job .running {
+    border-top-color: #31708f;
+  }
+  
+  li.job .success {
+    border-top-color: #155724;
+  }
+  
+  li.job .permanentfailure, li.job .systemerror {
+    border-top-color: #a94442;
+  }
+  
+  .left-panel-border {
+    border: solid 1px #282B30;
+    border-radius: 5px;
+    margin: 20px 0px;
+    height: 100%;
+  }
+  

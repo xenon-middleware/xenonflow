@@ -9,6 +9,9 @@ build/
 log/
 db/
 xenon-flow.log
+cwl/
+running-jobs/
+output/
 
 # Ignore Gradle GUI config
 gradle-app.setting

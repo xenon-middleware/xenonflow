@@ -1,0 +1,21 @@
+<div class="container full-height">
+  <div class="row">
+    <div class="col">
+      <nav class="navbar bg top-panel-border">
+          <ul class="nav">
+            <li>
+              <a class="navbar-brand" href="#">CWL Demo Frontend</a>
+            </li>
+          </ul>
+        </nav>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-3">
+      <app-job-list></app-job-list>
+    </div>
+    <div class="col-sm-9">
+      <app-job-detail *ngIf="panel=='job-detail'"></app-job-detail>
+    </div>
+  </div>
+</div>

@@ -49,11 +49,15 @@ Xenon-flow configuration consists of
         4. `properties`: Optional properties (usually not needed)
 
 ### application.properties
-The application.properties needs configuration for two things:
+The application.properties needs configuration for the following things:
 1. api-key
 	1. `xenonflow.http.auth-token-header-name` controls the name of the header that holds the api key
 	2. `xenonflow.http.auth-token` the value of the api key. IMPORTANT you should really change this one
-2. The SSL Configuration
+2. The Database Configuration.
+	* These settings should be changed!
+	1. `spring.datasource.username` The database username
+	2. `spring.datasource.password` The database password
+3. The SSL Configuration
 	* Please read https://dzone.com/articles/spring-boot-secured-by-lets-encrypt for setup using Letsencrypt
 	* The following settings can be left as is. 
 	1. `server.port` The port for the server to run on.

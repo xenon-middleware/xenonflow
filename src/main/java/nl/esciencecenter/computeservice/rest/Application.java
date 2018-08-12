@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.http.HttpMethod;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -89,8 +90,18 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
         httpSecurity.
             antMatcher("/**").
             csrf().disable().
-            sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).
-            and().addFilter(filter).authorizeRequests().anyRequest().authenticated();
+            sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and().addFilter(filter)
+            .authorizeRequests()
+            	.antMatchers("/jobs").authenticated()
+            	.antMatchers("/jobs/**").authenticated()
+            	.antMatchers(HttpMethod.OPTIONS,"/jobs/**").permitAll()//allow CORS option calls
+            	.antMatchers(HttpMethod.HEAD,"/jobs/**").permitAll() //allow CORS option calls
+            	.antMatchers("/files").authenticated()
+            	.antMatchers("/files/**").authenticated()
+            	.antMatchers(HttpMethod.OPTIONS,"/files/**").permitAll()//allow CORS option calls
+            	.antMatchers(HttpMethod.HEAD,"/files/**").permitAll() //allow CORS option calls
+        		.antMatchers("/**").permitAll();
     }
 	
 	@Bean
@@ -141,6 +152,9 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 
 		registry.addResourceHandler("/webjars/**")
 		        .addResourceLocations("classpath:/META-INF/resources/webjars/");
+		
+		registry.addResourceHandler("/admin/**")
+        .addResourceLocations("classpath:/main/resources/xenonflow-admin/");
 	}
 
 	@Override

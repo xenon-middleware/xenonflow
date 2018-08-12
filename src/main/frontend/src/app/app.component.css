@@ -1,0 +1,24 @@
+.bg-inverse {
+    background-color: #292b2c;
+    color: white;
+  }
+  
+  .bg-inverse a {
+    color: white;
+  }
+  
+  .bg {
+    background-color: white;
+    color: #282B30;
+    margin: 15px 0px;
+  }
+  
+  .bg a {
+    color: #282B30;
+  }
+  
+  .top-panel-border {
+    border: solid 1px #282B30;
+    border-radius: 5px;
+  }
+  
