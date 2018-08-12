@@ -13,6 +13,7 @@ import { Job } from '../job';
 export class JobListComponent implements OnInit {
 
   jobs: Job[];
+  error: string;
 
   constructor(
     private jobService: JobService,
@@ -20,30 +21,31 @@ export class JobListComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.jobService.getAllJobs().subscribe(data => {
-      // Read the result field from the JSON response.
-      this.jobs = data;
-    });
+    this.getAllJobs();
     interval(2500)
       .subscribe(() => {
-        // Make the HTTP request:
-        this.jobService.getAllJobs().subscribe(data => {
-          // Read the result field from the JSON response.
-          this.jobs = data;
-        });
+        this.getAllJobs();
       });
 
     this.jobService.getUpdateListObserver.subscribe((value) => {
       if (value) {
         setTimeout(() => {
-          this.jobService.getAllJobs().subscribe(data => {
-            // Read the result field from the JSON response.
-            this.jobs = data;
-          });
+          this.getAllJobs();
           this.jobService.updateList = false;
         }, 2500);
       }
     });
+  }
+
+  private getAllJobs() {
+    this.jobService.getAllJobs().subscribe(data => {
+      this.jobs = data;
+      this.error = null;
+    },
+    error => {
+      this.jobs = [];
+      this.error = error.message;
+    })
   }
 
   onSelect(job: Job) {
