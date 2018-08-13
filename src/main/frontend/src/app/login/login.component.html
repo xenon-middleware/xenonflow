@@ -1,0 +1,22 @@
+<div class="right-panel-border">
+  <div>
+    <form name="loginForm" (ngSubmit)="f.form.valid && onSubmit()" #f="ngForm" novalidate>
+      <div *ngIf="status == 'error'" class="alert alert-danger">
+        Failed to log into Xenonflow server.
+      </div>
+       <fieldset class="workflow-input">
+        <div class="form-group">
+          <label for="apiKeyName">API Key Header Name:</label>
+          <input [ngClass]="{'form-control': true, 'is-invalid': status == 'error'}" [(ngModel)]="model.apiKeyName" name="apiKeyName" #apiKeyName="ngModel" type="text" required>
+        </div>
+        <div class="form-group">
+          <label>API Key:</label>
+          <input [ngClass]="{'form-control': true, 'is-invalid': status == 'error'}" [(ngModel)]="model.apiKey" name="apiKey" #apiKey="ngModel"type="text" required>
+        </div>
+        <div class="form-group">
+          <button [disabled]="!f.form.valid || status=='loading'" class="btn btn-primary btn-block">Login</button>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+</div>

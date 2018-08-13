@@ -1,3 +1,163 @@
-<p>
-  job-detail works!
-</p>
+<div *ngIf="job" class="right-panel-border">
+    <h2>{{job.name}}</h2>
+    <div class="job-detail-container">
+      <div class="job-header">
+        <div class="row no-gutters">
+          <div *ngIf="isCancelable();then cancelable else notCancelable"></div>
+        </div>
+      </div>
+      <div class="job-details">
+        <div class="detail-block-sm job-info">
+            <table class="table no-lines">
+              <tbody>
+                <tr>
+                  <th class="w-30"  scope="row">Id:</th>
+                  <td>{{job.id}}</td>
+                </tr>
+                <tr>
+                  <th class="w-30" scope="row">Name:</th>
+                  <td>{{job.name}}</td>
+                </tr>
+                <tr>
+                  <th class="w-30" scope="row">Workflow:</th>
+                  <td>{{job.workflow}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        <h3 *ngIf="keys(job.output).length > 0">Output: </h3>
+        <div *ngIf="keys(job.output).length > 0"  class="detail-block">
+            <table class="table">
+                <thead class="thead-default">
+                  <tr>
+                    <th class="w-30">Name</th><th>Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let key of keys(job.output)">
+                      <td>{{key}}</td>
+                      <td>
+                        <a class="text-info" *ngIf="isFile(job.output[key])" target="_blank" href="{{job.output[key].location}}">{{job.output[key].basename}} <fa-icon icon="external-link-alt" [fixedWidth]="true"></fa-icon></a>
+                        <span *ngIf="!isFile(job.output[key])">{{job.output[key]}}</span>
+                      </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <h3>Input: </h3>
+        <div class="detail-block">
+            <table class="table">
+              <thead class="thead-default">
+                <tr>
+                  <th class="w-30">Key</th><th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let key of keys(job.input)">
+                  <td>{{key}}</td>
+                  <td>
+                      <a class="text-info" *ngIf="isFile(job.input[key])" target="_blank" href="{{jobService.webdavUrl}}/{{job.input[key].path}}">{{job.input[key].path}} <fa-icon icon="external-link-alt" [fixedWidth]="true"></fa-icon></a>
+                      <span *ngIf="!isFile(job.input[key])">{{job.input[key]}}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
+        <h3>Additional Info:</h3>
+        <div class="detail-block">
+          <table class="table">
+            <thead class="thead-default">
+              <tr>
+                <th class="w-30">Key</th><th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let key of keys(job.additionalInfo)">
+                <td class="capitalize">{{key}}</td>
+                <td *ngIf="!isObject(job.additionalInfo[key])">{{job.additionalInfo[key]}}</td>
+                <td *ngIf="key === 'files' && job.additionalInfo[key]['stderr.txt']" ><a target="_blank" class="text-info" href="{{job.additionalInfo[key]['stderr.txt']}}">View Standard Error <fa-icon icon="external-link-alt" [fixedWidth]="true"></fa-icon></a></td>
+                <td *ngIf="!isFile(job.additionalInfo[key]) && isObject(job.additionalInfo[key]) && key === 'error'">{{job.additionalInfo[key].message}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Log / URI</h3>
+        <div class="detail-block-sm">
+          <table class="table no-lines">
+            <tbody>
+              <tr>
+                <th class="w-30" scope="row">Log:</th>
+                <td><button class="w-50 text-info job-uri" (click)="openLog(job.name, job.log)">View logfile <fa-icon icon="external-link-alt" [fixedWidth]="true"></fa-icon></button></td>
+              </tr>
+              <tr>
+                <th class="w-30" scope="row">URI:</th>
+                <td><a class="w-50 text-info job-uri" href="{{job.uri}}" target="_blank">{{job.uri}} <fa-icon icon="external-link-alt" [fixedWidth]="true"></fa-icon></a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <ng-template #cancelable>
+      <div class="col-sm-8 state {{job.state | lowercase}} {{job.state | stateAlert}}">
+          <div class="state-name">
+            <app-job-state-icon [job]="job"></app-job-state-icon>
+            {{job.state | stateName}}
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="btn-right w-100">
+              <button class="btn btn-danger btn-right w-47" (click)="deleteJob(confirmDelete)">Delete</button>
+              <button class="btn btn-right btn-cancel btn-warning w-47" (click)="cancelJob(confirmCancel)">Cancel</button>
+          </div>
+        </div>
+  </ng-template>
+  
+  <ng-template #notCancelable>
+      <div class="col-sm-10 state {{job.state | lowercase}} {{job.state | stateAlert}}">
+          <div class="state-name">
+            <app-job-state-icon [job]="job"></app-job-state-icon>
+            {{job.state | stateName}}
+          </div>
+        </div>
+        <div class="col-sm-2">
+          <div class="btn-right w-100">
+              <button class="btn btn-danger btn-right w-98" (click)="deleteJob(confirmDelete)">Delete</button>
+          </div>
+        </div>
+  </ng-template>
+  
+  <ng-template #confirmDelete let-e="close" let-c="dismiss" let-d="dismiss">
+      <div class="modal-header">
+          <h4 class="modal-title">Confirm Delete</h4>
+          <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+              <span aria-hidden="true">&times;</span>
+            </button>
+      </div>
+      <div class="modal-body">
+          Are you sure you want to delete this job. This cannot be undone.
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" (click)="c('Cancel')">Cancel</button>
+          <a class="btn btn-danger btn-ok" (click)="e('Delete')">Delete</a>
+      </div>
+  </ng-template>
+  
+  <ng-template #confirmCancel let-e="close" let-c="dismiss" let-d="dismiss">
+      <div class="modal-header">
+          <h4 class="modal-title">Confirm Cancel</h4>
+          <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+              <span aria-hidden="true">&times;</span>
+            </button>
+      </div>
+      <div class="modal-body">
+          Are you sure you want to cancel this job. This cannot be undone.
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" (click)="c('Stop')">Stop</button>
+          <a class="btn btn-danger btn-ok" (click)="e('Delete')">Cancel Job</a>
+      </div>
+  </ng-template>
+  

@@ -4,18 +4,27 @@
       <nav class="navbar bg top-panel-border">
           <ul class="nav">
             <li>
-              <a class="navbar-brand" href="#">CWL Demo Frontend</a>
+              <a class="navbar-brand" href="#">Xenonflow Admin</a>
             </li>
           </ul>
         </nav>
     </div>
   </div>
-  <div class="row">
-    <div class="col-sm-3">
-      <app-job-list></app-job-list>
-    </div>
-    <div class="col-sm-9">
-      <app-job-detail *ngIf="panel=='job-detail'"></app-job-detail>
-    </div>
+  <div class="row justify-content-center">
+    <ng-container *ngIf="panel=='login'">
+      <div class="col-sm-4">
+        <app-login></app-login>
+      </div>
+    </ng-container>
+    <ng-container *ngIf="panel!='login'">
+      <div class="col-sm-3">
+        <app-job-list *ngIf="panel != 'login'"></app-job-list>
+      </div>
+      <div class="col-sm-9">
+        <app-job-detail *ngIf="panel=='job-detail'"></app-job-detail>
+        <app-login *ngIf="panel=='login'"></app-login>
+      </div>
+    </ng-container>
+
   </div>
 </div>

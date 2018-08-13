@@ -1,0 +1,127 @@
+h2 {
+    padding-bottom: 5px;
+    padding-left: 35px;
+    font-size: 2.5em;
+    font-weight: bold;
+    text-transform: capitalize;
+    margin-top: 10px;
+  }
+  
+  .job-detail-container {
+    padding: 15px;
+  }
+  
+  .job-detail-container table {
+    margin: 0;
+  }
+  
+  .job-detail-container table.no-lines th,
+  .job-detail-container table.no-lines td {
+    border: none;
+  }
+  
+  .right-panel-border {
+    border: solid 1px #282B30;
+    border-radius: 5px;
+    margin: 20px 0px;
+    height: 100%;
+  }
+  
+  .job-details {
+    padding: 0px 20px;
+  }
+  
+  .detail-block {
+    border: solid 1px #282B30;
+    border-radius: 5px;
+    padding: 25px;
+  }
+  
+  .detail-block-sm {
+    border: solid 1px #282B30;
+    border-radius: 5px;
+    padding: 5px 15px;
+  }
+  
+  .detail-block-sm.job-info {
+    margin-top: 15px;
+    margin-bottom: 35px;
+  }
+  
+  .detail-block-sm .job-uri {
+    font-size: 0.9rem;
+  }
+  
+  .job-header h3, .job-details h3 {
+    text-transform: capitalize;
+  }
+  
+  .job-details h3 {
+    margin: 25px 0px 10px 25px
+  }
+  
+  .capitalize {
+    text-transform: capitalize;
+  }
+  
+  .job-header .state {
+    border-radius: 5px;
+    line-height: 48px;
+  }
+  
+  .w-30 {
+    width: 30%!important;
+  }
+  
+  .w-47 {
+    width: 47%!important;
+  }
+  
+  .w-98 {
+    width: 98%!important;
+  }
+  
+  .btn-right {
+    float: right;
+    line-height: 32px;
+  }
+  
+  .btn-cancel {
+    margin-right: 5px;
+  }
+  
+  .job-header {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+  
+  .job-header .state .state-name {
+    vertical-align: middle;
+    margin-left: 27px;
+  }
+  
+  .job-header .state.cancelled, .job-header .state.temporaryfailure {
+    border: solid 1px #8a6d3b;
+  }
+  
+  .job-header .state.waiting, .job-header .state.running {
+    border: solid 1px #31708f;
+  }
+  
+  .job-header .state.waiting, .job-header .state.running {
+    border: solid 1px #31708f;
+  }
+  
+  .job-header .state.success {
+    border: solid 1px #155724;
+  }
+  
+  .job-header .state.permanentfailure, .job-header .state.systemerror {
+    border: solid 1px #a94442;
+  }
+  
+  fa.fa-right {
+    float: right;
+    margin-top: 2px;
+  }
+  
