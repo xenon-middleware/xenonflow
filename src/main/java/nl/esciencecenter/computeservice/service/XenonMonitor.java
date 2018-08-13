@@ -1,4 +1,4 @@
-package nl.esciencecenter.computeservice.service.tasks;
+package nl.esciencecenter.computeservice.service;
 
 import java.util.Date;
 import java.util.List;
@@ -15,9 +15,11 @@ import nl.esciencecenter.computeservice.model.Job;
 import nl.esciencecenter.computeservice.model.JobRepository;
 import nl.esciencecenter.computeservice.model.JobState;
 import nl.esciencecenter.computeservice.model.StatePreconditionException;
-import nl.esciencecenter.computeservice.service.JobService;
-import nl.esciencecenter.computeservice.service.XenonService;
 import nl.esciencecenter.computeservice.service.staging.XenonStager;
+import nl.esciencecenter.computeservice.service.tasks.CwlStageInTask;
+import nl.esciencecenter.computeservice.service.tasks.CwlStageOutTask;
+import nl.esciencecenter.computeservice.service.tasks.CwlWorkflowTask;
+import nl.esciencecenter.computeservice.service.tasks.DeleteJobTask;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.adaptors.schedulers.JobCanceledException;
 import nl.esciencecenter.xenon.schedulers.JobStatus;
@@ -25,8 +27,8 @@ import nl.esciencecenter.xenon.schedulers.NoSuchJobException;
 import nl.esciencecenter.xenon.schedulers.Scheduler;
 
 @Component
-public class XenonMonitoringTask {
-	private static final Logger logger = LoggerFactory.getLogger(XenonMonitoringTask.class);
+public class XenonMonitor {
+	private static final Logger logger = LoggerFactory.getLogger(XenonMonitor.class);
 
 	@Autowired
 	private XenonService xenonService;
@@ -83,7 +85,7 @@ public class XenonMonitoringTask {
 		}
 	}
 
-	@Scheduled(fixedRateString = "${xenon.update.rate}", initialDelay=1500)
+	@Scheduled(fixedRateString = "${xenonflow.update.rate}", initialDelay=1500)
 	public void update() {
 		Scheduler scheduler;
 		try {

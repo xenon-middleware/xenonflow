@@ -18,6 +18,7 @@ package nl.esciencecenter.computeservice.config;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Map;
@@ -76,7 +77,9 @@ public class ComputeServiceConfig {
 			module.addDeserializer(Credential.class, new CredentialDeserializer());
 			mapper.registerModule(module);
 
-			String contents = new String(Files.readAllBytes(Paths.get(configFile)));
+			Path xenonflowConfigPath = Paths.get(xenonflowHome, configFile);
+			logger.info("Loading xenon config from: " + xenonflowConfigPath.toString());
+			String contents = new String(Files.readAllBytes(xenonflowConfigPath));
 			contents = contents.replaceAll("\\$\\{XENONFLOW_HOME\\}", xenonflowHome);
 			contents = contents.replaceAll("\\$XENONFLOW_HOME", xenonflowHome);
 			config = mapper.readValue(contents, ComputeServiceConfig.class);

@@ -22,8 +22,8 @@ import nl.esciencecenter.computeservice.model.JobState;
 import nl.esciencecenter.computeservice.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.model.WorkflowBinding;
 import nl.esciencecenter.computeservice.service.JobService;
+import nl.esciencecenter.computeservice.service.XenonMonitor;
 import nl.esciencecenter.computeservice.service.XenonService;
-import nl.esciencecenter.computeservice.service.tasks.XenonMonitoringTask;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.CopyMode;
 import nl.esciencecenter.xenon.filesystems.CopyStatus;
@@ -32,7 +32,7 @@ import nl.esciencecenter.xenon.filesystems.Path;
 import nl.esciencecenter.xenon.filesystems.PosixFilePermission;
 
 public class XenonStager {
-	private static final Logger logger = LoggerFactory.getLogger(XenonMonitoringTask.class);
+	private static final Logger logger = LoggerFactory.getLogger(XenonMonitor.class);
 
 	private FileSystem sourceFileSystem;
 	private FileSystem targetFileSystem;

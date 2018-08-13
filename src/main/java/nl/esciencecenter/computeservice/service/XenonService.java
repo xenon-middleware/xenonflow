@@ -25,10 +25,10 @@ import nl.esciencecenter.xenon.schedulers.Scheduler;
 public class XenonService implements AutoCloseable {
 	private static final Logger logger = LoggerFactory.getLogger(XenonService.class);
 
-	@Value("${xenon.config}")
+	@Value("${xenonflow.config}")
 	private String xenonConfigFile;
 
-	@Value("${xenon.log.basepath}")
+	@Value("${xenonflow.log.basepath}")
 	private Path logBasePath;
 
 	@Autowired
@@ -70,15 +70,13 @@ public class XenonService implements AutoCloseable {
 
 	@PostConstruct
 	private void initialize() throws XenonException, IOException {
-		logger.info("Loading xenon config from: " + xenonConfigFile);
-
 		xenonflowHome = System.getenv("XENONFLOW_HOME");
 		
 		if (xenonflowHome == null) {
 			xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
 		}
 		logger.info("Xenonflow is using as home: " + xenonflowHome);
-		
+
 		// Read xenon config
 		setConfig(ComputeServiceConfig.loadFromFile(xenonConfigFile, xenonflowHome));
 		// Sanity Check the config file.

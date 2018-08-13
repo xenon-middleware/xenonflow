@@ -62,7 +62,7 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 	@Value("${local.server.address}")
 	private String bindAdress;
 	
-	@Value("${xenon.config}")
+	@Value("${xenonflow.config}")
 	private String xenonConfigFile;
 	
 	@Value("${xenonflow.http.auth-token-header-name}")
@@ -70,6 +70,9 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 
     @Value("${xenonflow.http.auth-token}")
     private String principalRequestValue;
+    
+    @Value("${xenonflow.admin.location}")
+    private String adminLocation;
 
     @Override
     protected void configure(HttpSecurity httpSecurity) throws Exception {
@@ -93,14 +96,16 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
             sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and().addFilter(filter)
             .authorizeRequests()
-            	.antMatchers("/jobs").authenticated()
-            	.antMatchers("/jobs/**").authenticated()
+            	.antMatchers(HttpMethod.OPTIONS,"/jobs").permitAll()//allow CORS option calls
+            	.antMatchers(HttpMethod.HEAD,"/jobs").permitAll() //allow CORS option calls
             	.antMatchers(HttpMethod.OPTIONS,"/jobs/**").permitAll()//allow CORS option calls
             	.antMatchers(HttpMethod.HEAD,"/jobs/**").permitAll() //allow CORS option calls
-            	.antMatchers("/files").authenticated()
-            	.antMatchers("/files/**").authenticated()
             	.antMatchers(HttpMethod.OPTIONS,"/files/**").permitAll()//allow CORS option calls
             	.antMatchers(HttpMethod.HEAD,"/files/**").permitAll() //allow CORS option calls
+            	.antMatchers("/jobs").authenticated()
+            	.antMatchers("/files").authenticated()
+            	.antMatchers("/files/**").authenticated()
+            	.antMatchers("/jobs/**").authenticated()
         		.antMatchers("/**").permitAll();
     }
 	
@@ -154,7 +159,7 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 		        .addResourceLocations("classpath:/META-INF/resources/webjars/");
 		
 		registry.addResourceHandler("/admin/**")
-			.addResourceLocations("classpath:xenonflow-admin/");
+			.addResourceLocations(adminLocation);
 	}
 
 	@Override
