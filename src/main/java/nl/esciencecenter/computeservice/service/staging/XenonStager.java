@@ -312,7 +312,7 @@ public class XenonStager {
 				UriComponentsBuilder b;
 				if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
 					b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
-					b.pathSegment(service.getConfig().getTargetFilesystemConfig().getBaseurl());
+					b.pathSegment("output/");
 					b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
 				} else {
 					b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());
@@ -391,7 +391,7 @@ public class XenonStager {
 		UriComponentsBuilder b;
 		if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
 			b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
-			b.pathSegment(service.getConfig().getTargetFilesystemConfig().getBaseurl());
+			b.pathSegment("output/");
 			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
 		} else {
 			b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());

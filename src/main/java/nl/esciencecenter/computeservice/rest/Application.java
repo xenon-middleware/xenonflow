@@ -33,6 +33,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -75,10 +76,14 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
     private String adminLocation;
 
     @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**");
+    }
+ 
+    @Override
     protected void configure(HttpSecurity httpSecurity) throws Exception {
         APIKeyAuthFilter filter = new APIKeyAuthFilter(principalRequestHeader);
         filter.setAuthenticationManager(new AuthenticationManager() {
-
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
                 String principal = (String) authentication.getPrincipal();
@@ -102,10 +107,18 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
             	.antMatchers(HttpMethod.HEAD,"/jobs/**").permitAll() //allow CORS option calls
             	.antMatchers(HttpMethod.OPTIONS,"/files/**").permitAll()//allow CORS option calls
             	.antMatchers(HttpMethod.HEAD,"/files/**").permitAll() //allow CORS option calls
+            	.antMatchers(HttpMethod.OPTIONS,"/output/**").permitAll()//allow CORS option calls
+            	.antMatchers(HttpMethod.HEAD,"/output/**").permitAll() //allow CORS option calls
+            	.antMatchers(HttpMethod.OPTIONS,"/status/**").permitAll()//allow CORS option calls
+            	.antMatchers(HttpMethod.HEAD,"/status/**").permitAll() //allow CORS option calls
             	.antMatchers("/jobs").authenticated()
+            	.antMatchers("/jobs/**").authenticated()
             	.antMatchers("/files").authenticated()
             	.antMatchers("/files/**").authenticated()
-            	.antMatchers("/jobs/**").authenticated()
+            	.antMatchers("/output").authenticated()
+            	.antMatchers("/output/**").authenticated()
+            	.antMatchers("/status").authenticated()
+            	.antMatchers("/status/**").authenticated()
         		.antMatchers("/**").permitAll();
     }
 	
@@ -132,8 +145,8 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 		return new XenonStager(jobService, repository, xenonService.getRemoteFileSystem(), xenonService.getTargetFileSystem(), xenonService);
 	}
 	
-	@Override
-	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+	@Bean
+	public TargetAdaptorConfig targetFileSystemConfig() {
 		String xenonflowHome = System.getenv("XENONFLOW_HOME");
 		
 		if (xenonflowHome == null) {
@@ -142,16 +155,23 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 		ComputeServiceConfig config;
 		try {
 			config = ComputeServiceConfig.loadFromFile(xenonConfigFile, xenonflowHome);
-			TargetAdaptorConfig targetConfig = config.getTargetFilesystemConfig();
-			
-			if (targetConfig.isHosted() && targetConfig.getAdaptor().equals("file")) {
-				String resourceLocation = targetConfig.getBaseurl() + "/**";
-				logger.info("Adding resource location handler for: " + resourceLocation);
-				registry.addResourceHandler(resourceLocation).addResourceLocations("file:" + targetConfig.getLocation());
-			}
+			return config.getTargetFilesystemConfig();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		return null;
+	}
+	
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		TargetAdaptorConfig targetConfig = targetFileSystemConfig(); 
+		if (targetConfig.isHosted() && targetConfig.getAdaptor().equals("file")) {
+			String resourceLocation = "/output/**";
+			logger.info("Adding resource location handler for: " + resourceLocation);
+			registry.addResourceHandler(resourceLocation)
+					.addResourceLocations("file:" + targetConfig.getLocation());
+		}
+		
 		registry.addResourceHandler("/swagger/**")
 				.addResourceLocations("classpath:/META-INF/resources/");
 
