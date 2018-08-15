@@ -54,6 +54,10 @@ export class JobDetailComponent implements OnInit {
     return Object.keys(object);
   }
 
+  isErrorFile(key, object): boolean {
+    return key === "stderr.txt" && this.isObject(object) && object.class === 'File' ;
+  }
+
   isFile(object): boolean {
     return this.isObject(object) && object.class === 'File';
   }
@@ -80,7 +84,7 @@ export class JobDetailComponent implements OnInit {
   }
 
   openLog(jobName, url) {
-    this.jobService.getJobLog(url).subscribe(content => {
+    this.jobService.getUrl(url).subscribe(content => {
       const modalRef = this.modalService.open(ModalContentComponent, { size: 'lg', windowClass: 'modal-xxl' });
       modalRef.componentInstance.title = jobName;
       modalRef.componentInstance.content = content;

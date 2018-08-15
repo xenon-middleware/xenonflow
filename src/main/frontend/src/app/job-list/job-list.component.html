@@ -2,13 +2,54 @@
   <div id="job-list" class="navbar-default sidebar">
     <div class="job-list-header">
       <h4>All Jobs</h4>
-      <a class="btn btn-primary btn-right" href="#" (click)="onSelect(null)">NEW JOB</a>
     </div>
     <div class="hr"></div>
-    <div class="sidebar-nav">
-      <button class="btn btn-danger btn-right w-98" (click)="deleteAllJobs(confirmDelete)">Delete All Jobs</button>
+    <div class="nav navbar-nav navbar-left">
       <ul class="nav jobs">
-        <li *ngFor="let job of jobs" class="job {{job.state | lowercase}}" id="{{job.id}}" (click)="onSelect(job)" [class.active]="activeJobId == job.id">
+        <li id="delete">
+          <button class="btn btn-danger btn-right w-96" (click)="deleteAllJobs(confirmDelete)">Delete All Jobs</button>
+        </li>
+        <div class="hr"></div>
+        <li class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text" id="basic-addon1">Filter:</span>
+          </div>
+          <input class="form-control" [(ngModel)]="searchText" placeholder="">
+        </li>
+        <li class="input-group">
+          <span class="filter-icon" (click)="statusFilter = 'Waiting'" placement="top" ngbTooltip="Waiting">
+            <fa-icon icon="pause"></fa-icon>
+          </span>
+          <span class="filter-icon" (click)="statusFilter = 'Running'" placement="top" ngbTooltip="Running">
+            <fa-icon icon="cog"></fa-icon>
+          </span>
+          <span class="filter-icon" (click)="statusFilter = 'Success'" placement="top" ngbTooltip="Success">
+            <fa-icon icon="check"></fa-icon>
+          </span>
+          <span class="filter-icon" (click)="statusFilter = 'Cancelled'" placement="top" ngbTooltip="Cancelled">
+            <fa-icon icon="ban"></fa-icon>
+          </span>
+          <span class="filter-icon" (click)="statusFilter = 'PermanentFailure'" placement="top" ngbTooltip="Permanent Failure">
+            <fa-icon icon="times"></fa-icon>
+          </span>
+          <span class="filter-icon" (click)="statusFilter = 'SystemError'" placement="top" ngbTooltip="System Error">
+            <fa-icon icon="exclamation-circle"></fa-icon>
+          </span>
+          <span class="filter-icon" (click)="statusFilter = 'TemporaryFailure'" placement="top" ngbTooltip="Temporary Failure">
+            <fa-icon icon="exclamation-triangle"></fa-icon>
+          </span>
+        </li>
+        <li class="input-group">
+          Filter:&nbsp;
+          <span>
+            {{statusFilter}}
+          </span>
+          <span *ngIf="statusFilter !== null" class="filter-icon-remove float-right" (click)="statusFilter = null">
+            <fa-icon icon="times"></fa-icon>
+          </span>
+        </li>
+        <div class="hr"></div>
+        <li *ngFor="let job of jobs | filter : searchText | statusFilter : statusFilter" class="job {{job.state | lowercase}}" id="{{job.id}}" (click)="onSelect(job)" [class.active]="activeJobId == job.id">
           <h5>{{job.name}}</h5>
           <span>Started: {{job.additionalInfo.startedAt | date: 'yyyy-MM-dd HH:mm:ss'}}</span>
           <div class="state {{job.state | lowercase}} {{job.state | stateAlert}}">

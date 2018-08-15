@@ -103,4 +103,25 @@ div#job-list {
     margin: 20px 0px;
     height: 100%;
   }
+
+  .w-96 {
+    width: 96%!important;
+  }
   
+  li#delete {
+    text-align: center;
+    margin: 4px 0px;
+  }
+
+  li.input-group {
+    padding: 4px;
+  }
+
+  li span.filter-icon {
+    border: solid gray 1px;
+    padding: 4px 8px;
+  }
+
+  li span.filter-icon-remove {
+    padding: 1px 8px;
+  }

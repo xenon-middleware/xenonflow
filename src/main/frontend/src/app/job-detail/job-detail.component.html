@@ -37,7 +37,8 @@
                     <tr *ngFor="let key of keys(job.output)">
                       <td>{{key}}</td>
                       <td>
-                        <a class="text-info" *ngIf="isFile(job.output[key])" target="_blank" href="{{job.output[key].location}}">{{job.output[key].basename}} <fa-icon icon="external-link-alt" [fixedWidth]="true"></fa-icon></a>
+                        <button *ngIf="isErrorFile(key, job.output[key])" (click)="openLog(job.name, job.output[key].location)">View logfile <fa-icon icon="external-link-alt" [fixedWidth]="true" class="w-50 text-info job-uri"></fa-icon></button>
+                        <a class="text-info" *ngIf="!isErrorFile(key, job.output[key]) && isFile(job.output[key])" target="_blank" href="{{job.output[key].location}}">{{job.output[key].basename}} <fa-icon icon="external-link-alt" [fixedWidth]="true"></fa-icon></a>
                         <span *ngIf="!isFile(job.output[key])">{{job.output[key]}}</span>
                       </td>
                     </tr>

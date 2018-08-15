@@ -1,0 +1,17 @@
+<div class="table-responsive">
+  <table *ngIf="status !== null" class="table">
+    <thead>
+      <tr>
+        <th colspan="4" scope="col">Server Status:</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Waiting: {{status.waiting}}</td>
+        <td>Running: {{status.running}}</td>
+        <td>Successful: {{status.successful}}</td>
+        <td>Errored: {{status.errored}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

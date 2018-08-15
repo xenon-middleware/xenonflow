@@ -16,6 +16,13 @@ export interface JobDescription {
   workflow: string;
 }
 
+export interface ServerStatus {
+  waiting: Number,
+  running: Number,
+  successful: Number,
+  errored: Number
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -24,6 +31,7 @@ export class JobService {
   private _updateList: BehaviorSubject<boolean>;
   private _isConnected: BehaviorSubject<boolean>;
   private api;
+  private statusUrl;
   private headers: HttpHeaders;
 
   constructor(
@@ -35,8 +43,10 @@ export class JobService {
     this._isConnected = new BehaviorSubject<boolean>(false);
     if (isDevMode) {
       this.api = environment.api;
+      this.statusUrl = environment.statusUrl;
     } else {
       this.api = this.window.location.origin + '/jobs';
+      this.statusUrl = this.window.location.origin + '/status';
     }
   }
 
@@ -85,8 +95,8 @@ export class JobService {
     return this.http.get<Job>(this.api + '/' + jobId, { headers: this.headers });
   }
 
-  getJobLog(logUrl: string): Observable<string> {
-    return this.http.get(logUrl, { headers: this.headers, responseType: 'text' });
+  getUrl(url: string): Observable<string> {
+    return this.http.get(url, { headers: this.headers, responseType: 'text' });
   }
 
   getAllJobs(): Observable<Job[]> {
@@ -103,5 +113,9 @@ export class JobService {
 
   cancelJob(jobId: string): Observable<Object> {
     return this.http.post(this.api + '/' + jobId + '/cancel', null, { headers: this.headers });
+  }
+
+  getStatus(): Observable<ServerStatus> {
+    return this.http.get<ServerStatus>(this.statusUrl, { headers: this.headers });
   }
 }

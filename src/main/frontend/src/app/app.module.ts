@@ -14,12 +14,15 @@ import { WINDOW_PROVIDERS } from './window.provider';
 
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
-import { faPause, faCog, faCheck, faBan, faTimes, faExclamationTriangle, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
+import { faPause, faCog, faCheck, faBan, faTimes, faExclamationTriangle, faExternalLinkAlt, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import { LoginComponent } from './login/login.component';
 import { ModalContentComponent } from './modal-content/modal-content.component';
 import { Plain2htmlPipe } from './plain2html.pipe';
+import { ServerStatusComponent } from './server-status/server-status.component';
+import { FilterPipe } from './filter.pipe';
+import { StatusFilterPipe } from './status-filter.pipe';
 
-library.add(faPause, faCog, faCheck, faBan, faTimes, faExclamationTriangle, faExternalLinkAlt);
+library.add(faPause, faCog, faCheck, faBan, faTimes, faExclamationTriangle, faExclamationCircle, faExternalLinkAlt);
 
 @NgModule({
   declarations: [
@@ -31,7 +34,10 @@ library.add(faPause, faCog, faCheck, faBan, faTimes, faExclamationTriangle, faEx
     StateNamePipe,
     LoginComponent,
     ModalContentComponent,
-    Plain2htmlPipe
+    Plain2htmlPipe,
+    ServerStatusComponent,
+    FilterPipe,
+    StatusFilterPipe
   ],
   imports: [
     BrowserModule,

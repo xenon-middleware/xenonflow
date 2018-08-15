@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { interval } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { JobService } from '../job.service';
@@ -15,11 +14,14 @@ export class JobListComponent implements OnInit {
   jobs: Job[];
   error: string;
   activeJobId: string;
+  statusFilter: string;
 
   constructor(
     private jobService: JobService,
     private modalService: NgbModal
-  ) { }
+  ) {
+    this.statusFilter = null;
+  }
 
   ngOnInit() {
     this.jobService.selectedJob.subscribe(x => {
