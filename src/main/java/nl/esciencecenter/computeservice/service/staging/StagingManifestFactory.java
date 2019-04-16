@@ -206,7 +206,8 @@ public class StagingManifestFactory {
 			if (map.containsKey(paramId)) {
 				addFileOrDirectoryToManifest(manifest, parameter, map, paramId);
 			}
-		} else if (parameter.getType().equals("File") || parameter.getType().equals("Directory")) {
+		} else if (parameter.getType().equals("File") || parameter.getType().equals("Directory")
+				 || parameter.getType().equals("stdout") || parameter.getType().equals("stderr")) {
 			if (!map.containsKey(paramId)) {
 				throw new CwlException("Error staging files, cannot find: " + paramId + " in the job order.");
 			} else {
@@ -241,7 +242,8 @@ public class StagingManifestFactory {
 	}
 	
 	private static void addFileOrDirectoryToManifest(StagingManifest manifest, Parameter parameter, HashMap<String, Object> map, String paramId) throws MalformedURLException, XenonflowException, XenonException {
-		if (parameter.getType().equals("File") || parameter.getType().equals("File?")) {
+		if (parameter.getType().equals("File") || parameter.getType().equals("File?")
+				|| parameter.getType().equals("stdout") || parameter.getType().equals("stderr")) {
 			addFileToManifest(manifest, parameter, map, paramId);
 		} else if (parameter.getType().equals("Directory") || parameter.getType().equals("Directory?")) {
 			addDirectoryToManifest(manifest, parameter, map, paramId);
@@ -297,3 +299,4 @@ public class StagingManifestFactory {
 		dir.put("path", targetPath.toString());
 	}
 }
+ 
