@@ -11,7 +11,7 @@ plugins {
     id "com.moowork.node" version "1.2.0"
 }
 
-version = '0.5'
+version = '0.6'
 mainClassName = 'nl.esciencecenter.computeservice.rest.Application'
 
 // In this section you declare where to find the dependencies of your project
