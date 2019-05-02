@@ -5,8 +5,8 @@ plugins {
     id 'eclipse'
     id 'application'
     id 'org.hidetake.swagger.generator' version '2.4.2'
-    id 'org.springframework.boot' version '2.0.4.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.5.RELEASE'
+    id 'org.springframework.boot' version '2.1.4.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.7.RELEASE'
     id 'jacoco'
     id "com.moowork.node" version "1.2.0"
 }
@@ -35,31 +35,31 @@ allprojects {
 // In this section you declare the dependencies for your production and test code
 dependencies {
     // Xenon
-    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.2.0'
+    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.6.2'
 
     //Spring(boot)
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.0.4.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.0.4.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '2.0.4.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '2.0.4.RELEASE'
-    compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.5.0'
-    compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.5.0'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.1.4.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.1.4.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '2.1.4.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '2.1.4.RELEASE'
+    compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.9.2'
+    compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.9.2'
 
     //Jackson, match version used in Spring
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.0'
-    compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.0'
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.9.0'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.8'
+    compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.8'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.9.8'
 	
     //compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310'
     compile group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
 	
 	//JPA, hibernate and h2 database persistance libraries
-	compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.0.4.RELEASE'
-	runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.1.4.RELEASE'
+	runtime group: 'com.h2database', name: 'h2', version: '1.4.199'
 	
 	// Security
 	compile group: 'com.weddini.throttling', name: 'spring-boot-throttling-starter', version: '0.0.9'
-	compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.0.4.RELEASE'
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.1.4.RELEASE'
 	
 	// Admin Interface
 
@@ -67,15 +67,15 @@ dependencies {
     swaggerCodegen 'io.swagger:swagger-codegen-cli:2.2.2'
 
     //Misc
-    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
     compile group: 'commons-io', name: 'commons-io', version: '2.5'
     
     //cli
     compile group: 'com.beust', name: 'jcommander', version: '1.71'
     compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.0'
     
-    testCompile 'junit:junit:4.12'
-    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.0.4.RELEASE'
+    testCompile group: 'junit', name:'junit', version:'4.12'
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.1.4.RELEASE'
 }
 
 // Include some more files in the distribution zip

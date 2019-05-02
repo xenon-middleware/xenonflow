@@ -42,6 +42,8 @@ import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
 import nl.esciencecenter.computeservice.model.JobRepository;
 import nl.esciencecenter.computeservice.service.JobService;
 import nl.esciencecenter.computeservice.service.XenonService;
+import nl.esciencecenter.computeservice.service.staging.RemoteToTargetStager;
+import nl.esciencecenter.computeservice.service.staging.SourceToRemoteStager;
 import nl.esciencecenter.computeservice.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
@@ -137,12 +139,12 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 	
 	@Bean
 	public static XenonStager sourceToRemoteStager(XenonService xenonService, JobRepository repository, JobService jobService) throws XenonException {
-		return new XenonStager(jobService, repository, xenonService.getSourceFileSystem(), xenonService.getRemoteFileSystem(), xenonService);
+		return new SourceToRemoteStager(jobService, repository, xenonService);
 	}
 	
 	@Bean
 	public static XenonStager remoteToTargetStager(XenonService xenonService, JobRepository repository, JobService jobService) throws XenonException {
-		return new XenonStager(jobService, repository, xenonService.getRemoteFileSystem(), xenonService.getTargetFileSystem(), xenonService);
+		return new RemoteToTargetStager(jobService, repository, xenonService);
 	}
 	
 	@Bean

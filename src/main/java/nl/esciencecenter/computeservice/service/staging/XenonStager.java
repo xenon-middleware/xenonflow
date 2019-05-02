@@ -31,14 +31,14 @@ import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 import nl.esciencecenter.xenon.filesystems.PosixFilePermission;
 
-public class XenonStager {
+public abstract class XenonStager {
 	private static final Logger logger = LoggerFactory.getLogger(XenonMonitor.class);
 
-	private FileSystem sourceFileSystem;
-	private FileSystem targetFileSystem;
+//	private FileSystem sourceFileSystem;
+//	private FileSystem targetFileSystem;
 	private JobService jobService;
 	private JobRepository repository;
-	private XenonService service;
+	protected XenonService service;
 	private HashMap<String, StagingJob> copyMap;
 	
 	private static class StagingJob {
@@ -61,14 +61,16 @@ public class XenonStager {
 		}
 	}
 
-	public XenonStager(JobService jobService, JobRepository repository, FileSystem sourceFileSystem, FileSystem targetFileSystem, XenonService service) {
-		this.sourceFileSystem = sourceFileSystem;
-		this.targetFileSystem = targetFileSystem;
+	public XenonStager(JobService jobService, JobRepository repository, XenonService service) {
 		this.jobService = jobService;
 		this.repository = repository;
 		this.service = service;
 		this.copyMap = new LinkedHashMap<String, StagingJob>();		
 	}
+
+	
+	protected abstract FileSystem getTargetFileSystem() throws XenonException;
+	protected abstract FileSystem getSourceFileSystem() throws XenonException;
 
 	/**
 	 * Stages everything defined in the StagingManifest
@@ -86,8 +88,11 @@ public class XenonStager {
 	public List<String> doStaging(StagingManifest manifest) throws XenonException, StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 
+		FileSystem targetFileSystem = getTargetFileSystem();
+		FileSystem sourceFileSystem = getSourceFileSystem();
+
 		// Make sure the target directory exists
-		Path targetDirectory = targetFileSystem.getWorkingDirectory().resolve(manifest.getTargetDirectory()).toAbsolutePath();
+		Path targetDirectory = getTargetFileSystem().getWorkingDirectory().resolve(manifest.getTargetDirectory()).toAbsolutePath();
 		if (!targetFileSystem.exists(targetDirectory)) {
 			jobLogger.info("Creating directory: " + targetDirectory);
 			targetFileSystem.createDirectories(targetDirectory);
@@ -185,6 +190,8 @@ public class XenonStager {
 			Job job = j.get();
 			
 			try {
+				FileSystem sourceFileSystem = getSourceFileSystem();
+
 				// Check if the job has been cancelled
 				if (job.getInternalState().isCancellationActive() || job.getInternalState().isDeletionActive()) {
 					for (String id: copyIds) {
@@ -261,13 +268,11 @@ public class XenonStager {
 	 * @throws StatePreconditionException 
 	 * @throws XenonException 
 	 */
-	public boolean stageIn(StagingManifest manifest) throws XenonException, StatePreconditionException {	
+	public void stageIn(StagingManifest manifest) throws XenonException, StatePreconditionException {	
 		List<String> stagingIds = doStaging(manifest);
 		
 		StagingJob stagingJob = new StagingJob(manifest, stagingIds);
 		copyMap.put(manifest.getJobId(), stagingJob);
-		
-		return true;
 	}
 
 	/**
@@ -284,7 +289,7 @@ public class XenonStager {
 	 * @throws XenonException 
 	 * @throws IOException 
 	 */
-	public boolean stageOut(StagingManifest manifest, int exitcode) throws StatePreconditionException, IOException, XenonException {
+	public void stageOut(StagingManifest manifest, int exitcode) throws StatePreconditionException, IOException, XenonException {
 		try {
 			List<String> stagingIds = doStaging(manifest);
 			StagingOutJob stagingJob = new StagingOutJob(exitcode, manifest, stagingIds);
@@ -292,13 +297,14 @@ public class XenonStager {
 		} catch (XenonException e) {
 			jobService.setErrorAndState(manifest.getJobId(), e, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
 		}
-		return true;
 	}
 	
 	@SuppressWarnings("unchecked")
 	public WorkflowBinding postStageout(Job job, StagingManifest manifest) throws IOException, XenonException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 		WorkflowBinding binding = job.getOutput();
+		
+		FileSystem targetFileSystem = getTargetFileSystem();
 		
 		jobLogger.debug("Starting postStageout");
 		for (StagingObject stageObject : manifest) {
@@ -384,9 +390,11 @@ public class XenonStager {
 	
 	@SuppressWarnings("unchecked")
 	public void fixDirectoryStagingObject(Job job, StagingManifest manifest,
-			StagingObject stageObject, WorkflowBinding binding, Logger jobLogger) {
+			StagingObject stageObject, WorkflowBinding binding, Logger jobLogger) throws XenonException {
 		DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
 		Parameter parameter = object.getParameter();
+		
+		FileSystem targetFileSystem = getTargetFileSystem();
 		
 		UriComponentsBuilder b;
 		if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
@@ -452,10 +460,5 @@ public class XenonStager {
 				fixListingRecursive(c, dirItem, dirItemPath);
 			}
 		}
-	}
-
-	public void setFileSystems(FileSystem sourceFileSystem, FileSystem targetFileSystem) {
-		this.sourceFileSystem = sourceFileSystem;
-		this.targetFileSystem = targetFileSystem;
 	}
 }

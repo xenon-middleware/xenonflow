@@ -98,7 +98,7 @@ public class XenonService implements AutoCloseable {
 		this.jobService = jobService;
 	}
 	
-	public void checkSchedulerStates() throws XenonException {
+	public boolean checkSchedulerStates() throws XenonException {
 		ComputeResource resource = getConfig().defaultComputeResource();
 		AdaptorConfig schedulerConfig = resource.getSchedulerConfig();
 		AdaptorConfig fileSystemConfig = resource.getFilesystemConfig();
@@ -137,6 +137,7 @@ public class XenonService implements AutoCloseable {
 				logger.debug("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
 			}
 		}
+		return recreateFileSystem || recreateScheduler;
 	}
 
 	public Scheduler getScheduler() throws XenonException {

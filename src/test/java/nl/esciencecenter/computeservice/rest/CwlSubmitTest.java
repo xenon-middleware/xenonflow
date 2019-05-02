@@ -8,11 +8,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,7 +79,7 @@ public class CwlSubmitTest {
 	public void submitAndWaitEchoTest() {
 		logger.info("Starting echo test");
 		assertThatCode(() -> {
-			String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/echo-test.json")));
+			String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/echo-test.json"), "UTF-8");
 			Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 			
 			assertTrue(job.getState() == CWLState.SUCCESS);
@@ -91,7 +90,7 @@ public class CwlSubmitTest {
 	public void submitAndWaitFailTest() {
 		logger.info("Starting fail test");
 		assertThatCode(() -> {
-			String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/fail-test.json")));
+			String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/fail-test.json"), "UTF-8");
 			Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 			
 			assertTrue(job.getState() == CWLState.PERMANENT_FAILURE);
@@ -101,7 +100,7 @@ public class CwlSubmitTest {
 	@Test
 	public void submitAndWaitLogTest() throws Exception {
 		logger.info("Starting log test");
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/echo-test.json")));
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/echo-test.json"), "UTF-8");
 		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		
 		assertThatCode(() -> {
@@ -156,7 +155,7 @@ public class CwlSubmitTest {
 	@Test
 	public void submitAndWaitCopyTest() throws Exception {	
 		logger.info("Starting copy test");
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-test.json")));
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/copy-test.json"), "UTF-8");
 		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
@@ -172,7 +171,7 @@ public class CwlSubmitTest {
 	@Test
 	public void submitAndWaitCopyDirectoryTest() throws Exception {	
 		logger.info("Starting copy directory test");
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-dir-test.json")));
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/copy-dir-test.json"), "UTF-8");
 		
 		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
@@ -190,7 +189,7 @@ public class CwlSubmitTest {
 	@SuppressWarnings("unchecked")
 	public void submitAndWaitCopyDirectoryArrayTest() throws Exception {
 		logger.info("Starting copy directory array test");
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-dir-array-test.json")));
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/copy-dir-array-test.json"), "UTF-8");
 		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
@@ -218,7 +217,7 @@ public class CwlSubmitTest {
 	@SuppressWarnings("unchecked")
 	public void submitAndWaitCopyDirectoryArray2Test() throws Exception {
 		logger.info("Starting copy directory array test");
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-dir-array2-test.json")));
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/copy-dir-array2-test.json"), "UTF-8");
 		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
@@ -246,7 +245,7 @@ public class CwlSubmitTest {
 	@SuppressWarnings("unchecked")
 	public void submitAndWaitCopyFileArrayTest() throws Exception {
 		logger.info("Starting copy file array test");
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/copy-file-array-test.json")));
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/copy-file-array-test.json"), "UTF-8");
 		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
@@ -283,7 +282,7 @@ public class CwlSubmitTest {
 	@Test
 	public void submitAndCancelImmediatelySleepTest() throws Exception {
 		logger.info("Starting cancel immediately test");
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/sleep-test.json")));
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/sleep-test.json"), "UTF-8");
 
 		MockHttpServletResponse response = CwlTestUtils.postJob(contents, mockMvc, headerName, apiToken);
 		
@@ -300,7 +299,7 @@ public class CwlSubmitTest {
 	public void submitAndCancelSleepTest() throws Exception {
 		
 		logger.info("Starting cancel test");
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/sleep-test.json")));
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/sleep-test.json"), "UTF-8");
 		
 		MockHttpServletResponse response = CwlTestUtils.postJob(contents, mockMvc, headerName, apiToken);
 		String location = response.getHeader("location");
@@ -319,7 +318,7 @@ public class CwlSubmitTest {
  * @Test
 	public void submitAndCancelWaitingSleepTest() throws Exception {
 		logger.info("Starting cancel waiting test");
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/sleep-test.json")));
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/sleep-test.json"), "UTF-8");
 		
 		MockHttpServletResponse response = postJob(contents);
 		String location1 = response.getHeader("location");
@@ -339,7 +338,7 @@ public class CwlSubmitTest {
 	@Test
 	public void submitAndDeleteEchoTest() throws Exception {
 		logger.info("Starting delete test");
-		String contents = new String(Files.readAllBytes(Paths.get("src/test/resources/jobs/echo-test.json")));
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/echo-test.json"), "UTF-8");
 		
 		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		String location = job.getUri();

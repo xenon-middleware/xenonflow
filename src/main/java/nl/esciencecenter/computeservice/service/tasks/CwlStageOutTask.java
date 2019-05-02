@@ -17,7 +17,6 @@ import nl.esciencecenter.computeservice.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.service.staging.StagingManifestFactory;
 import nl.esciencecenter.computeservice.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
-import nl.esciencecenter.xenon.adaptors.NotConnectedException;
 
 public class CwlStageOutTask implements Runnable {
 
@@ -60,22 +59,7 @@ public class CwlStageOutTask implements Runnable {
 			// Staging back output
 	        StagingManifest manifest = StagingManifestFactory.createStagingOutManifest(job, exitcode, service.getSourceFileSystem(), service.getRemoteFileSystem(), jobService, jobLogger); //new StagingManifest(jobId, new Path(job.getId() + "/"));
 
-	    	int tries = 0;
-			boolean success = false;
-			while(!success && tries < 3) {
-				try {
-					success = remoteToTargetStager.stageOut(manifest, exitcode);
-					tries++;
-				} catch (NotConnectedException e) {
-					if (tries <=3 ) {
-						logger.warn("Try: " + tries + ". Exception during stage out, forcing new filesystem for next attempt");
-						remoteToTargetStager.setFileSystems(service.getTargetFileSystem(), service.getRemoteFileSystem());
-					} else {
-						logger.error("Failed to submit after " + tries + " tries, giving up");
-					}
-					continue;
-				}
-			}
+			remoteToTargetStager.stageOut(manifest, exitcode);
 		} catch (StatePreconditionException | IOException | XenonException | XenonflowException | CwlException e){
 			jobLogger.error("Error during stage out of " + job.getName() + "(" +job.getId() +")", e);
 			logger.error("Error during stage out of " + job.getName() + "(" +job.getId() +")", e);

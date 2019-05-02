@@ -18,7 +18,6 @@ import nl.esciencecenter.computeservice.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.service.staging.StagingManifestFactory;
 import nl.esciencecenter.computeservice.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
-import nl.esciencecenter.xenon.adaptors.NotConnectedException;
 
 public class CwlStageInTask implements Runnable {
 
@@ -68,23 +67,8 @@ public class CwlStageInTask implements Runnable {
 			String cwlCommand = service.getConfig().defaultComputeResource().getCwlCommand();
 			// Staging files
 			StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, service.getSourceFileSystem(), cwlCommand, jobLogger);
-	        
-			int tries = 0;
-			boolean success = false;
-			while(!success && tries < 3) {
-				try {
-					success = sourceToRemoteStager.stageIn(manifest);
-					tries++;
-				} catch (NotConnectedException e) {
-					if (tries <=3 ) {
-						logger.warn("Try: " + tries + ". Exception during stage in, forcing new filesystem for next attempt");
-						sourceToRemoteStager.setFileSystems(service.getSourceFileSystem(), service.getRemoteFileSystem());
-					} else {
-						logger.error("Failed to submit after " + tries + " tries, giving up");
-					}
-					continue;
-				}
-			}
+	       
+			sourceToRemoteStager.stageIn(manifest);
 	        
 	        jobService.setXenonRemoteDir(jobId, service.getRemoteFileSystem().getWorkingDirectory().resolve(manifest.getTargetDirectory()));
 		} catch (CwlException | StatePreconditionException e) {
