@@ -1,0 +1,42 @@
+# YAML 1.2
+---
+authors: 
+  -
+    affiliation: "Netherlands eScience Center"
+    family-names: Weel
+    given-names: Berend
+    orcid: "https://orcid.org/0000-0002-9693-9332"
+  -
+    affiliation: thehyve
+    family-names: Borgdorff
+    given-names: Joris
+    orcid: "https://orcid.org/0000-0001-7911-9490"
+  -
+    affiliation: "Netherlands eScience Center"
+    family-names: Drost
+    given-names: Niels
+    orcid: "https://orcid.org/0000-0001-9795-7981"
+  -
+    affiliation: "Common Workflow Language"
+    family-names: Crusoe
+    given-names: "Michael R."
+    orcid: "https://orcid.org/0000-0002-2961-9670"
+  -
+    affiliation: "Netherlands eScience Center"
+    family-names: Verhoeven
+    given-names: Stefan
+    orcid: "https://orcid.org/0000-0002-5821-2060"
+  -
+    affiliation: "Netherlands eScience Center"
+    family-names: Maassen
+    given-names: Jason
+    orcid: "https://orcid.org/0000-0002-8172-4865"
+cff-version: "1.0.3"
+keywords: 
+  - workflow
+license: "Apache-2.0"
+message: "If you use this software, please cite it using these metadata."
+repository-code: "https://github.com/xenon-middleware/xenon-flow"
+title: "xenon-flow"
+version: "v0.4-alpha"
+...
