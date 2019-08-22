@@ -9,11 +9,11 @@ To run a workflow through Xenon-flow is quite simple:
 
 # Quick-start
 ## 1. Install the dependencies:
- - Java 8
+ - Java 11
 
 ## 2. Download Xenon-flow
 ```
-wget https://github.com/NLeSC/xenon-flow/releases/V1.0
+wget https://github.com/xenon-middleware/xenon-flow/releases/V1.0
 unzip xenonflow-1.0.zip
 ```
 

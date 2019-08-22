@@ -11,8 +11,10 @@ plugins {
     id "com.moowork.node" version "1.2.0"
 }
 
-version = '0.6'
+version = '0.7'
 mainClassName = 'nl.esciencecenter.computeservice.rest.Application'
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 // In this section you declare where to find the dependencies of your project
 repositories {
