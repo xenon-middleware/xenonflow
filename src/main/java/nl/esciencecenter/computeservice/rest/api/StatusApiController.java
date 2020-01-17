@@ -9,9 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
-import com.weddini.throttling.Throttling;
-import com.weddini.throttling.ThrottlingType;
-
 import nl.esciencecenter.computeservice.model.Job;
 import nl.esciencecenter.computeservice.model.JobRepository;
 import nl.esciencecenter.computeservice.model.JobState;
@@ -25,7 +22,6 @@ public class StatusApiController implements StatusApi {
 	
 
 	@Override
-	@Throttling(type = ThrottlingType.RemoteAddr, limit = 1, timeUnit = TimeUnit.SECONDS)
 	public ResponseEntity<Status> getStatus() {
 		List<Job> jobs = repository.findAll();
 		int errored = 0;

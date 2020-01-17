@@ -26,9 +26,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.weddini.throttling.Throttling;
-import com.weddini.throttling.ThrottlingType;
-
 import io.swagger.annotations.ApiParam;
 import nl.esciencecenter.computeservice.model.Job;
 import nl.esciencecenter.computeservice.model.JobDescription;
@@ -59,7 +56,6 @@ public class JobsApiController implements JobsApi {
 	private DeleteJobTask deleteJobTask;
 	
 	@Override
-	@Throttling(type = ThrottlingType.RemoteAddr, limit = 5, timeUnit = TimeUnit.SECONDS)
 	public ResponseEntity<Job> cancelJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
 		requestLogger.info("CANCEL request received for job: " + jobId);
 		Optional<Job> job;
@@ -85,7 +81,6 @@ public class JobsApiController implements JobsApi {
 	}
 
 	@Override
-	@Throttling(type = ThrottlingType.RemoteAddr, limit = 5, timeUnit = TimeUnit.SECONDS)
 	public ResponseEntity<Void> deleteJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
 		requestLogger.info("DELETE request received for job: " + jobId);
 		try {
@@ -107,7 +102,6 @@ public class JobsApiController implements JobsApi {
 	}
 
 	@Override
-	@Throttling(type = ThrottlingType.RemoteAddr, limit = 10, timeUnit = TimeUnit.SECONDS)
 	public ResponseEntity<Job> getJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
 		requestLogger.info("GET request received for job: " + jobId);
 		Optional<Job> job = repository.findById(jobId);
@@ -119,7 +113,6 @@ public class JobsApiController implements JobsApi {
 	}
 
 	@Override
-	@Throttling(type = ThrottlingType.RemoteAddr, limit = 10, timeUnit = TimeUnit.SECONDS)
 	public ResponseEntity<Object> getJobLogById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
 		requestLogger.info("JOBLOG request received for job: " + jobId);
 
@@ -140,14 +133,12 @@ public class JobsApiController implements JobsApi {
 	}
 
 	@Override
-	@Throttling(type = ThrottlingType.RemoteAddr, limit=10, timeUnit = TimeUnit.SECONDS)
 	public ResponseEntity<List<Job>> getJobs(HttpServletRequest request) {
 		requestLogger.info("GETALL request received from: " + getClientIpAddr(request));
 		return new ResponseEntity<List<Job>>(repository.findAll(), HttpStatus.OK);
 	}
 
 	@Override
-	@Throttling(type = ThrottlingType.RemoteAddr, limit = 5, timeUnit = TimeUnit.SECONDS)
 	public ResponseEntity<Job> postJob(@ApiParam(value = "Input binding for workflow." ,required=true ) @RequestBody JobDescription body) {
 		requestLogger.info("POST request received with description: " + body);
 		try {

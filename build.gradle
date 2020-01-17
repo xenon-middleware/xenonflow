@@ -61,7 +61,6 @@ dependencies {
 	runtime group: 'com.h2database', name: 'h2', version: '1.4.199'
 	
 	// Security
-	compile group: 'com.weddini.throttling', name: 'spring-boot-throttling-starter', version: '0.0.9'
 	compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.1.4.RELEASE'
 	
 	// Admin Interface
