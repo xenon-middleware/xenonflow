@@ -11,8 +11,10 @@ plugins {
     id "com.moowork.node" version "1.2.0"
 }
 
-version = '0.6'
+version = '0.7'
 mainClassName = 'nl.esciencecenter.computeservice.rest.Application'
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 // In this section you declare where to find the dependencies of your project
 repositories {
@@ -35,7 +37,8 @@ allprojects {
 // In this section you declare the dependencies for your production and test code
 dependencies {
     // Xenon
-    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '2.6.2'
+    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '3.0.1'
+    compile group: 'nl.esciencecenter.xenon.adaptors', name: 'xenon-adaptors-cloud', version: '3.0.2'
 
     //Spring(boot)
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.1.4.RELEASE'
