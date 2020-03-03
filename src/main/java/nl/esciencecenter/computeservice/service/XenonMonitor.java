@@ -129,20 +129,29 @@ public class XenonMonitor {
 		String[] jobIds = jobs.stream().map(j -> j.getXenonId()).toArray(String[]::new);
 		try {
 			JobStatus[] jobStatuses = scheduler.getJobStatuses(jobIds);
+
 			for (int i=0; i<jobs.size(); i++) {
 				Job job = jobs.get(i);
 				JobStatus status = jobStatuses[i];
 				Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
-				
+
 				if (status.hasException()) {
-					if (status.getState().equals("UNKNOWN")) {
-						tryRecoverJobOutput(job, status.getException());
-					} else {
-						jobLogger.error("Exception during execution", status.getException());
-						logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", status.getException());
-						jobService.setErrorAndState(job.getId(), status.getException(), JobState.RUNNING, JobState.PERMANENT_FAILURE);
-					}
-				} else if (status.isDone()) {
+  				     if (status.getState().equals("INTERNAL_ERROR")) {
+                                         // We seem to have lost the connection to the scheduler -- we may retry later
+    				         jobLogger.error("Exception while retrieving status of job (scheduler connection lost?)", status.getException());
+				         logger.error("Exception while retrieving status of job " + job.getName() + "(" + job.getId() + ") -- scheduler connection lost?", status.getException());
+                                     } else if (status.getState().equals("UNKNOWN")) {
+                                         // We seem to have lost the job completely? -- try to recover the output
+    				         jobLogger.error("Could not find job", status.getException());
+				         logger.error("Could not find job " + job.getName() + "(" + job.getId() + ")", status.getException());
+          				 tryRecoverJobOutput(job, status.getException());
+                                     } else {
+                                         // The job was cancelled or failed due to a timeout, node failure, preemption, etc. -- try to recover the output
+    				         jobLogger.error("Job failed or cancelled", status.getException());
+				         logger.error("Job failed or cancelled" + job.getName() + "(" + job.getId() + ")", status.getException());
+          				 tryRecoverJobOutput(job, status.getException());
+                                     }
+ 				} else if (status.isDone()) {
 					jobService.setXenonState(job.getId(), status.getState());
 					jobService.setXenonExitcode(job.getId(), status.getExitCode());
 					try {
@@ -178,15 +187,23 @@ public class XenonMonitor {
 				// We re-request the job here because it may have changed while we were looping.
 				job = repository.findById(job.getId()).get();
 				String xenonJobId = job.getXenonId();
-				
+
 				if (status.hasException()) {
-					if (status.getState().equals("UNKNOWN")) {
-						tryRecoverJobOutput(job, status.getException());
-					} else {
-						jobLogger.error("Exception during execution", status.getException());
-						logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", status.getException());
-						jobService.setErrorAndState(job.getId(), status.getException(), JobState.WAITING, JobState.PERMANENT_FAILURE);
-					}
+  				     if (status.getState().equals("INTERNAL_ERROR")) {
+                                         // We seem to have lost the connection to the scheduler -- we may retry later
+    				         jobLogger.error("Exception while retrieving status of job (scheduler connection lost?)", status.getException());
+				         logger.error("Exception while retrieving status of job " + job.getName() + "(" + job.getId() + ") -- scheduler connection lost?", status.getException());
+                                     } else if (status.getState().equals("UNKNOWN")) {
+                                         // We seem to have lost the job completely? -- try to recover the output
+    				         jobLogger.error("Could not find job", status.getException());
+				         logger.error("Could not find job " + job.getName() + "(" + job.getId() + ")", status.getException());
+          				 tryRecoverJobOutput(job, status.getException());
+                                     } else {
+                                         // The job was cancelled or failed due to a timeout, node failure, preemption, etc. -- try to recover the output
+    				         jobLogger.error("Job failed or cancelled", status.getException());
+				         logger.error("Job failed or cancelled" + job.getName() + "(" + job.getId() + ")", status.getException());
+          				 tryRecoverJobOutput(job, status.getException());
+                                     }
 				} else if (xenonJobId != null && !xenonJobId.isEmpty()) {
 					try {
 						if (status.isRunning() && !status.hasException()) {
@@ -241,8 +258,12 @@ public class XenonMonitor {
 					}
 				}
 			} catch (NoSuchJobException e) {
+				// It was running at some moment in time, so lets try to retrieve the output.
+				tryRecoverJobOutput(job, e);
+
 				if (job.getInternalState().isCancellationActive()) {
-					// We can't find the job that we're cancelling. That's awesome let's continue!
+  					// We can't find the job that we're cancelling. That's awesome let's continue!
+
 					try {
 						jobService.setJobState(job.getId(), job.getInternalState(), JobState.CANCELLED);
 					} catch (StatePreconditionException e1) {
@@ -254,8 +275,8 @@ public class XenonMonitor {
 					logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
 				}
 			} catch (XenonException | StatePreconditionException e) {
-				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+				jobLogger.error("Error while cancelling execution of " + job.getName() + "(" + job.getId() + ") -- scheduler connection lost?", e);
+				logger.error("Error while cancelling execution of " + job.getName() + "(" + job.getId() + ") -- scheduler connection lost?", e);
 			}
 		}
 	}
@@ -281,8 +302,8 @@ public class XenonMonitor {
 			} catch (NoSuchJobException e) {
 				tryRecoverJobOutput(job, e);
 			} catch (XenonException | StatePreconditionException e) {
-				jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
-				logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", e);
+				jobLogger.error("Error while cancelling execution of " + job.getName() + "(" + job.getId() + ") -- scheduler connection lost?", e);
+				logger.error("Error while cancelling execution of " + job.getName() + "(" + job.getId() + ") -- scheduler connection lost?", e);
 			}
 		}
 	}
@@ -351,7 +372,7 @@ public class XenonMonitor {
 	}
 	
 	private void tryRecoverJobOutput(Job job, Exception e) {
-		logger.info("Could not recover job" + job + " it is probably lost...");
+		logger.info("Could not recover job " + job + " it is probably lost...");
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + job.getId());
 		// TODO: We should probably try harder here to figure out what went wrong
 		// in additional info there may be a xenon.state.

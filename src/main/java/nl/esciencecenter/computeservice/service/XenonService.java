@@ -121,22 +121,26 @@ public class XenonService implements AutoCloseable {
 			}
 		}
 		if (recreateScheduler) {
-			logger.debug("Creating a scheduler to run jobs...");
+			logger.info("Creating a scheduler to run jobs...");
 			scheduler = Scheduler.create(schedulerConfig.getAdaptor(), schedulerConfig.getLocation(),
 										 schedulerConfig.getCredential(), schedulerConfig.getProperties());
-		}
+		} else {
+			logger.info("Reusing existing scheduler");
+	        }
 		if (recreateFileSystem) {
 			if (useSchedulerFilesystem && Scheduler.getAdaptorDescription(scheduler.getAdaptorName()).usesFileSystem()) {
-				logger.debug("Using scheduler filesystem as a remote filesystem...");
+				logger.info("Using scheduler filesystem as a remote filesystem...");
 				remoteFileSystem = scheduler.getFileSystem();
 			} else {
 				// Initialize remote filesystem
-				logger.debug("Creating remote filesystem...");
+				logger.info("Creating remote filesystem...");
 				remoteFileSystem = FileSystem.create(fileSystemConfig.getAdaptor(), fileSystemConfig.getLocation(),
 													 fileSystemConfig.getCredential(), fileSystemConfig.getProperties());
-				logger.debug("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
+				logger.info("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
 			}
-		}
+		} else {
+			logger.info("Reusing existing filesystem");
+                }
 		return recreateFileSystem || recreateScheduler;
 	}
 
