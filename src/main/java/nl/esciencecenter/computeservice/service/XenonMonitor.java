@@ -142,13 +142,13 @@ public class XenonMonitor {
 				         logger.error("Exception while retrieving status of job " + job.getName() + "(" + job.getId() + ") -- scheduler connection lost?", status.getException());
                                      } else if (status.getState().equals("UNKNOWN")) {
                                          // We seem to have lost the job completely? -- try to recover the output
-    				         jobLogger.error("Could not find job", status.getException());
+    				         jobLogger.error("Could not find job ", status.getException());
 				         logger.error("Could not find job " + job.getName() + "(" + job.getId() + ")", status.getException());
           				 tryRecoverJobOutput(job, status.getException());
                                      } else {
                                          // The job was cancelled or failed due to a timeout, node failure, preemption, etc. -- try to recover the output
-    				         jobLogger.error("Job failed or cancelled", status.getException());
-				         logger.error("Job failed or cancelled" + job.getName() + "(" + job.getId() + ")", status.getException());
+    				         jobLogger.error("Job failed or cancelled ", status.getException());
+				         logger.error("Job failed or cancelled " + job.getName() + "(" + job.getId() + ")", status.getException());
           				 tryRecoverJobOutput(job, status.getException());
                                      }
  				} else if (status.isDone()) {
@@ -195,13 +195,13 @@ public class XenonMonitor {
 				         logger.error("Exception while retrieving status of job " + job.getName() + "(" + job.getId() + ") -- scheduler connection lost?", status.getException());
                                      } else if (status.getState().equals("UNKNOWN")) {
                                          // We seem to have lost the job completely? -- try to recover the output
-    				         jobLogger.error("Could not find job", status.getException());
+    				         jobLogger.error("Could not find job ", status.getException());
 				         logger.error("Could not find job " + job.getName() + "(" + job.getId() + ")", status.getException());
           				 tryRecoverJobOutput(job, status.getException());
                                      } else {
                                          // The job was cancelled or failed due to a timeout, node failure, preemption, etc. -- try to recover the output
-    				         jobLogger.error("Job failed or cancelled", status.getException());
-				         logger.error("Job failed or cancelled" + job.getName() + "(" + job.getId() + ")", status.getException());
+    				         jobLogger.error("Job failed or cancelled ", status.getException());
+				         logger.error("Job failed or cancelled " + job.getName() + "(" + job.getId() + ")", status.getException());
           				 tryRecoverJobOutput(job, status.getException());
                                      }
 				} else if (xenonJobId != null && !xenonJobId.isEmpty()) {
