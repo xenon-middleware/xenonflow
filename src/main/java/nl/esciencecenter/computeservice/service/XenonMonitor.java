@@ -86,7 +86,7 @@ public class XenonMonitor {
         }
     }
 
-    @Scheduled(fixedRateString = "${xenonflow.update.rate}", initialDelay = 1500)
+    @Scheduled(fixedRateString = "${xenonflow.update.rate}", initialDelay = 5000)
     public void update() {
         Scheduler scheduler;
         try {
