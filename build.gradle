@@ -37,7 +37,7 @@ allprojects {
 // In this section you declare the dependencies for your production and test code
 dependencies {
     // Xenon
-    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '3.0.5'
+    compile group: 'nl.esciencecenter.xenon', name: 'xenon', version: '3.0.6'
     compile group: 'nl.esciencecenter.xenon.adaptors', name: 'xenon-adaptors-cloud', version: '3.0.2'
 
     //Spring(boot)
