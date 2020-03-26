@@ -149,10 +149,17 @@ public class XenonService implements AutoCloseable {
         return scheduler;
     }
 
-    public Scheduler forceNewScheduler() throws XenonException {
+    public void closeScheduler() throws XenonException {
         if (scheduler != null) {
+            if (scheduler.isOpen()) {
+                scheduler.close();
+            }
             scheduler = null;
         }
+    }
+
+    public Scheduler forceNewScheduler() throws XenonException {
+        closeScheduler();
         return getScheduler();
     }
 

@@ -142,6 +142,10 @@ public class XenonMonitor {
                         jobLogger.error("Exception while retrieving status of job (scheduler connection lost?)", status.getException());
                         logger.error("Exception while retrieving status of job " + job.getName() + "(" + job.getId() + ") -- scheduler connection lost?",
                                 status.getException());
+
+                        // Force the scheduler to close when we seem to lose the connection
+                        logger.error("Forcing the scheduler to close");
+                        xenonService.closeScheduler();
                     } else if (status.getState().equals("UNKNOWN")) {
                         // We seem to have lost the job completely? -- try to recover the output
                         jobLogger.error("Could not find job ", status.getException());
@@ -196,6 +200,9 @@ public class XenonMonitor {
                         jobLogger.error("Exception while retrieving status of job (scheduler connection lost?)", status.getException());
                         logger.error("Exception while retrieving status of job " + job.getName() + "(" + job.getId() + ") -- scheduler connection lost?",
                                 status.getException());
+
+                        logger.error("Forcing the scheduler to close");
+                        xenonService.closeScheduler();
                     } else if (status.getState().equals("UNKNOWN")) {
                         // We seem to have lost the job completely? -- try to recover the output
                         jobLogger.error("Could not find job ", status.getException());
@@ -249,6 +256,7 @@ public class XenonMonitor {
                         status = scheduler.cancelJob(job.getXenonId());
                         jobService.setXenonState(job.getId(), status.getState());
                     } else {
+                        // FIXME: we may leak jobs here if the connection to the machine is lost!
                         if (status.hasException() && !(status.getException() instanceof JobCanceledException)) {
                             jobService.setXenonExitcode(job.getId(), status.getExitCode());
                             jobService.setErrorAndState(job.getId(), status.getException(), JobState.RUNNING_CR, JobState.PERMANENT_FAILURE);
@@ -300,6 +308,7 @@ public class XenonMonitor {
                         logger.debug("Cancelled job: " + job.getId() + " new status: " + status);
                     }
 
+                    // FIXME: we may leak jobs here if the connection to the machine is lost?
                     jobService.setJobState(job.getId(), JobState.WAITING_CR, JobState.CANCELLED);
                 }
             } catch (NoSuchJobException e) {
