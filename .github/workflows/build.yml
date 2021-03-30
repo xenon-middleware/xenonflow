@@ -8,13 +8,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-	    - name: Checkout project
-	        uses: actions/checkout@v2
-	    - uses: actions/setup-java@v1
+      - name: Set up java
+        uses: actions/setup-java@v1
         with:
           java-version: 11.0.2
           java-package: jdk
           architecture: x64
+      - name: Set up python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+          architecture: "x64"
+      - name: Install cwltool
+        run: pip3 install cwltool
+      - name: Checkout project
+        uses: actions/checkout@v2
       - name: Build with Gradle
         run: ./gradlew build
       - name: Test
