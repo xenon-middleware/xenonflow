@@ -24,7 +24,7 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v2
       - name: Check cwltool
-        run: cwltool
+        run: cwltool --version
       - name: Build with Gradle
         run: ./gradlew build -x test
       - name: Test
