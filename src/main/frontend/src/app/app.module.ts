@@ -1,28 +1,23 @@
-import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-
+import { BrowserModule } from '@angular/platform-browser';
+import { FaIconLibrary, FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { fas } from '@fortawesome/free-solid-svg-icons';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AppComponent } from './app.component';
+import { FilterPipe } from './filter.pipe';
 import { JobDetailComponent } from './job-detail/job-detail.component';
 import { JobListComponent } from './job-list/job-list.component';
 import { JobStateIconComponent } from './job-state-icon/job-state-icon.component';
-import { StateAlertPipe } from './state-alert.pipe';
-import { StateNamePipe } from './state-name.pipe';
-import { WINDOW_PROVIDERS } from './window.provider';
-
-import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faPause, faCog, faCheck, faBan, faTimes, faExclamationTriangle, faExternalLinkAlt, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import { LoginComponent } from './login/login.component';
 import { ModalContentComponent } from './modal-content/modal-content.component';
 import { Plain2htmlPipe } from './plain2html.pipe';
 import { ServerStatusComponent } from './server-status/server-status.component';
-import { FilterPipe } from './filter.pipe';
+import { StateAlertPipe } from './state-alert.pipe';
+import { StateNamePipe } from './state-name.pipe';
 import { StatusFilterPipe } from './status-filter.pipe';
-
-library.add(faPause, faCog, faCheck, faBan, faTimes, faExclamationTriangle, faExclamationCircle, faExternalLinkAlt);
+import { WINDOW_PROVIDERS } from './window.provider';
 
 @NgModule({
   declarations: [
@@ -44,7 +39,7 @@ library.add(faPause, faCog, faCheck, faBan, faTimes, faExclamationTriangle, faEx
     HttpClientModule,
     FontAwesomeModule,
     FormsModule,
-    NgbModule.forRoot()
+    NgbModule
   ],
   providers: [
     WINDOW_PROVIDERS
@@ -52,4 +47,8 @@ library.add(faPause, faCog, faCheck, faBan, faTimes, faExclamationTriangle, faEx
   bootstrap: [AppComponent],
   entryComponents: [ModalContentComponent]
 })
-export class AppModule { }
+export class AppModule {
+    constructor(library: FaIconLibrary) {
+        library.addIconPacks(fas);
+    }
+}

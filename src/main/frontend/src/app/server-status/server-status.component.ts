@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { JobService, ServerStatus } from '../job.service';
 import { interval } from 'rxjs';
+import { JobService, ServerStatus } from '../job.service';
 
 @Component({
   selector: 'app-server-status',
@@ -8,11 +8,11 @@ import { interval } from 'rxjs';
   styleUrls: ['./server-status.component.css']
 })
 export class ServerStatusComponent implements OnInit {
-  status: ServerStatus;
+  status: ServerStatus | null;
 
   constructor(
     private jobService: JobService
-  ) { 
+  ) {
     this.status = null;
   }
 

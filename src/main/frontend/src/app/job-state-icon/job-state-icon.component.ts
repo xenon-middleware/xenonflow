@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { Job } from '../job';
 
 @Component({
@@ -7,7 +7,7 @@ import { Job } from '../job';
   styleUrls: ['./job-state-icon.component.css']
 })
 export class JobStateIconComponent implements OnInit {
-  @Input() job: Job;
+  @Input() job: Job | undefined;
 
   constructor() { }
 

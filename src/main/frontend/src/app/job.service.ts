@@ -1,10 +1,10 @@
-import { Injectable, Inject, isDevMode } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { Job } from './job';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Inject, Injectable, isDevMode } from '@angular/core';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { environment } from '../environments/environment';
+import { Job } from './job';
 import { WINDOW } from './window.provider';
 
-import { environment } from '../environments/environment';
 
 export interface WorkflowInput {
   [x: string]: object;
@@ -27,21 +27,23 @@ export interface ServerStatus {
   providedIn: 'root'
 })
 export class JobService {
-  private _selectedJob: BehaviorSubject<Job>;
+  private _selectedJob: Subject<Job>;
   private _updateList: BehaviorSubject<boolean>;
   private _isConnected: BehaviorSubject<boolean>;
   private api;
   private statusUrl;
-  private headers: HttpHeaders;
+  private headers: HttpHeaders | undefined;
 
   constructor(
     private http: HttpClient,
     @Inject(WINDOW) private window: Window
   ) {
-    this._selectedJob = <BehaviorSubject<Job>>new BehaviorSubject(null);
-    this._updateList = <BehaviorSubject<boolean>>new BehaviorSubject(false);
+    this._selectedJob = new Subject<Job>();
+    this._selectedJob.next(undefined)
+    this._updateList = new BehaviorSubject<boolean>(false);
     this._isConnected = new BehaviorSubject<boolean>(false);
-    if (isDevMode) {
+    this.headers = undefined;
+    if (isDevMode()) {
       this.api = environment.api;
       this.statusUrl = environment.statusUrl;
     } else {
@@ -71,7 +73,7 @@ export class JobService {
     return this._selectedJob.asObservable();
   }
 
-  set setSelectedJob(job: Job) {
+  set setSelectedJob(job: Job | undefined) {
     this._selectedJob.next(job);
   }
 

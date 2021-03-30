@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { interval } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { JobService } from '../job.service';
+import { interval } from 'rxjs';
 import { Job } from '../job';
+import { JobService } from '../job.service';
 
 @Component({
   selector: 'app-job-list',
@@ -12,15 +12,18 @@ import { Job } from '../job';
 export class JobListComponent implements OnInit {
 
   jobs: Job[];
-  error: string;
-  activeJobId: string;
-  statusFilter: string;
+  error: string | null;
+  activeJobId: string | null;
+  statusFilter: string | null;
 
   constructor(
     private jobService: JobService,
     private modalService: NgbModal
   ) {
     this.statusFilter = null;
+    this.jobs = [];
+    this.error =  null;
+    this.activeJobId = null;
   }
 
   ngOnInit() {
@@ -58,7 +61,7 @@ export class JobListComponent implements OnInit {
     this.jobService.setSelectedJob = job;
   }
 
-  deleteAllJobs(dialog): void {
+  deleteAllJobs(dialog: any): void {
     this.modalService.open(dialog).result.then((result) => {
       this.jobs.forEach((job: Job) => {
         this.jobService.deleteJob(job.id).subscribe(
