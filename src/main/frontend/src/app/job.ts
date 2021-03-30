@@ -1,4 +1,4 @@
-export class Job {
+export interface Job {
   id: string;
   name: string;
   uri: string;
