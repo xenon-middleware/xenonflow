@@ -5,6 +5,7 @@ build/
 .project
 .settings
 *.iws
+.DS_Store
 
 log/
 db/
