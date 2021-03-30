@@ -20,9 +20,11 @@ jobs:
           python-version: "3.8"
           architecture: "x64"
       - name: Install cwltool
-        run: pip3 install cwltool
+        run: pip install cwltool
       - name: Checkout project
         uses: actions/checkout@v2
+      - name: Check cwltool
+        run: cwltool --version
       - name: Build with Gradle
         run: ./gradlew build -x test
       - name: Test
