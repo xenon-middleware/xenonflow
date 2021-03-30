@@ -14,46 +14,22 @@
 # limitations under the License.
 #
 ComputeResources:
-    docker:
-        cwlCommand: cwltool
-        scheduler:
-            adaptor: slurm
-            location: ssh://localhost:10022
-            credential:
-                user: xenon
-                password: amF2YWdhdA==
-            #credentialsMap:
-            #    localhost:10022:
     local:
         cwlCommand: |
             #!/usr/bin/env bash
 
-            /usr/local/bin/cwltool $@
-
-
+            cwltool $@
         maxTime: 20
         scheduler:
             adaptor: local
             location: ${XENONFLOW_HOME}/running-jobs/
-    das5:
-        cwlCommand: /home/bweel/anaconda3/bin/cwltool-wrapper
-        maxTime: 600
-        scheduler:
-            adaptor: slurm
-            location: ssh://fs0.das5.cs.vu.nl:/var/scratch/bweel/xenonflow/
 
 #######
 # To use the docker slurm container instead
 # of the local one change the following line to
 # default: docker
 default: local
-#default: das5
 
-####### 
-# To use the docker webdav instead of 
-# the local filesystem adaptor
-# Comment the following sourceFileSystem entry
-# and uncomment the webdav one.
 sourceFileSystem:
    adaptor: file
    location: ${XENONFLOW_HOME}
@@ -62,11 +38,3 @@ targetFileSystem:
    adaptor: file
    location: ${XENONFLOW_HOME}/output/
    hosted: true
-
-#sourceFileSystem:
-#     adaptor: webdav
-#     location: http://localhost:5050/webdav/input
-#     credential:
-#        user: webdav
-#        password: dmFkYmV3
-
