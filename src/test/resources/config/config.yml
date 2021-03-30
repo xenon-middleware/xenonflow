@@ -18,7 +18,7 @@ ComputeResources:
         cwlCommand: |
             #!/usr/bin/env bash
 
-            source /Users/bweel/miniconda2/bin/activate cwltool && cwltool $@
+            cwltool $@
         maxTime: 20
         scheduler:
             adaptor: local

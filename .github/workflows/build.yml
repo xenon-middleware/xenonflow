@@ -24,6 +24,6 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v2
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew build -X test
       - name: Test
         run: ./gradlew check
