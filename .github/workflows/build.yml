@@ -1,6 +1,6 @@
 name: Build and Test Xenonflow
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   build:
@@ -24,6 +24,6 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v2
       - name: Build with Gradle
-        run: ./gradlew build -X test
+        run: ./gradlew build -x test
       - name: Test
         run: ./gradlew check
