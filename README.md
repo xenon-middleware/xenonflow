@@ -1,3 +1,5 @@
+[![Build and Test Xenonflow](https://github.com/xenon-middleware/xenon-flow/actions/workflows/build.yml/badge.svg)](https://github.com/xenon-middleware/xenon-flow/actions/workflows/build.yml)
+
 # Xenon-flow
 
 Run CWL workflows using Xenon. Possibly through a REST api.

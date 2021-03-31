@@ -12,10 +12,11 @@ export class AppComponent implements OnInit {
 
   constructor(
     private jobService: JobService
-  ) { }
+  ) {
+      this.panel = 'login';
+   }
 
   ngOnInit() {
-    this.panel = 'login';
     this.jobService.isConnected.subscribe(connected => {
       if (connected) {
         this.panel = 'job-detail';

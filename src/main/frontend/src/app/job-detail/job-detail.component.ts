@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { interval } from 'rxjs';
-
-import { JobService} from '../job.service';
 import { Job } from '../job';
+import { JobService } from '../job.service';
 import { ModalContentComponent } from '../modal-content/modal-content.component';
+
 
 @Component({
   selector: 'app-job-detail',
@@ -12,10 +12,7 @@ import { ModalContentComponent } from '../modal-content/modal-content.component'
   styleUrls: ['./job-detail.component.css']
 })
 export class JobDetailComponent implements OnInit {
-  job: Job;
-
-  private cancelResult: string;
-  private deleteResult: string;
+  job: Job | null = null;
 
   constructor(
     protected jobService: JobService,
@@ -50,28 +47,28 @@ export class JobDetailComponent implements OnInit {
     });
   }
 
-  keys(object): Array<string> {
+  keys(object: any): Array<string> {
     return Object.keys(object);
   }
 
-  isErrorFile(key, object): boolean {
+  isErrorFile(key: string, object: any): boolean {
     return key === "stderr.txt" && this.isObject(object) && object.class === 'File' ;
   }
 
-  isFile(object): boolean {
+  isFile(object: any): boolean {
     return this.isObject(object) && object.class === 'File';
   }
 
-  isObject(object): boolean {
+  isObject(object: any): boolean {
     return (object !== null && typeof object === 'object' && !Array.isArray(object));
   }
 
-  deleteJob(dialog): void {
+  deleteJob(dialog: any): void {
     this.modalService.open(dialog).result.then((result) => {
-      this.jobService.deleteJob(this.job.id).subscribe(
+      this.jobService.deleteJob(this.job!.id).subscribe(
         (success) => {
           console.log('Job delete request sent');
-          this.jobService.setSelectedJob = null;
+          this.jobService.setSelectedJob = undefined;
           this.jobService.updateList = true;
         },
         (error) => {
@@ -83,7 +80,7 @@ export class JobDetailComponent implements OnInit {
     });
   }
 
-  openLog(jobName, url) {
+  openLog(jobName: string, url: string) {
     this.jobService.getUrl(url).subscribe(content => {
       const modalRef = this.modalService.open(ModalContentComponent, { size: 'lg', windowClass: 'modal-xxl' });
       modalRef.componentInstance.title = jobName;
@@ -100,9 +97,9 @@ export class JobDetailComponent implements OnInit {
     }
   }
 
-  cancelJob(dialog): void {
+  cancelJob(dialog: any): void {
     this.modalService.open(dialog).result.then((result) => {
-      this.jobService.cancelJob(this.job.id).subscribe(
+      this.jobService.cancelJob(this.job!.id).subscribe(
         (success) => {
           console.log('Job cancel request sent');
           this.jobService.updateList = true;
