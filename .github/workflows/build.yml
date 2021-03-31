@@ -1,6 +1,16 @@
 name: Build and Test Xenonflow
 
-on: [pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule: 0 4 * * *
+  release:
+    types:
+      - created
 
 jobs:
   build:
