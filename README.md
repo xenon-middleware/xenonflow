@@ -7,7 +7,7 @@
 Run CWL workflows using Xenon. Possibly through a REST api.
 
 # Usage:
-To run a workflow through Xenon-flow is quite simple:
+The following diagram shows a rough overview of the interaction when using xenonflow
 
 ![Xenon-flow Usage Pattern](docs/architecture_diagram.png "Xenon-flow Usage")
 
