@@ -1,5 +1,6 @@
-[![Build and Test Xenonflow](https://github.com/xenon-middleware/xenon-flow/actions/workflows/build.yml/badge.svg)](https://github.com/xenon-middleware/xenon-flow/actions/workflows/build.yml)
+[![Build and Test Xenonflow](https://github.com/xenon-middleware/xenon-flow/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/xenon-middleware/xenon-flow/actions/workflows/build.yml)
 [![DOI](https://zenodo.org/badge/63334137.svg)](https://zenodo.org/badge/latestdoi/63334137)
+
 
 # Xenon-flow
 
