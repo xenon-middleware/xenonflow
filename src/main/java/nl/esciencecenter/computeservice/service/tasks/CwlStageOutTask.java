@@ -57,7 +57,7 @@ public class CwlStageOutTask implements Runnable {
 			}
 
 			// Staging back output
-	        StagingManifest manifest = StagingManifestFactory.createStagingOutManifest(job, exitcode, service.getSourceFileSystem(), service.getRemoteFileSystem(), jobService, jobLogger); //new StagingManifest(jobId, new Path(job.getId() + "/"));
+	        StagingManifest manifest = StagingManifestFactory.createStagingOutManifest(job, exitcode, service.getCwlFileSystem(), service.getSourceFileSystem(), service.getRemoteFileSystem(), jobService, jobLogger); //new StagingManifest(jobId, new Path(job.getId() + "/"));
 
 			remoteToTargetStager.stageOut(manifest, exitcode);
 		} catch (StatePreconditionException | IOException | XenonException | XenonflowException | CwlException e){

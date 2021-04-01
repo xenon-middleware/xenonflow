@@ -1,14 +1,14 @@
 {
   "name": "test_copy_file_array",
-  "workflow": "src/test/resources/cwl/copy-file-array.cwl", 
+  "workflow": "copy-file-array.cwl", 
   "input": {
     "inp_files": [{
         "class": "File",
-    	"path": "src/test/resources/cwl/input/lorem.txt"
+    	"path": "input/lorem.txt"
     },
     {
         "class": "File",
-    	"path": "src/test/resources/cwl/input/lorem.txt"
+    	"path": "input/lorem.txt"
     }],
     "newnames" : [
         "ipsum1",

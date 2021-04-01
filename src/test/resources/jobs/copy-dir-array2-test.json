@@ -1,14 +1,14 @@
 {
   "name": "test_copy",
-  "workflow": "src/test/resources/cwl/copy-dir-array2.cwl", 
+  "workflow": "copy-dir-array2.cwl", 
   "input": {
     "inp_dirs": [{
         "class": "Directory",
-        "path": "src/test/resources/cwl/input"
+        "path": "input"
     },
     {
         "class": "Directory",
-        "path": "src/test/resources/cwl/input"
+        "path": "input"
     }],
     "newnames" : [
         "output1",

@@ -44,10 +44,10 @@ public class StagingManifestFactory {
 		Path workflowBasePath;
 	}
 	
-	public static StagingManifest createStagingInManifest(Job job, FileSystem fileSystem, String cwlCommandScript, Logger jobLogger) throws CwlException, XenonException, JsonParseException, JsonMappingException, IOException, StatePreconditionException, XenonflowException {
+	public static StagingManifest createStagingInManifest(Job job, FileSystem cwlFileSystem, FileSystem sourceFileSystem, String cwlCommandScript, Logger jobLogger) throws CwlException, XenonException, JsonParseException, JsonMappingException, IOException, StatePreconditionException, XenonflowException {
 		StagingManifest manifest = new StagingManifest(job.getId(), job.getSandboxDirectory());
 
-		WorkflowDescription wfd = loadLocalWorkflow(job, fileSystem, jobLogger);
+		WorkflowDescription wfd = loadLocalWorkflow(job, cwlFileSystem, jobLogger);
 
 		if (wfd.workflow == null || wfd.workflow.getSteps() == null) {
 			throw new CwlException("Error staging files, cannot read the workflow file!\nworkflow: " + wfd.workflow);
@@ -59,20 +59,20 @@ public class StagingManifestFactory {
 			manifest.add(new CommandScriptStagingObject(cwlCommandScript, new Path("cwlcommand"), null));
 		}
 		
-        manifest.add(new FileStagingObject(wfd.localPath, wfd.workflowBaseName, null));
-        addSubWorkflowsToManifest(wfd.workflow, manifest, wfd.workflowBasePath, fileSystem, jobLogger);
+        manifest.add(new CwlFileStagingObject(wfd.localPath, wfd.workflowBaseName, null));
+        addSubWorkflowsToManifest(wfd.workflow, manifest, wfd.workflowBasePath, cwlFileSystem, jobLogger);
 
         addInputToManifest(job, wfd.workflow, manifest, jobLogger);
 
         return manifest;
 	}
 	
-	public static StagingManifest createStagingOutManifest(Job job, Integer exitcode, FileSystem fileSystem, FileSystem remoteFileSystem, JobService jobService,
+	public static StagingManifest createStagingOutManifest(Job job, Integer exitcode, FileSystem cwlFileSystem, FileSystem fileSystem, FileSystem remoteFileSystem, JobService jobService,
 			Logger jobLogger) throws JsonParseException, JsonMappingException, IOException, XenonException, XenonflowException, CwlException {
 		StagingManifest manifest = new StagingManifest(job.getId(), job.getSandboxDirectory());
 		manifest.setBaseurl((String) job.getAdditionalInfo().get("baseurl"));
 		
-		WorkflowDescription wfd = loadLocalWorkflow(job, fileSystem, jobLogger);
+		WorkflowDescription wfd = loadLocalWorkflow(job, cwlFileSystem, jobLogger);
 		
 		Path remoteDirectory = job.getSandboxDirectory();
         Path outPath = remoteDirectory.resolve("stdout.txt");
@@ -112,20 +112,21 @@ public class StagingManifestFactory {
 		return manifest;
 	}
 	
-	public static WorkflowDescription loadLocalWorkflow(Job job, FileSystem fileSystem, Logger jobLogger) throws JsonParseException, JsonMappingException, IOException, XenonException {
+	public static WorkflowDescription loadLocalWorkflow(Job job, FileSystem cwlFileSystem, Logger jobLogger) throws JsonParseException, JsonMappingException, IOException, XenonException {
 		WorkflowDescription output = new StagingManifestFactory.WorkflowDescription();
+		
         // Add the workflow to the staging manifest
         Path localWorkflow = new Path(job.getWorkflow());
         output.localPath = localWorkflow;
         output.workflowBaseName = new Path (localWorkflow.getFileNameAsString());
 
 		// Read in the workflow to get the required inputs
-		Path workflowPath = fileSystem.getWorkingDirectory().resolve(localWorkflow);
-		output.workflowBasePath = fileSystem.getWorkingDirectory().relativize(workflowPath.getParent());
+		Path workflowPath = cwlFileSystem.getWorkingDirectory().resolve(localWorkflow);
+		output.workflowBasePath = cwlFileSystem.getWorkingDirectory().relativize(workflowPath.getParent());
 
 		jobLogger.debug("Loading workflow from: " + workflowPath);
 		String extension = FilenameUtils.getExtension(workflowPath.getFileNameAsString());
-		output.workflow = Workflow.fromInputStream(fileSystem.readFromFile(workflowPath.toAbsolutePath()), extension);
+		output.workflow = Workflow.fromInputStream(cwlFileSystem.readFromFile(workflowPath.toAbsolutePath()), extension);
 
 		return output;
 	}
@@ -141,7 +142,7 @@ public class StagingManifestFactory {
         		localPath = workflowBasePath.resolve(path);
         	}
         	Path remotePath = path;
-        	manifest.add(new FileStagingObject(localPath, remotePath, null));
+        	manifest.add(new CwlFileStagingObject(localPath, remotePath, null));
         }
 	}
 	

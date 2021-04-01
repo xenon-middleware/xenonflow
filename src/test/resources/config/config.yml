@@ -32,10 +32,13 @@ default: local
 
 sourceFileSystem:
    adaptor: file
-   location: ${XENONFLOW_HOME}
+   location: ${XENONFLOW_HOME}/src/test/resources/cwl/
    
 targetFileSystem:
    adaptor: file
    location: ${XENONFLOW_HOME}/output/
    hosted: true
-
+   
+cwlFileSystem:
+   adaptor: file
+   location: ${XENONFLOW_HOME}/src/test/resources/cwl/

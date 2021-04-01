@@ -1,10 +1,10 @@
 {
   "name": "fail_copy",
-  "workflow": "src/test/resources/cwl/fail.cwl", 
+  "workflow": "fail.cwl", 
   "input": {
     "inp": {
         "class": "File",
-    	"path": "src/test/resources/cwl/input/lorem.txt"
+    	"path": "lorem.txt"
     },
     "newname" : "ipsum.txt"
   }
