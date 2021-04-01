@@ -37,7 +37,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
+import nl.esciencecenter.computeservice.config.XenonflowConfig;
 import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
 import nl.esciencecenter.computeservice.model.JobRepository;
 import nl.esciencecenter.computeservice.service.JobService;
@@ -157,9 +157,9 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 		if (xenonflowHome == null) {
 			xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
 		}
-		ComputeServiceConfig config;
+		XenonflowConfig config;
 		try {
-			config = ComputeServiceConfig.loadFromFile(xenonConfigFile, xenonflowHome);
+			config = XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome);
 			return config.getTargetFilesystemConfig();
 		} catch (IOException e) {
 			e.printStackTrace();

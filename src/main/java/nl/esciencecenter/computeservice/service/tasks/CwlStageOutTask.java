@@ -17,6 +17,7 @@ import nl.esciencecenter.computeservice.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.service.staging.StagingManifestFactory;
 import nl.esciencecenter.computeservice.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
+import nl.esciencecenter.xenon.filesystems.FileSystem;
 
 public class CwlStageOutTask implements Runnable {
 
@@ -57,7 +58,8 @@ public class CwlStageOutTask implements Runnable {
 			}
 
 			// Staging back output
-	        StagingManifest manifest = StagingManifestFactory.createStagingOutManifest(job, exitcode, service.getSourceFileSystem(), service.getRemoteFileSystem(), jobService, jobLogger); //new StagingManifest(jobId, new Path(job.getId() + "/"));
+			FileSystem cwlFileSystem = service.hasCwlFileSystem() ? service.getCwlFileSystem() : service.getSourceFileSystem();
+	        StagingManifest manifest = StagingManifestFactory.createStagingOutManifest(job, exitcode, cwlFileSystem, service.getSourceFileSystem(), service.getRemoteFileSystem(), jobService, jobLogger); //new StagingManifest(jobId, new Path(job.getId() + "/"));
 
 			remoteToTargetStager.stageOut(manifest, exitcode);
 		} catch (StatePreconditionException | IOException | XenonException | XenonflowException | CwlException e){

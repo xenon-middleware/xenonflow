@@ -25,7 +25,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 import nl.esciencecenter.computeservice.config.AdaptorConfig;
-import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
+import nl.esciencecenter.computeservice.config.XenonflowConfig;
 import nl.esciencecenter.computeservice.model.Job;
 import nl.esciencecenter.computeservice.model.JobState;
 import nl.esciencecenter.computeservice.model.StatePreconditionException;
@@ -59,7 +59,7 @@ public class CwlStageInTest {
 			}
 			
 			System.out.println("Loading config from:" + xenonConfigFile);
-			ComputeServiceConfig config = ComputeServiceConfig.loadFromFile(xenonConfigFile, xenonflowHome);
+			XenonflowConfig config = XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome);
 			
 			// Initialize local filesystem
 			AdaptorConfig sourceConfig = config.getSourceFilesystemConfig();
@@ -82,7 +82,7 @@ public class CwlStageInTest {
 		job.setInternalState(JobState.SUBMITTED);
 		job.setWorkflow("src/test/resources/cwl/echo-file.cwl");
 		
-		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), null, jobLogger);
+		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), this.getSourceFileSystem(), null, jobLogger);
 		
 		List<String> paths = new ArrayList<String>();
 		for (StagingObject stageObject : manifest) {
@@ -112,7 +112,7 @@ public class CwlStageInTest {
 		job.setName("createStagingManifestTest");
 		job.setInternalState(JobState.SUBMITTED);
 		
-		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), null, jobLogger);
+		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), this.getSourceFileSystem(), null, jobLogger);
 		
 		List<String> paths = new ArrayList<String>();
 		for (StagingObject stageObject : manifest) {
