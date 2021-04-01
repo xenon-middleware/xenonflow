@@ -65,6 +65,9 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 	@Value("${local.server.address}")
 	private String bindAdress;
 	
+	@Value("${server.port}")
+	private String serverPort;
+	
 	@Value("${xenonflow.config}")
 	private String xenonConfigFile;
 	
@@ -207,6 +210,6 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
-		logger.info("Server running at: http://" + bindAdress);
+		logger.info("Server running at: http://" + bindAdress + ":" + serverPort);
 	}
 }
