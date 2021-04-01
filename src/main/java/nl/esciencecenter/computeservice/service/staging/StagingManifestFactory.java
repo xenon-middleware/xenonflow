@@ -59,8 +59,8 @@ public class StagingManifestFactory {
 			manifest.add(new CommandScriptStagingObject(cwlCommandScript, new Path("cwlcommand"), null));
 		}
 		
-        manifest.add(new FileStagingObject(wfd.localPath, wfd.workflowBaseName, null));
-        addSubWorkflowsToManifest(wfd.workflow, manifest, wfd.workflowBasePath, sourceFileSystem, jobLogger);
+        manifest.add(new CwlFileStagingObject(wfd.localPath, wfd.workflowBaseName, null));
+        addSubWorkflowsToManifest(wfd.workflow, manifest, wfd.workflowBasePath, cwlFileSystem, jobLogger);
 
         addInputToManifest(job, wfd.workflow, manifest, jobLogger);
 
@@ -142,7 +142,7 @@ public class StagingManifestFactory {
         		localPath = workflowBasePath.resolve(path);
         	}
         	Path remotePath = path;
-        	manifest.add(new FileStagingObject(localPath, remotePath, null));
+        	manifest.add(new CwlFileStagingObject(localPath, remotePath, null));
         }
 	}
 	

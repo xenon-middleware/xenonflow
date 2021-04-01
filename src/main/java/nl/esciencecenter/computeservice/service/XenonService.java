@@ -61,16 +61,20 @@ public class XenonService implements AutoCloseable {
 			if (remoteFileSystem != null && remoteFileSystem.isOpen()) {
 				remoteFileSystem.close();
 			}
+			if (cwlFileSystem != null && cwlFileSystem.isOpen()) {
+				cwlFileSystem.close();
+			}
 		} catch (XenonException e) {
 			logger.error("Error while shutting down xenon: ", e);
 		}
 		scheduler = null;
 		sourceFileSystem = null;
 		remoteFileSystem = null;
+		cwlFileSystem = null;
 	}
 
 	@PostConstruct
-	private void initialize() throws XenonException, IOException {
+	public void initialize() throws XenonException, IOException {
 		xenonflowHome = System.getenv("XENONFLOW_HOME");
 		
 		if (xenonflowHome == null) {
@@ -196,12 +200,8 @@ public class XenonService implements AutoCloseable {
 		this.sourceFileSystem = sourceFileSystem;
 	}
 	
-	public boolean hasCwlFileSystem() {
-		return getConfig().hasCwlFilesystemConfig();
-	}
-	
 	public FileSystem getCwlFileSystem() throws XenonException {
-		if (hasCwlFileSystem() && cwlFileSystem == null || !cwlFileSystem.isOpen()) {
+		if (cwlFileSystem == null || !cwlFileSystem.isOpen()) {
 			AdaptorConfig cwlConfig = getConfig().getCwlFilesystemConfig();
 			logger.debug("Creating cwl filesystem..." + cwlConfig.getAdaptor() + " location: "
 					+ cwlConfig.getLocation());

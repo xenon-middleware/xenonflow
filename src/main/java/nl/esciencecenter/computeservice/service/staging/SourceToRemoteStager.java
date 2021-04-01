@@ -21,5 +21,10 @@ public class SourceToRemoteStager extends XenonStager {
 	protected FileSystem getSourceFileSystem() throws XenonException {
 		return service.getSourceFileSystem();
 	}
+	
+	@Override
+	protected FileSystem getCwlFileSystem() throws XenonException {
+		return service.getCwlFileSystem();
+	}
 
 }

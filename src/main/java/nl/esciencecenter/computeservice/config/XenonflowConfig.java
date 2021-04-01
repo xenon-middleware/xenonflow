@@ -54,7 +54,7 @@ public class XenonflowConfig {
 	@JsonProperty(value="targetFileSystem", required=true)
 	private TargetAdaptorConfig targetFileSystemConfig;
 	
-	@JsonProperty(value="cwlFileSystem", required=false)
+	@JsonProperty(value="cwlFileSystem", required=true)
 	private AdaptorConfig cwlFileSystemConfig;
 	
 	
@@ -136,7 +136,7 @@ public class XenonflowConfig {
 	public XenonflowConfig(@JsonProperty(value="ComputeResources", required=true) Map<String, ComputeResource> computeResources,
 								@JsonProperty(value="sourceFileSystem", required=true) AdaptorConfig sourceFileSystemConfig,
 								@JsonProperty(value="targetFileSystem", required=true) TargetAdaptorConfig targetFileSystemConfig,
-								@JsonProperty(value="cwlFileSystem", required=false) AdaptorConfig cwlFileSystemConfig) {
+								@JsonProperty(value="cwlFileSystem", required=true) AdaptorConfig cwlFileSystemConfig) {
 		super();
 		this.computeResources = computeResources;
 		this.sourceFileSystemConfig = sourceFileSystemConfig;
@@ -192,12 +192,6 @@ public class XenonflowConfig {
 	public void setCwlFilesystemConfig(AdaptorConfig cwlFileSystemConfig) {
 		this.cwlFileSystemConfig = cwlFileSystemConfig;
 	}
-	
-
-	public boolean hasCwlFilesystemConfig() {
-		return this.cwlFileSystemConfig != null;
-	}
-
 
 	/*
 	 * A bunch of delegate methods from Map

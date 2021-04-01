@@ -15,10 +15,7 @@
  */
 package nl.esciencecenter.computeservice.config;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Paths;
 
@@ -34,7 +31,6 @@ public class XenonflowConfigTest {
 		assertNotNull("Default resource should exist", config.defaultComputeResource());
 		assertNotNull("Source filesystem should exist", config.getSourceFilesystemConfig());
 		assertNotNull("Target filesystem should exist", config.getTargetFilesystemConfig());
-		assertTrue("CWL filesystem should exist", config.hasCwlFilesystemConfig());
 		assertNotNull("CWL filesystem should exist", config.getCwlFilesystemConfig());
 	}
 	
@@ -61,6 +57,10 @@ public class XenonflowConfigTest {
 				+ " \"targetFileSystem\": {"
 				+ "    \"adaptor\": \"file\","
 				+ "    \"location\": \"/tmp/results\""
+				+ "  },"
+				+ " \"cwlFileSystem\": {"
+				+ "    \"adaptor\": \"file\","
+				+ "    \"location\": \"/tmp/results\""
 				+ "  }"
 				+ "}", "json");
 		assertNotNull("Configuration should not be null", config);
@@ -68,8 +68,7 @@ public class XenonflowConfigTest {
 		assertNotNull("Default resource should exist", config.defaultComputeResource());
 		assertNotNull("Source filesystem should exist", config.getSourceFilesystemConfig());
 		assertNotNull("Target filesystem should exist", config.getTargetFilesystemConfig());
-		assertFalse("CWL Filesystem does not exsist", config.hasCwlFilesystemConfig());
-		assertNull("CWL Filesystem does not exsist", config.getCwlFilesystemConfig());
+		assertNotNull("CWL Filesystem does not exsist", config.getCwlFilesystemConfig());
 		assert (config.get("das5").getSchedulerConfig().getAdaptor().equals("local")); 
 	}
 }

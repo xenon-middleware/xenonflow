@@ -1,10 +1,10 @@
 {
   "name": "test_copy",
-  "workflow": "src/test/resources/cwl/copy.cwl", 
+  "workflow": "copy.cwl", 
   "input": {
     "inp": {
         "class": "File",
-    	"path": "src/test/resources/cwl/input/lorem.txt"
+    	"path": "input/lorem.txt"
     },
     "newname" : "ipsum.txt"
   }

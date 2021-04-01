@@ -64,7 +64,11 @@ public class CwlTestUtils {
 	
 	public static Job waitForRunning(String location, MockMvc mockMvc, String headerName, String apiToken) throws Exception {
 		CWLState state = CWLState.WAITING;
-		while(!state.isRunning()) {
+		
+		long startTime = System.nanoTime();
+		long endTime = System.nanoTime();
+		long totalTime = 0;
+		while(!state.isRunning() && totalTime < 10) {
 			MockHttpServletResponse res = mockMvc.perform(
 					get(location)
 					.header(headerName, apiToken)
@@ -76,6 +80,8 @@ public class CwlTestUtils {
 				 return job;
 			}
 			Thread.sleep(1100);
+			endTime   = System.nanoTime();
+			totalTime = (endTime - startTime) / 1000000000;
 		}
 		return null;
 	}

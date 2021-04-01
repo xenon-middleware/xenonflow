@@ -31,6 +31,7 @@ import nl.esciencecenter.computeservice.model.JobState;
 import nl.esciencecenter.computeservice.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.model.WorkflowBinding;
 import nl.esciencecenter.computeservice.model.XenonflowException;
+import nl.esciencecenter.computeservice.service.staging.CwlFileStagingObject;
 import nl.esciencecenter.computeservice.service.staging.FileStagingObject;
 import nl.esciencecenter.computeservice.service.staging.StagingManifest;
 import nl.esciencecenter.computeservice.service.staging.StagingManifestFactory;
@@ -44,7 +45,7 @@ import nl.esciencecenter.xenon.filesystems.FileSystem;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = {nl.esciencecenter.computeservice.rest.Application.class})
 @TestPropertySource(locations="classpath:test.properties")
 public class CwlStageInTest {
-	@Value("${xenon.config}")
+	@Value("${xenonflow.config}")
 	private String xenonConfigFile;
 	
 	private FileSystem sourceFileSystem;
@@ -80,13 +81,16 @@ public class CwlStageInTest {
 		job.setInput(WorkflowBinding.fromFile(new File("src/test/resources/cwl/echo-file.json")));
 		job.setName("createStagingManifestTest");
 		job.setInternalState(JobState.SUBMITTED);
-		job.setWorkflow("src/test/resources/cwl/echo-file.cwl");
+		job.setWorkflow("echo-file.cwl");
 		
 		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), this.getSourceFileSystem(), null, jobLogger);
 		
 		List<String> paths = new ArrayList<String>();
 		for (StagingObject stageObject : manifest) {
-			if (stageObject instanceof FileStagingObject) {
+			if (stageObject instanceof CwlFileStagingObject) {
+				CwlFileStagingObject object = (CwlFileStagingObject) stageObject;
+				paths.add(object.getTargetPath().toString());
+			} else if (stageObject instanceof FileStagingObject) {
 				FileStagingObject object = (FileStagingObject) stageObject;
 				paths.add(object.getTargetPath().toString());
 			} else if (stageObject instanceof StringToFileStagingObject) {
@@ -107,7 +111,7 @@ public class CwlStageInTest {
 
 		Job job = new Job();
 		job.setId(uuid);
-		job.setWorkflow("src/test/resources/cwl/count-lines-remote.cwl");
+		job.setWorkflow("count-lines-remote.cwl");
 		job.setInput(WorkflowBinding.fromFile(new File("src/test/resources/cwl/count-lines-job.json")));
 		job.setName("createStagingManifestTest");
 		job.setInternalState(JobState.SUBMITTED);
@@ -116,7 +120,10 @@ public class CwlStageInTest {
 		
 		List<String> paths = new ArrayList<String>();
 		for (StagingObject stageObject : manifest) {
-			if (stageObject instanceof FileStagingObject) {
+			if (stageObject instanceof CwlFileStagingObject) {
+				CwlFileStagingObject object = (CwlFileStagingObject) stageObject;
+				paths.add(object.getTargetPath().toString());
+			} else if (stageObject instanceof FileStagingObject) {
 				FileStagingObject object = (FileStagingObject) stageObject;
 				paths.add(object.getTargetPath().toString());
 			} else if (stageObject instanceof StringToFileStagingObject) {

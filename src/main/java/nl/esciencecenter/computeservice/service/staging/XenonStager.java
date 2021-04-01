@@ -14,6 +14,7 @@ import java.util.Set;
 import org.commonwl.cwl.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.util.Pair;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import nl.esciencecenter.computeservice.model.Job;
@@ -44,19 +45,21 @@ public abstract class XenonStager {
 	private static class StagingJob {
 		private final StagingManifest manifest;
 		private final List<String> copyIds;
+		private final List<String> cwlFileIds;
 		
-		public StagingJob(StagingManifest manifest, List<String> copyIds) {
+		public StagingJob(StagingManifest manifest, List<String> copyIds, List<String> cwlFileIds) {
 			super();
 			this.manifest = manifest;
 			this.copyIds = copyIds;
+			this.cwlFileIds = cwlFileIds;
 		}
 	}
 	
 	private static final class StagingOutJob extends StagingJob {
 		private final int exitcode;
 		
-		public StagingOutJob(int exitcode, StagingManifest manifest, List<String> copyIds) {
-			super(manifest, copyIds);
+		public StagingOutJob(int exitcode, StagingManifest manifest, List<String> copyIds, List<String> cwlFileIds) {
+			super(manifest, copyIds, cwlFileIds);
 			this.exitcode = exitcode;
 		}
 	}
@@ -71,6 +74,7 @@ public abstract class XenonStager {
 	
 	protected abstract FileSystem getTargetFileSystem() throws XenonException;
 	protected abstract FileSystem getSourceFileSystem() throws XenonException;
+	protected abstract FileSystem getCwlFileSystem() throws XenonException;
 
 	/**
 	 * Stages everything defined in the StagingManifest
@@ -85,11 +89,12 @@ public abstract class XenonStager {
 	 * @throws XenonException 
 	 * @throws StatePreconditionException 
 	 */
-	public List<String> doStaging(StagingManifest manifest) throws XenonException, StatePreconditionException {
+	public Pair<List<String>,List<String>> doStaging(StagingManifest manifest) throws XenonException, StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 
 		FileSystem targetFileSystem = getTargetFileSystem();
 		FileSystem sourceFileSystem = getSourceFileSystem();
+		FileSystem cwlFileSystem = getCwlFileSystem();
 
 		// Make sure the target directory exists
 		Path targetDirectory = getTargetFileSystem().getWorkingDirectory().resolve(manifest.getTargetDirectory()).toAbsolutePath();
@@ -99,11 +104,30 @@ public abstract class XenonStager {
 		}
 		
 		Path sourceDirectory = sourceFileSystem.getWorkingDirectory().toAbsolutePath();
+		Path cwlDirectory = cwlFileSystem.getWorkingDirectory().toAbsolutePath();
 
 		List<String> stagingIds = new LinkedList<String>();
+		List<String> cwlFileIds = new LinkedList<String>();
 		// Copy all the files there
 		for (StagingObject stageObject : manifest) {
-			if (stageObject instanceof FileStagingObject) {
+			if (stageObject instanceof CwlFileStagingObject) {
+				CwlFileStagingObject object = (CwlFileStagingObject) stageObject;
+				Path sourcePath = object.getSourcePath();
+				if (!sourcePath.isAbsolute()) {
+					sourcePath = cwlDirectory.resolve(object.getSourcePath()).toAbsolutePath();
+				}
+				Path targetPath = targetDirectory.resolve(object.getTargetPath());
+				Path targetDir = targetPath.getParent();
+				if (!targetFileSystem.exists(targetDir)) {
+					targetFileSystem.createDirectories(targetDir);
+				}
+				
+				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
+				String copyId = cwlFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
+						false);
+				stageObject.setCopyId(copyId);
+				cwlFileIds.add(copyId);
+			}else if (stageObject instanceof FileStagingObject) {
 				FileStagingObject object = (FileStagingObject) stageObject;
 				Path sourcePath = object.getSourcePath();
 				if (!sourcePath.isAbsolute()) {
@@ -168,7 +192,7 @@ public abstract class XenonStager {
 			}
 		}
 		
-		return stagingIds;
+		return Pair.of(stagingIds, cwlFileIds);
 	}
 	
 	public void updateStaging() {
@@ -179,6 +203,7 @@ public abstract class XenonStager {
 			
 			StagingManifest manifest = stagingJob.manifest;
 			List<String> copyIds = stagingJob.copyIds;
+			List<String> cwlFileIds = stagingJob.cwlFileIds;
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
 			
 			Optional<Job> j = repository.findById(jobId);		
@@ -191,11 +216,15 @@ public abstract class XenonStager {
 			
 			try {
 				FileSystem sourceFileSystem = getSourceFileSystem();
+				FileSystem cwlFileSystem = getCwlFileSystem();
 
 				// Check if the job has been cancelled
 				if (job.getInternalState().isCancellationActive() || job.getInternalState().isDeletionActive()) {
 					for (String id: copyIds) {
 						sourceFileSystem.cancel(id);
+					}
+					for (String id: cwlFileIds) {
+						cwlFileSystem.cancel(id);
 					}
 					stagingEntries.remove();
 					continue;
@@ -203,19 +232,10 @@ public abstract class XenonStager {
 				
 				// Check the status of the copies of the job
 				for (Iterator<String> iterator=copyIds.iterator(); iterator.hasNext();) {
-					String id = iterator.next();
-					CopyStatus s = sourceFileSystem.getStatus(id);
-					
-					if (s.hasException()) {
-						jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", s.getException());
-						logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", s.getException());
-						jobService.setErrorAndState(job.getId(), s.getException(), job.getInternalState(), JobState.PERMANENT_FAILURE);
-						copyMap.remove(jobId);
-					} else if (s.isDone()) {
-						StagingObject stageObject = manifest.getByCopyid(id);
-						stageObject.setBytesCopied(s.bytesCopied());
-						iterator.remove();
-					}
+					checkAndReportCopy(jobId, manifest, jobLogger, job, sourceFileSystem, iterator);
+				}
+				for (Iterator<String> iterator=cwlFileIds.iterator(); iterator.hasNext();) {
+					checkAndReportCopy(jobId, manifest, jobLogger, job, cwlFileSystem, iterator);
 				}
 				
 				// All statuses have been updated, if there are no more copyIds were done with staging
@@ -259,6 +279,24 @@ public abstract class XenonStager {
 			}
 		}
 	}
+
+
+	private void checkAndReportCopy(String jobId, StagingManifest manifest, Logger jobLogger, Job job,
+			FileSystem sourceFileSystem, Iterator<String> iterator) throws XenonException {
+		String id = iterator.next();
+		CopyStatus s = sourceFileSystem.getStatus(id);
+		
+		if (s.hasException()) {
+			jobLogger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", s.getException());
+			logger.error("Error during execution of " + job.getName() + "(" + job.getId() + ")", s.getException());
+			jobService.setErrorAndState(job.getId(), s.getException(), job.getInternalState(), JobState.PERMANENT_FAILURE);
+			copyMap.remove(jobId);
+		} else if (s.isDone()) {
+			StagingObject stageObject = manifest.getByCopyid(id);
+			stageObject.setBytesCopied(s.bytesCopied());
+			iterator.remove();
+		}
+	}
 	
 	/**
 	 * Do the staging from local to remote
@@ -269,9 +307,9 @@ public abstract class XenonStager {
 	 * @throws XenonException 
 	 */
 	public void stageIn(StagingManifest manifest) throws XenonException, StatePreconditionException {	
-		List<String> stagingIds = doStaging(manifest);
+		Pair<List<String>, List<String>> ids = doStaging(manifest);
 		
-		StagingJob stagingJob = new StagingJob(manifest, stagingIds);
+		StagingJob stagingJob = new StagingJob(manifest, ids.getFirst(), ids.getSecond());
 		copyMap.put(manifest.getJobId(), stagingJob);
 	}
 
@@ -291,8 +329,8 @@ public abstract class XenonStager {
 	 */
 	public void stageOut(StagingManifest manifest, int exitcode) throws StatePreconditionException, IOException, XenonException {
 		try {
-			List<String> stagingIds = doStaging(manifest);
-			StagingOutJob stagingJob = new StagingOutJob(exitcode, manifest, stagingIds);
+			Pair<List<String>, List<String>> ids = doStaging(manifest);
+			StagingOutJob stagingJob = new StagingOutJob(exitcode, manifest, ids.getFirst(), ids.getSecond());
 			copyMap.put(manifest.getJobId(), stagingJob);
 		} catch (XenonException e) {
 			jobService.setErrorAndState(manifest.getJobId(), e, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
@@ -318,7 +356,7 @@ public abstract class XenonStager {
 				UriComponentsBuilder b;
 				if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
 					b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
-					b.pathSegment("output/");
+					b.pathSegment("output");
 					b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
 				} else {
 					b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());
@@ -399,7 +437,7 @@ public abstract class XenonStager {
 		UriComponentsBuilder b;
 		if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
 			b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
-			b.pathSegment("output/");
+			b.pathSegment("output");
 			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
 		} else {
 			b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());

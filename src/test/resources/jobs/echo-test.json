@@ -1,6 +1,6 @@
 {
   "name": "test_echo",
-  "workflow": "src/test/resources/cwl/echo.cwl", 
+  "workflow": "echo.cwl", 
   "input": {
     "inp": "Hello CWL"
   }
