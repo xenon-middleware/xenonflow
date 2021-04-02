@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 
 import nl.esciencecenter.computeservice.config.AdaptorConfig;
 import nl.esciencecenter.computeservice.config.ComputeResource;
-import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
 import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
+import nl.esciencecenter.computeservice.config.XenonflowConfig;
 import nl.esciencecenter.computeservice.model.JobRepository;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
@@ -37,11 +37,12 @@ public class XenonService implements AutoCloseable {
 	@Autowired
 	private JobService jobService;
 	
-	private ComputeServiceConfig config = null;
+	private XenonflowConfig config = null;
 	private Scheduler scheduler = null;
 	private FileSystem remoteFileSystem = null;
 	private FileSystem sourceFileSystem = null;
 	private FileSystem targetFileSystem = null;
+	private FileSystem cwlFileSystem = null;
 	
 	private String xenonflowHome = null;
 
@@ -60,16 +61,20 @@ public class XenonService implements AutoCloseable {
 			if (remoteFileSystem != null && remoteFileSystem.isOpen()) {
 				remoteFileSystem.close();
 			}
+			if (cwlFileSystem != null && cwlFileSystem.isOpen()) {
+				cwlFileSystem.close();
+			}
 		} catch (XenonException e) {
 			logger.error("Error while shutting down xenon: ", e);
 		}
 		scheduler = null;
 		sourceFileSystem = null;
 		remoteFileSystem = null;
+		cwlFileSystem = null;
 	}
 
 	@PostConstruct
-	private void initialize() throws XenonException, IOException {
+	public void initialize() throws XenonException, IOException {
 		xenonflowHome = System.getenv("XENONFLOW_HOME");
 		
 		if (xenonflowHome == null) {
@@ -78,7 +83,7 @@ public class XenonService implements AutoCloseable {
 		logger.info("Xenonflow is using as home: " + xenonflowHome);
 
 		// Read xenon config
-		setConfig(ComputeServiceConfig.loadFromFile(xenonConfigFile, xenonflowHome));
+		setConfig(XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome));
 		// Sanity Check the config file.
 		ComputeResource resource = getConfig().defaultComputeResource();
 
@@ -167,7 +172,6 @@ public class XenonService implements AutoCloseable {
 
 	public FileSystem getSourceFileSystem() throws XenonException {
 		if (sourceFileSystem == null || !sourceFileSystem.isOpen()) {
-			// Initialize local filesystem
 			AdaptorConfig sourceConfig = getConfig().getSourceFilesystemConfig();
 			logger.debug("Creating source filesystem..." + sourceConfig.getAdaptor() + " location: "
 					+ sourceConfig.getLocation());
@@ -181,7 +185,6 @@ public class XenonService implements AutoCloseable {
 
 	public FileSystem getTargetFileSystem() throws XenonException {
 		if (targetFileSystem == null || !targetFileSystem.isOpen()) {
-			// Initialize local filesystem
 			TargetAdaptorConfig targetConfig = getConfig().getTargetFilesystemConfig();
 			logger.debug("Creating target filesystem..." + targetConfig.getAdaptor() + " location: "
 					+ targetConfig.getLocation());
@@ -196,6 +199,23 @@ public class XenonService implements AutoCloseable {
 	public void setSourceFileSystem(FileSystem sourceFileSystem) {
 		this.sourceFileSystem = sourceFileSystem;
 	}
+	
+	public FileSystem getCwlFileSystem() throws XenonException {
+		if (cwlFileSystem == null || !cwlFileSystem.isOpen()) {
+			AdaptorConfig cwlConfig = getConfig().getCwlFilesystemConfig();
+			logger.debug("Creating cwl filesystem..." + cwlConfig.getAdaptor() + " location: "
+					+ cwlConfig.getLocation());
+			logger.debug(cwlConfig.getAdaptor() + " " + cwlConfig.getLocation() + " " + cwlConfig.getCredential()
+					+ " " + cwlConfig.getProperties());
+			cwlFileSystem = FileSystem.create(cwlConfig.getAdaptor(), cwlConfig.getLocation(),
+					cwlConfig.getCredential(), cwlConfig.getProperties());
+		}
+		return cwlFileSystem;
+	}
+
+	public void setCwlFileSystem(FileSystem cwlFileSystem) {
+		this.cwlFileSystem = cwlFileSystem;
+	}
 
 	public JobRepository getRepository() {
 		return repository;
@@ -205,11 +225,11 @@ public class XenonService implements AutoCloseable {
 		this.repository = repository;
 	}
 
-	public ComputeServiceConfig getConfig() {
+	public XenonflowConfig getConfig() {
 		return config;
 	}
 
-	public void setConfig(ComputeServiceConfig config) {
+	public void setConfig(XenonflowConfig config) {
 		this.config = config;
 	}
 

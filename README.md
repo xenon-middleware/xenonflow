@@ -1,11 +1,13 @@
 [![Build and Test Xenonflow](https://github.com/xenon-middleware/xenon-flow/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/xenon-middleware/xenon-flow/actions/workflows/build.yml)
+[![DOI](https://zenodo.org/badge/63334137.svg)](https://zenodo.org/badge/latestdoi/63334137)
+
 
 # Xenon-flow
 
 Run CWL workflows using Xenon. Possibly through a REST api.
 
 # Usage:
-To run a workflow through Xenon-flow is quite simple:
+The following diagram shows a rough overview of the interaction when using xenonflow
 
 ![Xenon-flow Usage Pattern](docs/architecture_diagram.png "Xenon-flow Usage")
 

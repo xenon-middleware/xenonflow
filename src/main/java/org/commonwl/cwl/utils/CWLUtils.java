@@ -16,12 +16,20 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
+import nl.esciencecenter.computeservice.model.Job;
 import nl.esciencecenter.computeservice.model.XenonflowException;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 
 public class CWLUtils {
+	public static class WorkflowDescription {
+		public Workflow workflow;
+		public Path localPath;
+		public Path workflowBaseName;
+		public Path workflowBasePath;
+	}
+	
 	private static Logger logger = LoggerFactory.getLogger(CWLUtils.class);
 
 	/**
@@ -66,6 +74,43 @@ public class CWLUtils {
 		}
 
 		return paths;
+	}
+	
+	/**
+	 * Loads a local file as a WorkflowDiscreption
+	 * 
+	 * @param job
+	 * @param cwlFileSystem
+	 * @param jobLogger
+	 * @return WorkflowDescription
+	 * @throws JsonParseException
+	 * @throws JsonMappingException
+	 * @throws IOException
+	 * @throws XenonException
+	 */
+	public static WorkflowDescription loadLocalWorkflow(Job job, FileSystem cwlFileSystem, Logger jobLogger) throws JsonParseException, JsonMappingException, IOException, XenonException {
+		WorkflowDescription output = new WorkflowDescription();
+		
+        // Add the workflow to the staging manifest
+        Path localWorkflow = new Path(job.getWorkflow());
+        output.localPath = localWorkflow;
+        output.workflowBaseName = new Path (localWorkflow.getFileNameAsString());
+
+		// Read in the workflow to get the required inputs
+		Path workflowPath = cwlFileSystem.getWorkingDirectory().resolve(localWorkflow);
+		output.workflowBasePath = cwlFileSystem.getWorkingDirectory().relativize(workflowPath.getParent());
+
+		jobLogger.debug("Loading workflow from: " + workflowPath);
+		String extension = FilenameUtils.getExtension(workflowPath.getFileNameAsString());
+		output.workflow = Workflow.fromInputStream(cwlFileSystem.readFromFile(workflowPath.toAbsolutePath()), extension);
+
+		return output;
+	}
+	
+	public static boolean isLocalWorkflow(Path workflow, FileSystem cwlFileSystem) throws XenonException {
+		Path workflowPath = cwlFileSystem.getWorkingDirectory().resolve(workflow);
+		
+		return cwlFileSystem.exists(workflowPath);
 	}
 	
 	/**

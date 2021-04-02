@@ -40,19 +40,22 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import nl.esciencecenter.computeservice.utils.JacksonUtils;
 import nl.esciencecenter.xenon.credentials.Credential;
 
-public class ComputeServiceConfig {
-	private static final Logger logger = LoggerFactory.getLogger(ComputeServiceConfig.class);
+public class XenonflowConfig {
+	private static final Logger logger = LoggerFactory.getLogger(XenonflowConfig.class);
 
 	private Map<String, ComputeResource> computeResources;
 	
-	@JsonProperty("default")
+	@JsonProperty(value="default", required=false)
 	private String defaultComputeResourceName = null;
 	
-	@JsonProperty("sourceFileSystem")
+	@JsonProperty(value="sourceFileSystem", required=true)
 	private AdaptorConfig sourceFileSystemConfig;
 	
-	@JsonProperty("targetFileSystem")
+	@JsonProperty(value="targetFileSystem", required=true)
 	private TargetAdaptorConfig targetFileSystemConfig;
+	
+	@JsonProperty(value="cwlFileSystem", required=true)
+	private AdaptorConfig cwlFileSystemConfig;
 	
 	
 	/**
@@ -65,10 +68,10 @@ public class ComputeServiceConfig {
 	 * @throws JsonMappingException When jackson has problems mapping the file to java objects
 	 * @throws IOException When the file is not found
 	 */
-	public static ComputeServiceConfig loadFromFile(String configFile, String xenonflowHome) throws IOException {
+	public static XenonflowConfig loadFromFile(String configFile, String xenonflowHome) throws IOException {
 		String extension = FilenameUtils.getExtension(configFile);
 		ObjectMapper mapper;
-		ComputeServiceConfig config = null;
+		XenonflowConfig config = null;
 
 		try {
 			mapper = JacksonUtils.getMapperForFileType(extension);
@@ -82,7 +85,7 @@ public class ComputeServiceConfig {
 			String contents = new String(Files.readAllBytes(xenonflowConfigPath));
 			contents = contents.replaceAll("\\$\\{XENONFLOW_HOME\\}", xenonflowHome);
 			contents = contents.replaceAll("\\$XENONFLOW_HOME", xenonflowHome);
-			config = mapper.readValue(contents, ComputeServiceConfig.class);
+			config = mapper.readValue(contents, XenonflowConfig.class);
         
 			if (config.getDefaultComputeResourceName() == null) {
 				// use the first key as the default if it's not set in the file
@@ -112,14 +115,14 @@ public class ComputeServiceConfig {
 	 * @throws JsonMappingException When jackson has problems mapping the file to java objects
 	 * @throws IOException When the file is not found
 	 */
-	public static ComputeServiceConfig loadFromString(String configstring, String type) throws JsonParseException, JsonMappingException, IOException {
+	public static XenonflowConfig loadFromString(String configstring, String type) throws JsonParseException, JsonMappingException, IOException {
 		ObjectMapper mapper = new ObjectMapper(new JsonFactory());
 		SimpleModule module = new SimpleModule();
 		
 		module.addDeserializer(Credential.class, new CredentialDeserializer());
 		mapper.registerModule(module);
 		
-		ComputeServiceConfig config = mapper.readValue(new StringReader(configstring), ComputeServiceConfig.class);
+		XenonflowConfig config = mapper.readValue(new StringReader(configstring), XenonflowConfig.class);
 		
 		if (config.getDefaultComputeResourceName() == null) {
 			// use the first key as the default if it's not set in the file
@@ -130,13 +133,16 @@ public class ComputeServiceConfig {
 	}
 	
 	@JsonCreator
-	public ComputeServiceConfig(@JsonProperty(value="ComputeResources", required=true) Map<String, ComputeResource> computeResources,
+	public XenonflowConfig(@JsonProperty(value="ComputeResources", required=true) Map<String, ComputeResource> computeResources,
 								@JsonProperty(value="sourceFileSystem", required=true) AdaptorConfig sourceFileSystemConfig,
-								@JsonProperty(value="targetFileSystem", required=true) TargetAdaptorConfig targetFileSystemConfig) {
+								@JsonProperty(value="targetFileSystem", required=true) TargetAdaptorConfig targetFileSystemConfig,
+								@JsonProperty(value="cwlFileSystem", required=true) AdaptorConfig cwlFileSystemConfig) {
 		super();
 		this.computeResources = computeResources;
 		this.sourceFileSystemConfig = sourceFileSystemConfig;
 		this.targetFileSystemConfig = targetFileSystemConfig;
+		this.cwlFileSystemConfig = cwlFileSystemConfig;
+		
 	}
 	
 	public Map<String, ComputeResource> getComputeResources() {
@@ -177,6 +183,14 @@ public class ComputeServiceConfig {
 
 	public void setTargetFilesystemConfig(TargetAdaptorConfig targetFileSystemConfig) {
 		this.targetFileSystemConfig = targetFileSystemConfig;
+	}
+	
+	public AdaptorConfig getCwlFilesystemConfig() {
+		return cwlFileSystemConfig;
+	}
+
+	public void setCwlFilesystemConfig(AdaptorConfig cwlFileSystemConfig) {
+		this.cwlFileSystemConfig = cwlFileSystemConfig;
 	}
 
 	/*

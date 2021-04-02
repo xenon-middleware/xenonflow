@@ -37,7 +37,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import nl.esciencecenter.computeservice.config.ComputeServiceConfig;
+import nl.esciencecenter.computeservice.config.XenonflowConfig;
 import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
 import nl.esciencecenter.computeservice.model.JobRepository;
 import nl.esciencecenter.computeservice.service.JobService;
@@ -64,6 +64,9 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 	
 	@Value("${local.server.address}")
 	private String bindAdress;
+	
+	@Value("${server.port}")
+	private String serverPort;
 	
 	@Value("${xenonflow.config}")
 	private String xenonConfigFile;
@@ -113,6 +116,8 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
             	.antMatchers(HttpMethod.HEAD,"/output/**").permitAll() //allow CORS option calls
             	.antMatchers(HttpMethod.OPTIONS,"/status/**").permitAll()//allow CORS option calls
             	.antMatchers(HttpMethod.HEAD,"/status/**").permitAll() //allow CORS option calls
+            	.antMatchers(HttpMethod.OPTIONS,"/workflows/**").permitAll()//allow CORS option calls
+            	.antMatchers(HttpMethod.HEAD,"/workflows/**").permitAll() //allow CORS option calls
             	.antMatchers("/jobs").authenticated()
             	.antMatchers("/jobs/**").authenticated()
             	.antMatchers("/files").authenticated()
@@ -121,6 +126,8 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
             	.antMatchers("/output/**").authenticated()
             	.antMatchers("/status").authenticated()
             	.antMatchers("/status/**").authenticated()
+            	.antMatchers("/workflows").authenticated()
+            	.antMatchers("/workflows/**").authenticated()
         		.antMatchers("/**").permitAll();
     }
 	
@@ -154,9 +161,9 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 		if (xenonflowHome == null) {
 			xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
 		}
-		ComputeServiceConfig config;
+		XenonflowConfig config;
 		try {
-			config = ComputeServiceConfig.loadFromFile(xenonConfigFile, xenonflowHome);
+			config = XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome);
 			return config.getTargetFilesystemConfig();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -207,6 +214,6 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
-		logger.info("Server running at: http://" + bindAdress);
+		logger.info("Server running at: http://" + bindAdress + ":" + serverPort);
 	}
 }

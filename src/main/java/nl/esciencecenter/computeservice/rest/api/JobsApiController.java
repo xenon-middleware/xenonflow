@@ -3,8 +3,6 @@ package nl.esciencecenter.computeservice.rest.api;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +10,7 @@ import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.commonwl.cwl.utils.CWLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +33,15 @@ import nl.esciencecenter.computeservice.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.service.JobService;
 import nl.esciencecenter.computeservice.service.XenonService;
 import nl.esciencecenter.computeservice.service.tasks.DeleteJobTask;
+import nl.esciencecenter.computeservice.utils.InetUtils;
 import nl.esciencecenter.computeservice.utils.LoggingUtils;
+import nl.esciencecenter.xenon.XenonException;
+import nl.esciencecenter.xenon.filesystems.Path;
 
 @CrossOrigin
 @Controller
 public class JobsApiController implements JobsApi {
-	private static final Logger logger = LoggerFactory.getLogger(JobsApi.class);
+	private static final Logger logger = LoggerFactory.getLogger(JobsApiController.class);
 	private static final Logger requestLogger = LoggerFactory.getLogger("requests");
 
 	@Autowired
@@ -133,7 +135,7 @@ public class JobsApiController implements JobsApi {
 
 	@Override
 	public ResponseEntity<List<Job>> getJobs(HttpServletRequest request) {
-		requestLogger.info("GETALL request received from: " + getClientIpAddr(request));
+		requestLogger.info("GET all jobs request received from: " + InetUtils.getClientIpAddr(request));
 		return new ResponseEntity<List<Job>>(repository.findAll(), HttpStatus.OK);
 	}
 
@@ -154,6 +156,17 @@ public class JobsApiController implements JobsApi {
 				return new ResponseEntity<Job>(job, HttpStatus.BAD_REQUEST);
 			}
 			
+			if(!CWLUtils.isLocalWorkflow(new Path(body.getWorkflow()), xenonService.getCwlFileSystem())) {
+				Job job = new Job();
+				job.setId(uuid);
+				job.setName(body.getName());
+				job.setWorkflow(body.getWorkflow());
+				job.setInternalState(JobState.PERMANENT_FAILURE);
+				
+				job.getAdditionalInfo().put("error", "supplied workflow is not an exisiting workflow");
+				return new ResponseEntity<Job>(job, HttpStatus.BAD_REQUEST);
+			}
+			
 			Job job = submitJob(body, uuid);
 			
 			HttpHeaders headers = new HttpHeaders();
@@ -164,7 +177,7 @@ public class JobsApiController implements JobsApi {
 			headers.setLocation(builder.build().toUri());
 			
 			return new ResponseEntity<Job>(job, headers, HttpStatus.CREATED);
-		} catch (StatePreconditionException e) {
+		} catch (StatePreconditionException | XenonException e) {
 			logger.error("Error while posting job", e);
 			Job job = new Job();
 			job.getAdditionalInfo().put("exception", e);
@@ -264,30 +277,5 @@ public class JobsApiController implements JobsApi {
 			return Optional.ofNullable(job);
 		}
 		return j;
-	}
-	
-
-	public static InetAddress getClientIpAddr(HttpServletRequest request) {  
-	    String ip = request.getHeader("X-Forwarded-For");  
-	    if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-	        ip = request.getHeader("Proxy-Client-IP");  
-	    }
-	    if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-	        ip = request.getHeader("WL-Proxy-Client-IP");  
-	    }
-	    if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-	        ip = request.getHeader("HTTP_CLIENT_IP");  
-	    }
-	    if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-	        ip = request.getHeader("HTTP_X_FORWARDED_FOR");  
-	    }
-	    if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-	        ip = request.getRemoteAddr();  
-	    }
-	    try {
-	        return InetAddress.getByName(ip);
-	    } catch (UnknownHostException e) {
-	        return null;
-	    }  
 	}
 }

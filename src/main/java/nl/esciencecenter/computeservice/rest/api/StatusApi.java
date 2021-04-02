@@ -13,13 +13,10 @@ import nl.esciencecenter.computeservice.model.Status;
 @Api(value = "status")
 public interface StatusApi {
 
-
 	@ApiOperation(value = "Get status", notes = "", response = Status.class, tags = {})
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Status of the server", response = Status.class),
 			@ApiResponse(code = 404, message = "status not found", response = Status.class) })
 	@RequestMapping(value = "/status", produces = { "application/json" }, method = RequestMethod.GET)
-	ResponseEntity<Status> getStatus(); // {
-		// do some magic!
-//		return new ResponseEntity<Status>(HttpStatus.OK);
-//	}
+	ResponseEntity<Status> getStatus();
+
 }

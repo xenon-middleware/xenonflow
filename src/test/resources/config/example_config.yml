@@ -44,3 +44,8 @@ sourceFileSystem:
 targetFileSystem:
    adaptor: file
    location: /tmp/results/
+   
+   
+cwlFileSystem:
+   adaptor: file
+   location: ${XENONFLOW_HOME}/cwl

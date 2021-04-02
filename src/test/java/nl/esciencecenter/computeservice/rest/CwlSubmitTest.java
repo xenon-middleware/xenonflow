@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
 import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,8 +52,8 @@ public class CwlSubmitTest {
 
 	@Value("${xenonflow.http.auth-token}")
 	private String apiToken;
-	
-	@After
+
+	@AfterAll
 	public void deleteJob() throws Exception {
 		for (String jobId : CwlTestUtils.getCreated()) {
 			this.mockMvc.perform(
@@ -83,6 +83,20 @@ public class CwlSubmitTest {
 			Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 			
 			assertTrue(job.getState() == CWLState.SUCCESS);
+		}).doesNotThrowAnyException();
+	}
+	
+	@Test
+	public void submitAndWaitWrongWorkflowTest() throws Exception {	
+		logger.info("Starting wrong workflow test");
+		assertThatCode(() -> {
+			String contents = "{\"name\":\"echo-fail\",\"workflow\":\"doesnotexist.cwl\",\"input\":{}}";
+			mockMvc.perform(post("/jobs")
+					.header(headerName, apiToken)
+					.accept(MediaType.APPLICATION_JSON)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(contents)
+			).andExpect(status().is4xxClientError());
 		}).doesNotThrowAnyException();
 	}
 	
@@ -132,7 +146,7 @@ public class CwlSubmitTest {
 	
 	@Test
 	public void noBodyTest() throws Exception {
-		logger.info("Starting does not exist test");
+		logger.info("Starting no body test");
 		assertThatCode(() -> {
 			
 			String contents = new String("{}");
@@ -167,7 +181,7 @@ public class CwlSubmitTest {
 		
 		assertEquals(job.getSandboxDirectory() + "/ipsum.txt", (String)out.get("path"));
 	}
-
+	
 	@Test
 	public void submitAndWaitCopyDirectoryTest() throws Exception {	
 		logger.info("Starting copy directory test");
@@ -278,6 +292,7 @@ public class CwlSubmitTest {
 		
 		assertTrue(state.isErrorState());
 	}
+	
 	
 	@Test
 	public void submitAndCancelImmediatelySleepTest() throws Exception {
