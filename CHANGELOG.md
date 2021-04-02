@@ -1,4 +1,7 @@
-# Version 1.0
+# Version 1.0-rc1
+- Split SourceFileSystem setting into sourceFileSystem for inputs and cwlFileSystem for workflow storage
+- Added check on job submission whether the referenced workflow exists on the cwlFileSystem
+- Added /workflows api that supplies a list of available workflows in the cwlFileSystem
 - Upgrade admin interface to Angular 11
 
 # Version 0.4-process

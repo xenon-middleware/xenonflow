@@ -38,5 +38,5 @@ license: "Apache-2.0"
 message: "If you use this software, please cite it using these metadata."
 repository-code: "https://github.com/xenon-middleware/xenon-flow"
 title: "xenon-flow"
-version: "v1.0"
+version: "v1.0-rc1"
 ...
