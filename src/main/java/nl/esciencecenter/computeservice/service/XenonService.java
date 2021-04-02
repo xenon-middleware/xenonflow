@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 
 import nl.esciencecenter.computeservice.config.AdaptorConfig;
 import nl.esciencecenter.computeservice.config.ComputeResource;
-import nl.esciencecenter.computeservice.config.XenonflowConfig;
 import nl.esciencecenter.computeservice.config.TargetAdaptorConfig;
+import nl.esciencecenter.computeservice.config.XenonflowConfig;
 import nl.esciencecenter.computeservice.model.JobRepository;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.filesystems.FileSystem;

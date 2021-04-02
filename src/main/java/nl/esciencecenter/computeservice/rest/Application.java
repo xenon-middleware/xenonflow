@@ -116,6 +116,8 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
             	.antMatchers(HttpMethod.HEAD,"/output/**").permitAll() //allow CORS option calls
             	.antMatchers(HttpMethod.OPTIONS,"/status/**").permitAll()//allow CORS option calls
             	.antMatchers(HttpMethod.HEAD,"/status/**").permitAll() //allow CORS option calls
+            	.antMatchers(HttpMethod.OPTIONS,"/workflows/**").permitAll()//allow CORS option calls
+            	.antMatchers(HttpMethod.HEAD,"/workflows/**").permitAll() //allow CORS option calls
             	.antMatchers("/jobs").authenticated()
             	.antMatchers("/jobs/**").authenticated()
             	.antMatchers("/files").authenticated()
@@ -124,6 +126,8 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
             	.antMatchers("/output/**").authenticated()
             	.antMatchers("/status").authenticated()
             	.antMatchers("/status/**").authenticated()
+            	.antMatchers("/workflows").authenticated()
+            	.antMatchers("/workflows/**").authenticated()
         		.antMatchers("/**").permitAll();
     }
 	

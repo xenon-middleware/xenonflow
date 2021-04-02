@@ -3,8 +3,6 @@ package nl.esciencecenter.computeservice.rest.api;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -34,12 +32,13 @@ import nl.esciencecenter.computeservice.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.service.JobService;
 import nl.esciencecenter.computeservice.service.XenonService;
 import nl.esciencecenter.computeservice.service.tasks.DeleteJobTask;
+import nl.esciencecenter.computeservice.utils.InetUtils;
 import nl.esciencecenter.computeservice.utils.LoggingUtils;
 
 @CrossOrigin
 @Controller
 public class JobsApiController implements JobsApi {
-	private static final Logger logger = LoggerFactory.getLogger(JobsApi.class);
+	private static final Logger logger = LoggerFactory.getLogger(JobsApiController.class);
 	private static final Logger requestLogger = LoggerFactory.getLogger("requests");
 
 	@Autowired
@@ -133,7 +132,7 @@ public class JobsApiController implements JobsApi {
 
 	@Override
 	public ResponseEntity<List<Job>> getJobs(HttpServletRequest request) {
-		requestLogger.info("GETALL request received from: " + getClientIpAddr(request));
+		requestLogger.info("GET all jobs request received from: " + InetUtils.getClientIpAddr(request));
 		return new ResponseEntity<List<Job>>(repository.findAll(), HttpStatus.OK);
 	}
 
@@ -264,30 +263,5 @@ public class JobsApiController implements JobsApi {
 			return Optional.ofNullable(job);
 		}
 		return j;
-	}
-	
-
-	public static InetAddress getClientIpAddr(HttpServletRequest request) {  
-	    String ip = request.getHeader("X-Forwarded-For");  
-	    if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-	        ip = request.getHeader("Proxy-Client-IP");  
-	    }
-	    if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-	        ip = request.getHeader("WL-Proxy-Client-IP");  
-	    }
-	    if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-	        ip = request.getHeader("HTTP_CLIENT_IP");  
-	    }
-	    if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-	        ip = request.getHeader("HTTP_X_FORWARDED_FOR");  
-	    }
-	    if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-	        ip = request.getRemoteAddr();  
-	    }
-	    try {
-	        return InetAddress.getByName(ip);
-	    } catch (UnknownHostException e) {
-	        return null;
-	    }  
 	}
 }
