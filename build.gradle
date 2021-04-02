@@ -19,6 +19,7 @@ application {
 	mainClassName = 'nl.esciencecenter.computeservice.rest.Application'
 }
 
+
 // In this section you declare where to find the dependencies of your project
 repositories {
     // Use 'jcenter' for resolving your dependencies.
@@ -82,12 +83,16 @@ dependencies {
     testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.2.4.RELEASE'
 }
 
+bootJar {
+	baseName = 'xenonflow'
+}
+
 // Include some more files in the distribution zip
 // Don't use include an extra directory in the dist zip.
 distributions {
-    main {
+    boot {
+    	baseName = 'xenonflow'
         contents {
-			
 			from(['config/config.yml', 'config/application.properties']) {
 				into '/config'
 			}
@@ -106,6 +111,10 @@ distributions {
         }
     }
 }
+
+// Disable the other distributions
+distZip.enabled = false
+distTar.enabled = false
 
 test {
     testLogging {

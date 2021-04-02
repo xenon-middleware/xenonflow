@@ -39,7 +39,7 @@ targetFileSystem:
    location: ${XENONFLOW_HOME}/output/
    hosted: true
 
-# Optional: Location where xenonflow can find the cwl workflows that are
+# Location where xenonflow can find the cwl workflows that are
 # allowed to be run. If specified xenonflow will restrict running workflows
 # to those available here. If not specified any workflow that cwltool can find
 # can be executed

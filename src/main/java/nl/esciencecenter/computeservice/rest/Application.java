@@ -68,6 +68,9 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 	@Value("${server.port}")
 	private String serverPort;
 	
+	@Value("${server.ssl.enabled}")
+	private boolean ssl;
+	
 	@Value("${xenonflow.config}")
 	private String xenonConfigFile;
 	
@@ -214,6 +217,7 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
-		logger.info("Server running at: http://" + bindAdress + ":" + serverPort);
+		String scheme = ssl ? "https://" : "http://";
+		logger.info("Server running at: " + scheme + bindAdress + ":" + serverPort);
 	}
 }
