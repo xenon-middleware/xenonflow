@@ -33,8 +33,9 @@ computer to run workflows.
 Xenon-flow configuration consists of 
 1. `sourceFileSystem`: Any filesystem supported by Xenon can be used here
 2. `targetFileSystem`: Any filesystem supported by Xenon can be used here
-3. `ComputeResources`: A map of compute resource descriptions for Xenon
-4. Each resource has the following settings:
+3. `cwlFileSystem`: Any filesystem supported by Xenon can be used here
+4. `ComputeResources`: A map of compute resource descriptions for Xenon
+5. Each resource has the following settings:
     1. `cwlCommand`: A script to run the cwl runner, allowing for python environments to be started first.
     	* Default:
     		```
@@ -77,7 +78,7 @@ The application.properties needs configuration for the following things:
 ## 4. Start the server
 The following command will run the server.
 ```
-./xenonflow
+./bin/xenonflow
 ```
 
 ## 5. Run a workflow
