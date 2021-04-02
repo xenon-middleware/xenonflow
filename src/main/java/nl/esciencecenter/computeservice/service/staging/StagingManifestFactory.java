@@ -7,7 +7,6 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.commonwl.cwl.CwlException;
 import org.commonwl.cwl.FileDirEntry;
@@ -16,6 +15,7 @@ import org.commonwl.cwl.OutputParameter;
 import org.commonwl.cwl.Parameter;
 import org.commonwl.cwl.Workflow;
 import org.commonwl.cwl.utils.CWLUtils;
+import org.commonwl.cwl.utils.CWLUtils.WorkflowDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,17 +37,10 @@ import nl.esciencecenter.xenon.filesystems.Path;
 public class StagingManifestFactory {
 	private static Logger logger = LoggerFactory.getLogger(StagingManifestFactory.class);
 	
-	public static class WorkflowDescription {
-		Workflow workflow;
-		Path localPath;
-		Path workflowBaseName;
-		Path workflowBasePath;
-	}
-	
 	public static StagingManifest createStagingInManifest(Job job, FileSystem cwlFileSystem, FileSystem sourceFileSystem, String cwlCommandScript, Logger jobLogger) throws CwlException, XenonException, JsonParseException, JsonMappingException, IOException, StatePreconditionException, XenonflowException {
 		StagingManifest manifest = new StagingManifest(job.getId(), job.getSandboxDirectory());
 
-		WorkflowDescription wfd = loadLocalWorkflow(job, cwlFileSystem, jobLogger);
+		WorkflowDescription wfd = CWLUtils.loadLocalWorkflow(job, cwlFileSystem, jobLogger);
 
 		if (wfd.workflow == null || wfd.workflow.getSteps() == null) {
 			throw new CwlException("Error staging files, cannot read the workflow file!\nworkflow: " + wfd.workflow);
@@ -72,7 +65,7 @@ public class StagingManifestFactory {
 		StagingManifest manifest = new StagingManifest(job.getId(), job.getSandboxDirectory());
 		manifest.setBaseurl((String) job.getAdditionalInfo().get("baseurl"));
 		
-		WorkflowDescription wfd = loadLocalWorkflow(job, cwlFileSystem, jobLogger);
+		WorkflowDescription wfd = CWLUtils.loadLocalWorkflow(job, cwlFileSystem, jobLogger);
 		
 		Path remoteDirectory = job.getSandboxDirectory();
         Path outPath = remoteDirectory.resolve("stdout.txt");
@@ -110,25 +103,6 @@ public class StagingManifestFactory {
     	}
 		
 		return manifest;
-	}
-	
-	public static WorkflowDescription loadLocalWorkflow(Job job, FileSystem cwlFileSystem, Logger jobLogger) throws JsonParseException, JsonMappingException, IOException, XenonException {
-		WorkflowDescription output = new StagingManifestFactory.WorkflowDescription();
-		
-        // Add the workflow to the staging manifest
-        Path localWorkflow = new Path(job.getWorkflow());
-        output.localPath = localWorkflow;
-        output.workflowBaseName = new Path (localWorkflow.getFileNameAsString());
-
-		// Read in the workflow to get the required inputs
-		Path workflowPath = cwlFileSystem.getWorkingDirectory().resolve(localWorkflow);
-		output.workflowBasePath = cwlFileSystem.getWorkingDirectory().relativize(workflowPath.getParent());
-
-		jobLogger.debug("Loading workflow from: " + workflowPath);
-		String extension = FilenameUtils.getExtension(workflowPath.getFileNameAsString());
-		output.workflow = Workflow.fromInputStream(cwlFileSystem.readFromFile(workflowPath.toAbsolutePath()), extension);
-
-		return output;
 	}
 	
 	public static void addSubWorkflowsToManifest(Workflow workflow, StagingManifest manifest, Path workflowBasePath, FileSystem fileSystem, Logger jobLogger) throws JsonParseException, JsonMappingException, IOException, XenonException, XenonflowException {

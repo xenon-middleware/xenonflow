@@ -87,6 +87,20 @@ public class CwlSubmitTest {
 	}
 	
 	@Test
+	public void submitAndWaitWrongWorkflowTest() throws Exception {	
+		logger.info("Starting wrong workflow test");
+		assertThatCode(() -> {
+			String contents = "{\"name\":\"echo-fail\",\"workflow\":\"doesnotexist.cwl\",\"input\":{}}";
+			mockMvc.perform(post("/jobs")
+					.header(headerName, apiToken)
+					.accept(MediaType.APPLICATION_JSON)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(contents)
+			).andExpect(status().is4xxClientError());
+		}).doesNotThrowAnyException();
+	}
+	
+	@Test
 	public void submitAndWaitFailTest() {
 		logger.info("Starting fail test");
 		assertThatCode(() -> {
@@ -272,12 +286,13 @@ public class CwlSubmitTest {
 	@Test
 	public void submitAndWaitEchoFailTest() throws Exception {	
 		logger.info("Starting echo failure test");
-		String contents = "{\"name\":\"echo-fail\",\"workflow\":\"echo2.cwl\",\"input\":{}}";
+		String contents = "{\"name\":\"echo-fail\",\"workflow\":\"echo.cwl\",\"input\":{}}";
 		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
 		CWLState state = job.getState();
 		
 		assertTrue(state.isErrorState());
 	}
+	
 	
 	@Test
 	public void submitAndCancelImmediatelySleepTest() throws Exception {

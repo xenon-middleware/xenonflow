@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.commonwl.cwl.utils.CWLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,8 @@ import nl.esciencecenter.computeservice.service.XenonService;
 import nl.esciencecenter.computeservice.service.tasks.DeleteJobTask;
 import nl.esciencecenter.computeservice.utils.InetUtils;
 import nl.esciencecenter.computeservice.utils.LoggingUtils;
+import nl.esciencecenter.xenon.XenonException;
+import nl.esciencecenter.xenon.filesystems.Path;
 
 @CrossOrigin
 @Controller
@@ -153,6 +156,17 @@ public class JobsApiController implements JobsApi {
 				return new ResponseEntity<Job>(job, HttpStatus.BAD_REQUEST);
 			}
 			
+			if(!CWLUtils.isLocalWorkflow(new Path(body.getWorkflow()), xenonService.getCwlFileSystem())) {
+				Job job = new Job();
+				job.setId(uuid);
+				job.setName(body.getName());
+				job.setWorkflow(body.getWorkflow());
+				job.setInternalState(JobState.PERMANENT_FAILURE);
+				
+				job.getAdditionalInfo().put("error", "supplied workflow is not an exisiting workflow");
+				return new ResponseEntity<Job>(job, HttpStatus.BAD_REQUEST);
+			}
+			
 			Job job = submitJob(body, uuid);
 			
 			HttpHeaders headers = new HttpHeaders();
@@ -163,7 +177,7 @@ public class JobsApiController implements JobsApi {
 			headers.setLocation(builder.build().toUri());
 			
 			return new ResponseEntity<Job>(job, headers, HttpStatus.CREATED);
-		} catch (StatePreconditionException e) {
+		} catch (StatePreconditionException | XenonException e) {
 			logger.error("Error while posting job", e);
 			Job job = new Job();
 			job.getAdditionalInfo().put("exception", e);

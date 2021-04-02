@@ -4,7 +4,7 @@
   "input": {
     "inp": {
         "class": "File",
-    	"path": "lorem.txt"
+    	"path": "input/lorem.txt"
     },
     "newname" : "ipsum.txt"
   }
