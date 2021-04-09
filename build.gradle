@@ -4,7 +4,6 @@ plugins {
     id 'idea'
     id 'eclipse'
     id 'application'
-    id 'org.hidetake.swagger.generator' version '2.4.2'
     id 'org.springframework.boot' version '2.2.4.RELEASE'
     id 'io.spring.dependency-management' version '1.0.7.RELEASE'
     id 'jacoco'
@@ -49,8 +48,7 @@ dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.2.4.RELEASE'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '2.2.4.RELEASE'
     implementation group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '2.2.4.RELEASE'
-    implementation group: 'io.springfox', name: 'springfox-swagger2', version: '2.9.2'
-    implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.9.2'
+    implementation group: 'io.springfox', name: 'springfox-boot-starter', version: '3.0.0'
 
     //Jackson, match version used in Spring
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.8'
@@ -68,9 +66,6 @@ dependencies {
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.2.4.RELEASE'
 	
 	// Admin Interface
-
-    //Swagger
-    swaggerCodegen 'io.swagger:swagger-codegen-cli:2.2.2'
 
     //Misc
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
@@ -134,31 +129,6 @@ jacocoTestReport {
         csv.enabled false
         html.destination file("${buildDir}/reports/coverage/jacocoHtml")
     }
-}
-
-validateSwagger {
-    inputFile = file('xenon-workflow-execution-api.yaml')
-}
-
-def swaggerProperties = [
-        'basePackage'            : 'nl.esciencecenter.computeservice.rest',
-        'modelPackage'           : 'nl.esciencecenter.computeservice.rest.model',
-        'apiPackage'             : 'nl.esciencecenter.computeservice.rest.api',
-        'invokerPackage'         : 'nl.esciencecenter.computeservice.rest.invoker',
-        'java8'                  : 'true',
-        'hideGenerationTimestamp': 'true',
-        'dateLibrary'            : 'java8',
-        'serializableModel'      : 'true'
-
-]
-
-generateSwaggerCode {
-    language = 'spring'
-    inputFile = file('xenon-workflow-execution-api.yaml')
-    additionalProperties = swaggerProperties
-//    outputDir = file('src')
-//    configFile = file('config.json')
-//    components = ['models', 'apis']
 }
 
 def webappDir = "$projectDir/src/main/frontend"
