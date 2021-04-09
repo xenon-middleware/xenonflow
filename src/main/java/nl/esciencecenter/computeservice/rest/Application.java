@@ -46,11 +46,9 @@ import nl.esciencecenter.computeservice.service.staging.RemoteToTargetStager;
 import nl.esciencecenter.computeservice.service.staging.SourceToRemoteStager;
 import nl.esciencecenter.computeservice.service.staging.XenonStager;
 import nl.esciencecenter.xenon.XenonException;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @Configuration
 @EnableAutoConfiguration
-@EnableSwagger2
 @EnableScheduling
 @EnableAsync
 @EnableWebSecurity
