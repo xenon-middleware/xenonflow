@@ -196,15 +196,16 @@ public class JobsApiController implements JobsApi {
 		job.setInternalState(JobState.SUBMITTED);
 		job.setWorkflow(body.getWorkflow());
 
-		ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
+		ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentContextPath();
+		builder.pathSegment("jobs");
 		builder.pathSegment(job.getId());
 		job.setURI(builder.build().toString());
 
 		builder.pathSegment("log");
 		job.setLog(builder.build().toString());
 		
-		ServletUriComponentsBuilder b = ServletUriComponentsBuilder.fromCurrentRequestUri();
-		b.replacePath("/");
+		ServletUriComponentsBuilder b = ServletUriComponentsBuilder.fromCurrentContextPath();
+		b.path("/");
 		job.getAdditionalInfo().put("baseurl", b.build().toString());
 		job.getAdditionalInfo().put("createdAt", new Date());
 
