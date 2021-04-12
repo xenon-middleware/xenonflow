@@ -130,7 +130,7 @@ public class XenonService implements AutoCloseable {
 			scheduler = Scheduler.create(schedulerConfig.getAdaptor(), schedulerConfig.getLocation(),
 										 schedulerConfig.getCredential(), schedulerConfig.getProperties());
 		} else {
-	        logger.info("Reusing existing scheduler");
+	        logger.debug("Reusing existing scheduler");
 	    }
 		if (recreateFileSystem) {
 			if (useSchedulerFilesystem && Scheduler.getAdaptorDescription(scheduler.getAdaptorName()).usesFileSystem()) {
