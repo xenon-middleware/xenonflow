@@ -126,20 +126,22 @@ public class XenonService implements AutoCloseable {
 			}
 		}
 		if (recreateScheduler) {
-			logger.debug("Creating a scheduler to run jobs...");
+			logger.info("Creating a scheduler to run jobs...");
 			scheduler = Scheduler.create(schedulerConfig.getAdaptor(), schedulerConfig.getLocation(),
 										 schedulerConfig.getCredential(), schedulerConfig.getProperties());
-		}
+		} else {
+	        logger.info("Reusing existing scheduler");
+	    }
 		if (recreateFileSystem) {
 			if (useSchedulerFilesystem && Scheduler.getAdaptorDescription(scheduler.getAdaptorName()).usesFileSystem()) {
-				logger.debug("Using scheduler filesystem as a remote filesystem...");
+				logger.info("Using scheduler filesystem as a remote filesystem...");
 				remoteFileSystem = scheduler.getFileSystem();
 			} else {
 				// Initialize remote filesystem
-				logger.debug("Creating remote filesystem...");
+				logger.info("Creating remote filesystem...");
 				remoteFileSystem = FileSystem.create(fileSystemConfig.getAdaptor(), fileSystemConfig.getLocation(),
 													 fileSystemConfig.getCredential(), fileSystemConfig.getProperties());
-				logger.debug("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
+				logger.info("Remote working directory: " + remoteFileSystem.getWorkingDirectory());
 			}
 		}
 		return recreateFileSystem || recreateScheduler;
@@ -157,10 +159,6 @@ public class XenonService implements AutoCloseable {
 		return getScheduler();
 	}
 
-	public void setScheduler(Scheduler scheduler) {
-		this.scheduler = scheduler;
-	}
-
 	public FileSystem getRemoteFileSystem() throws XenonException {
 		checkSchedulerStates();
 		return remoteFileSystem;
@@ -173,12 +171,20 @@ public class XenonService implements AutoCloseable {
 	public FileSystem getSourceFileSystem() throws XenonException {
 		if (sourceFileSystem == null || !sourceFileSystem.isOpen()) {
 			AdaptorConfig sourceConfig = getConfig().getSourceFilesystemConfig();
-			logger.debug("Creating source filesystem..." + sourceConfig.getAdaptor() + " location: "
+			logger.debug("Creating source filesystem..." +
+					sourceConfig.getAdaptor() + " location: "
 					+ sourceConfig.getLocation());
-			logger.debug(sourceConfig.getAdaptor() + " " + sourceConfig.getLocation() + " " + sourceConfig.getCredential()
+
+			logger.debug(sourceConfig.getAdaptor() + " " +
+					sourceConfig.getLocation() + " " +
+					sourceConfig.getCredential()
 					+ " " + sourceConfig.getProperties());
-			sourceFileSystem = FileSystem.create(sourceConfig.getAdaptor(), sourceConfig.getLocation(),
-					sourceConfig.getCredential(), sourceConfig.getProperties());
+
+			sourceFileSystem = FileSystem.create(
+					sourceConfig.getAdaptor(),
+					sourceConfig.getLocation(),
+					sourceConfig.getCredential(),
+					sourceConfig.getProperties());
 		}
 		return sourceFileSystem;
 	}
@@ -186,12 +192,20 @@ public class XenonService implements AutoCloseable {
 	public FileSystem getTargetFileSystem() throws XenonException {
 		if (targetFileSystem == null || !targetFileSystem.isOpen()) {
 			TargetAdaptorConfig targetConfig = getConfig().getTargetFilesystemConfig();
-			logger.debug("Creating target filesystem..." + targetConfig.getAdaptor() + " location: "
+			logger.debug("Creating target filesystem..."
+					+ targetConfig.getAdaptor() + " location: "
 					+ targetConfig.getLocation());
-			logger.debug(targetConfig.getAdaptor() + " " + targetConfig.getLocation() + " " + targetConfig.getCredential()
+
+			logger.debug(targetConfig.getAdaptor() + " "
+					+ targetConfig.getLocation() + " "
+					+ targetConfig.getCredential()
 					+ " " + targetConfig.getProperties());
-			targetFileSystem = FileSystem.create(targetConfig.getAdaptor(), targetConfig.getLocation(),
-					targetConfig.getCredential(), targetConfig.getProperties());
+
+			targetFileSystem = FileSystem.create(
+					targetConfig.getAdaptor(),
+					targetConfig.getLocation(),
+					targetConfig.getCredential(),
+					targetConfig.getProperties());
 		}
 		return targetFileSystem;
 	}
