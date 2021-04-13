@@ -1,7 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Inject, Injectable, isDevMode } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { environment } from '../environments/environment';
 import { Job } from './job';
 import { WINDOW } from './window.provider';
 
@@ -30,26 +29,22 @@ export class JobService {
   private _selectedJob: Subject<Job>;
   private _updateList: BehaviorSubject<boolean>;
   private _isConnected: BehaviorSubject<boolean>;
-  private api;
-  private statusUrl;
+  private api: string;
+  private statusUrl: string;
   private headers: HttpHeaders | undefined;
 
   constructor(
     private http: HttpClient,
-    @Inject(WINDOW) private window: Window
+    @Inject(WINDOW) private window: Window,
   ) {
     this._selectedJob = new Subject<Job>();
     this._selectedJob.next(undefined)
     this._updateList = new BehaviorSubject<boolean>(false);
     this._isConnected = new BehaviorSubject<boolean>(false);
     this.headers = undefined;
-    if (isDevMode()) {
-      this.api = environment.api;
-      this.statusUrl = environment.statusUrl;
-    } else {
-      this.api = this.window.location.origin + '/jobs';
-      this.statusUrl = this.window.location.origin + '/status';
-    }
+    let baseurl = this.window.location.origin + this.window.location.pathname.replace("/admin/index.html","")
+    this.api =  baseurl + '/jobs';
+    this.statusUrl = baseurl + '/status';
   }
 
   connect(apiKeyHeaderName: string, apiKeyValue: string): Promise<void> {
