@@ -1,5 +1,5 @@
 # Unreleased
-- Fixed uri's supplied by xenonflow to include the port
+- Fixed uri's supplied by xenonflow when runing behind a proxy server
 - Updated admin interface to connect to the backend using its current location
 
 # Version 1.0-rc1

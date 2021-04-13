@@ -14,6 +14,18 @@ The following diagram shows a rough overview of the interaction when using xenon
 # Quick-start
 ## 1. Install the dependencies:
  - Java 11
+ - a cwl runner
+
+For the cwl runner you can use the reference implementation called cwltool.
+It can be installed by
+```bash
+pip install cwltool
+```
+You may need to use pip3 on some systems.
+For a full list of available cwl runners check https://www.commonwl.org/#Implementations
+
+After installing the cwl runner it is a good idea to double check that your workflow can be run
+using the runner on the command line
 
 ## 2. Download Xenon-flow
 ```
@@ -28,9 +40,11 @@ As well as the `XENONFLOW_HOME/config/application.properties`.
 By default it is set the use the local file system as the source and the local
 computer to run workflows.
 
+For information on which filesystems and schedulers can be used refer to the xenon documentation: https://xenon-middleware.github.io/xenon/versions/3.1.0/javadoc/.
+
 
 ### config.yml
-Xenon-flow configuration consists of 
+Xenon-flow configuration consists of
 1. `sourceFileSystem`: Any filesystem supported by Xenon can be used here
 2. `targetFileSystem`: Any filesystem supported by Xenon can be used here
 3. `cwlFileSystem`: Any filesystem supported by Xenon can be used here
@@ -40,7 +54,7 @@ Xenon-flow configuration consists of
     	* Default:
     		```
     		#!/usr/bin/env bash
-    		
+
     		cwltool $@
     		```
     2. `scheduler`: A Xenon scheduler
@@ -60,19 +74,12 @@ The application.properties needs configuration for the following things:
 	2. `xenonflow.http.auth-token` the value of the api key. IMPORTANT you should really change this one
 2. The Database Configuration.
 	* These settings should be changed!
-	1. `spring.datasource.username` The database username
-	2. `spring.datasource.password` The database password
-3. The SSL Configuration
-	* Please read https://dzone.com/articles/spring-boot-secured-by-lets-encrypt for setup using Letsencrypt
-	* The following settings can be left as is. 
-	1. `server.port` The port for the server to run on.
-	2. `local.server.address=localhost` The servername.
-	3. `server.ssl.key-store-type` The keystore type (spring boot only supports PKCS12).
-	* The following really need to be changed
-	4. `server.ssl.key-store` The store for the certificate files. 
-	5. `server.ssl.key-store-password` The password to the key store.
-	6. `server.ssl.key-alias` The alias as given to the keystore.
-	7. `server.http.interface` Set up the server to be publicaly available by setting this to 0.0.0.0
+    	1. `spring.datasource.username` The database username
+    	2. `spring.datasource.password` The database password3.
+	* The following settings can be left as is.
+    	1. `server.port` The port for the server to run on.
+    	2. `local.server.address=localhost` The servername.
+    	3. `server.http.interface` Set up the server to be publicaly available by setting this to 0.0.0.0
 
 
 ## 4. Start the server
@@ -128,3 +135,45 @@ Note that the input map contains a key `inp` which refers to the corresponding i
 curl -X POST -H "Content-Type: application/json" -H "api-key: <insert api key here>" -d '{"name": "My First Workflow","workflow": "$PWD/cwl/echo.cwl","input": {"inp": "Hello CWL Server!"}}' https://localhost:8443/jobs
 ```
 
+
+
+### Running Xenonflow behind a proxy server
+We recommend running xenonflow behind a proxy server. Both nginx and apache httpd are good candidates for this. In addition both nginx and apache httpd can act as webdav servers which xenonflow can use as a sourceFileSystem.
+
+Doing this requires no changes to the configuration of xenonflow as long as the correct X-forwarded-* headers are set in the proxy server.
+
+To ensure that xenonflow returns the correct uri's for the jobs you should set the following headers:
+* X-Forwarded-Host
+* X-Forwarded-Server
+* X-Forwarded-Proto
+* X-Forwarded-Port
+* X-Forwarded-Prefix
+
+Below is an example location from a nginx config that correctly proxies a xenonflow instance running at localhost:8080
+```nginx
+...
+location /api/ {
+
+    include cors;
+    proxy_pass http://localhost:8080/;
+    proxy_redirect off;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Server $host;
+    proxy_set_header X-Forwarded-Proto http;
+    proxy_set_header X-Forwarded-Port $server_port;
+    proxy_set_header X-Forwarded-Prefix /api/;
+}
+...
+```
+
+### Running Xenonflow in SSL mode
+To run xenonflow in ssl (https) mode you can follow the following steps:
+1. Please read https://dzone.com/articles/spring-boot-secured-by-lets-encrypt for setup using Letsencrypt.
+2. You should now have a certificate with a private key store
+3. You should now set the following properties in the application.properties file:
+   1. `server.ssl.enabled=true` Enable ssl encryption in the server
+   2. `server.ssl.key-store-type` The keystore type (spring boot only supports PKCS12).
+   3. `server.ssl.key-store` The store for the certificate files.
+   4. `server.ssl.key-store-password` The password to the key store.
+   5. `server.ssl.key-alias` The alias as given to the keystore.

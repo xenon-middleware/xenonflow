@@ -12,13 +12,16 @@ public class HomeController {
 	@RequestMapping(value = "/")
 	public String index() {
 		ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequest();
+		
 		builder.pathSegment("swagger-ui/");
 		return "redirect:" + builder.build().toString();
-//		return "";
 	}
 	
 	@RequestMapping(value = "/admin")
 	public String admin() {
-		return "redirect:admin/index.html";
+		ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequest();
+		
+		builder.pathSegment("index.html");
+		return "redirect:" + builder.build().toString();
 	}
 }
