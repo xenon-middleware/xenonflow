@@ -42,8 +42,9 @@ export class JobService {
     this._updateList = new BehaviorSubject<boolean>(false);
     this._isConnected = new BehaviorSubject<boolean>(false);
     this.headers = undefined;
-    this.api = this.window.location.origin + '/jobs';
-    this.statusUrl = this.window.location.origin + '/status';
+    let baseurl = this.window.location.origin + this.window.location.pathname.replace("/admin/index.html","")
+    this.api =  baseurl + '/jobs';
+    this.statusUrl = baseurl + '/status';
   }
 
   connect(apiKeyHeaderName: string, apiKeyValue: string): Promise<void> {

@@ -32,15 +32,14 @@ ComputeResources:
 default: local
 
 sourceFileSystem:
-    adaptor: file
-    location: /
+    adaptor: webdav
+    location: http://localhost/webdav/
 
 targetFileSystem:
     adaptor: file
     location: /output
     hosted: true
 
-#sourceFileSystem:
-#    adaptor: webdav
-#    location: http://localhost/webdav/
-      
+cwlFileSystem:
+   adaptor: file
+   location: ${XENONFLOW_HOME}/cwl      

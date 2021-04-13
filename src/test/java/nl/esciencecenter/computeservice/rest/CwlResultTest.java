@@ -2,7 +2,6 @@ package nl.esciencecenter.computeservice.rest;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -23,7 +22,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
-import nl.esciencecenter.client.CWLState;
 import nl.esciencecenter.client.Job;
 import nl.esciencecenter.computeservice.utils.CwlTestUtils;
 
@@ -61,8 +59,6 @@ public class CwlResultTest {
 		assertThatCode(() -> {
 			String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/echo-test.json"), "UTF-8");
 			Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
-			
-			//assertTrue(job.getState() == CWLState.SUCCESS);
 			
 			MockHttpServletResponse response = this.mockMvc.perform(
 					get(job.getLog())
