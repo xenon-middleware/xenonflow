@@ -130,6 +130,8 @@ public class JobsApiController implements JobsApi {
 			return new ResponseEntity<Object>(inputStreamResource, headers, HttpStatus.OK);
 		} catch (FileNotFoundException e) {
 			return new ResponseEntity<Object>(HttpStatus.NOT_FOUND);
+		} catch (Exception e) {
+			return new ResponseEntity<Object>(e, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 

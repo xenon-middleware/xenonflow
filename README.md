@@ -2,9 +2,8 @@
 [![DOI](https://zenodo.org/badge/63334137.svg)](https://zenodo.org/badge/latestdoi/63334137)
 
 
-# Xenon-flow
-
-Run CWL workflows using Xenon. Possibly through a REST api.
+# Xenonflow
+Run CWL workflows using Xenon through a REST api.
 
 # Usage:
 The following diagram shows a rough overview of the interaction when using xenonflow
@@ -41,7 +40,6 @@ By default it is set the use the local file system as the source and the local
 computer to run workflows.
 
 For information on which filesystems and schedulers can be used refer to the xenon documentation: https://xenon-middleware.github.io/xenon/versions/3.1.0/javadoc/.
-
 
 ### config.yml
 Xenon-flow configuration consists of
