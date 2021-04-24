@@ -23,9 +23,9 @@
           <h2 id="project_tagline">{{ site.description | default: site.github.project_tagline }}</h2>
 
           <section id="navigation">
-            <a class="nav_link" href="site.url">Home</a>
-            <a class="nav_link" href="api.md">REST API</a>
-            <a class="nav_link" href="tutorial.md">Tutorial</a>
+            <a class="nav_link" href="{{ 'index.html' | relative_url }}">Home</a>
+            <a class="nav_link" href="{{ 'api.html' | relative_url }}">REST API</a>
+            <a class="nav_link" href="{{ 'tutorial.html' | relative_url }}">Tutorial</a>
           </section>
           {% if site.show_downloads %}
             <section id="downloads">

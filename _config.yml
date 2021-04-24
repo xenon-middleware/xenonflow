@@ -5,3 +5,5 @@ show_downloads: True
 github:
   zip_url: https://github.com/xenon-middleware/xenon-flow/releases/download/1.0-rc1/xenonflow-v1.0-rc1.zip
   tar_url: https://github.com/xenon-middleware/xenon-flow/releases/download/1.0-rc1/xenonflow-v1.0-rc1.tar
+plugins:
+  - jekyll-feed
