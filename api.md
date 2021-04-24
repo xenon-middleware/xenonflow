@@ -29,7 +29,7 @@ License: <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache 2.0</a
 * API Key (ApiKeyAuth)
     - Parameter Name: **api-key**, in: header.
 
-<h1 id="xenon-cwl-workflow-execution-service-api-default">Default</h1>
+<h1 id="xenon-cwl-workflow-execution-service-api-default">Jobs API</h1>
 
 ## list of jobs
 

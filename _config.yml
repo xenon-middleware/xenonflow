@@ -1,1 +1,4 @@
 theme: jekyll-theme-slate
+title: "Xenonflow: Scientific Workflows through a REST API"
+description: Xenonflow allows you to run CWL workflows using Xenon on a compute resource through a REST api.
+show_downloads: True
