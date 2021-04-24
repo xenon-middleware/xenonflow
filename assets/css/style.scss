@@ -3,10 +3,20 @@
 
 @import "{{ site.theme }}";
 
-.home_link {
+.nav_link {
   display: block;
   float: left;
-  width: 90px;
-  height: 70px;
+  background-color: #373737;
   overflow: hidden;
+  color: #fff;
+  padding: 10px 10px 10px 10px;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgb(0 0 0 / 50%);
+  border-radius: 2px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.nav_link:hover {
+  background-color: #777777;
 }
