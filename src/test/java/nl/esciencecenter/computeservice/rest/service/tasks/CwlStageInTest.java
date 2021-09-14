@@ -54,13 +54,14 @@ public class CwlStageInTest {
 		if (sourceFileSystem == null || !sourceFileSystem.isOpen()) {
 			
 			String xenonflowHome = System.getenv("XENONFLOW_HOME");
+			String xenonflowFiles = System.getenv("XENONFLOW_FILES");
 			
 			if (xenonflowHome == null) {
 				xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
 			}
 			
 			System.out.println("Loading config from:" + xenonConfigFile);
-			XenonflowConfig config = XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome);
+			XenonflowConfig config = XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome, xenonflowFiles);
 			
 			// Initialize local filesystem
 			AdaptorConfig sourceConfig = config.getSourceFilesystemConfig();

@@ -25,7 +25,8 @@ public class XenonflowConfigTest {
 	@Test
 	public void testConfigLoad() throws Exception {
 		String xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
-		XenonflowConfig config = XenonflowConfig.loadFromFile("src/test/resources/config/example_config.yml", xenonflowHome);
+		String xenonflowFiles = xenonflowHome;
+		XenonflowConfig config = XenonflowConfig.loadFromFile("src/test/resources/config/example_config.yml", xenonflowHome, xenonflowFiles);
 		assertNotNull("Configuration should not be null", config);
 		assertNotNull("ComputeResource das5 should exist", config.get("das5"));
 		assertNotNull("Default resource should exist", config.defaultComputeResource());
