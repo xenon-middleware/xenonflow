@@ -6,9 +6,21 @@
 Run CWL workflows using Xenon through a REST api.
 
 # Usage:
-The following diagram shows a rough overview of the interaction when using xenonflow
+The following diagram shows a rough overview of the interaction when using xenonflow.
+The overview shows 3 file systems, all of which can be configured for Xenonflow (See the quick-start guide below).
+1. The input filesystem, this should contain all the input files needed for running the cwl workflow
+2. The cwl filesystem, this filesystem should contain the cwl workflows you want to run with Xenonflow.
+3. The output filesystem, this is where xenonflow will put the output of the workflows.
 
-![Xenon-flow Usage Pattern](docs/architecture_diagram.png "Xenon-flow Usage")
+On the right you can see a compute resource: Xenonflow can be configured to run on a number of computing backends, including the local machine, to actually execute the cwl workflow.
+
+Before making a call to the Xenonflow REST API make sure the data is available on the input filesystem and the workflow is available on the cwl filesystems.
+The rest call will return a JSON object which contains some information on the job you just submitted. Such as its current state, what input was provided, a uri to the job (for instance to poll the server for new states) and a uri to the log of the job.
+
+After the workflow is completed the results will be available in the target filesystem
+
+![Xenonflow Usage Pattern](https://user-images.githubusercontent.com/16776108/116083884-718bdd80-a69d-11eb-982a-7351b1e586f3.png)
+
 
 # Quick-start
 ## 1. Install the dependencies:
@@ -50,7 +62,8 @@ Xenon-flow configuration consists of
 5. Each resource has the following settings:
     1. `cwlCommand`: A script to run the cwl runner, allowing for python environments to be started first.
     	* Default:
-    		```
+    		```![xenonflow (3)](https://user-images.githubusercontent.com/16776108/116083865-6d5fc000-a69d-11eb-81ca-5e82fa2c6727.png)
+
     		#!/usr/bin/env bash
 
     		cwltool $@
