@@ -19,13 +19,13 @@ import java.util.List;
 
 import javax.persistence.LockModeType;
 
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface JobRepository extends CrudRepository<Job, String> {
+public interface JobRepository extends JpaRepository<Job, String> {
 	List<Job> findAll();
 	
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
