@@ -24,9 +24,8 @@ repositories {
     // Use 'jcenter' for resolving your dependencies.
     // You can declare any Maven/Ivy/file repository here.
     mavenLocal()
+    mavenCentral()
     jcenter() 
-    maven { url "https://raw.github.com/weddini/spring-boot-throttling/mvn-repo/" }
-    maven { url 'https://jitpack.io'}
 }
 
 allprojects {
