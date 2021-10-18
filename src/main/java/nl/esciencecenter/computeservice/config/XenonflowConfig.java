@@ -68,7 +68,7 @@ public class XenonflowConfig {
 	 * @throws JsonMappingException When jackson has problems mapping the file to java objects
 	 * @throws IOException When the file is not found
 	 */
-	public static XenonflowConfig loadFromFile(String configFile, String xenonflowHome) throws IOException {
+	public static XenonflowConfig loadFromFile(String configFile, String xenonflowHome, String xenonflowFiles) throws IOException {
 		String extension = FilenameUtils.getExtension(configFile);
 		ObjectMapper mapper;
 		XenonflowConfig config = null;
@@ -83,6 +83,7 @@ public class XenonflowConfig {
 			Path xenonflowConfigPath = Paths.get(xenonflowHome, configFile);
 			logger.info("Loading xenon config from: " + xenonflowConfigPath.toString());
 			String contents = new String(Files.readAllBytes(xenonflowConfigPath));
+			contents = contents.replaceAll("\\$\\{XENONFLOW_FILES\\}", xenonflowFiles);
 			contents = contents.replaceAll("\\$\\{XENONFLOW_HOME\\}", xenonflowHome);
 			contents = contents.replaceAll("\\$XENONFLOW_HOME", xenonflowHome);
 			config = mapper.readValue(contents, XenonflowConfig.class);

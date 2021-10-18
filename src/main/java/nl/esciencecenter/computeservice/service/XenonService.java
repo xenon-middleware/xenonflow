@@ -45,6 +45,7 @@ public class XenonService implements AutoCloseable {
 	private FileSystem cwlFileSystem = null;
 	
 	private String xenonflowHome = null;
+	private String xenonflowFiles = null;
 
 	public XenonService() throws IOException {
 		// TODO: Watch the config file for changes?
@@ -76,14 +77,15 @@ public class XenonService implements AutoCloseable {
 	@PostConstruct
 	public void initialize() throws XenonException, IOException {
 		xenonflowHome = System.getenv("XENONFLOW_HOME");
-		
+		xenonflowFiles = System.getenv("XENONFLOW_FILES");
+
 		if (xenonflowHome == null) {
 			xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
 		}
 		logger.info("Xenonflow is using as home: " + xenonflowHome);
 
 		// Read xenon config
-		setConfig(XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome));
+		setConfig(XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome, xenonflowFiles));
 		// Sanity Check the config file.
 		ComputeResource resource = getConfig().defaultComputeResource();
 
