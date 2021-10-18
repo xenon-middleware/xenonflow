@@ -33,7 +33,7 @@ public class JobService {
 			job.getAdditionalInfo().put("finalizedAt", new Date());
 		}
 		
-        job = repository.save(job);
+        job = repository.saveAndFlush(job);
         
         jobLogger.info("Job " + jobId + " now has state: " + to);
         return job;
@@ -50,7 +50,7 @@ public class JobService {
 				jobLogger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
 				logger.error("Error during execution of " + job.getName() + "(" +job.getId() +")", e);
 				job.getAdditionalInfo().put("error", e);
-				job = repository.save(job);
+				job = repository.saveAndFlush(job);
 			}
 			setJobState(jobId, from, to);
 		} catch (StatePreconditionException except) {
@@ -62,14 +62,14 @@ public class JobService {
 	public void setXenonRemoteDir(String jobId, Path remoteDirectory){
 		Job job = repository.findOneForUpdate(jobId);
         job.getAdditionalInfo().put("xenon.remote.directory", remoteDirectory.toString());
-        job = repository.save(job);
+        job = repository.saveAndFlush(job);
 	}
 
 	@Transactional
 	public void setOutput(String jobId, String outputTarget, Object outputObject) {
 		Job job = repository.findOneForUpdate(jobId);
     	job.getOutput().put(outputTarget, outputObject);
-    	job = repository.save(job);
+    	job = repository.saveAndFlush(job);
 	}
 
 	@Transactional
@@ -77,21 +77,21 @@ public class JobService {
 		Job job = repository.findOneForUpdate(jobId);
 		job.setXenonId(xenonJobId);
 		job.getAdditionalInfo().put("xenon.id", xenonJobId);
-		job = repository.save(job);
+		job = repository.saveAndFlush(job);
 	}
 
 	@Transactional
 	public void setXenonState(String jobId, String state) {
 		Job job = repository.findOneForUpdate(jobId);
 		job.getAdditionalInfo().put("xenon.state", state);
-		job = repository.save(job);
+		job = repository.saveAndFlush(job);
 	}
 
 	@Transactional
 	public void setXenonExitcode(String jobId, Integer exitCode) {
 		Job job = repository.findOneForUpdate(jobId);
 		job.getAdditionalInfo().put("xenon.exitcode", exitCode);
-		job = repository.save(job);
+		job = repository.saveAndFlush(job);
 	}
 
 	@Transactional
@@ -102,9 +102,24 @@ public class JobService {
 		job.setOutput(binding);
 		
 	
-        job = repository.save(job);
+        job = repository.saveAndFlush(job);
         
         jobLogger.info("Job " + jobId + " now has ouptut: " + job.getOutput());
+        return job;    	
+    	
+	}
+	
+	@Transactional
+	public Job setInput(String jobId, WorkflowBinding binding) {    	
+		Logger jobLogger = LoggerFactory.getLogger("jobs."+jobId);
+		
+		Job job = repository.findOneForUpdate(jobId);
+		job.setInput(binding);
+		
+	
+        job = repository.saveAndFlush(job);
+        
+        jobLogger.info("Job " + jobId + " now has input: " + job.getInput());
         return job;    	
     	
 	}
@@ -113,7 +128,7 @@ public class JobService {
 	public void setAdditionalInfo(String jobId, String key, Object info) {
 		Job job = repository.findOneForUpdate(jobId);
 		job.getAdditionalInfo().put(key, info);
-		job = repository.save(job);
+		job = repository.saveAndFlush(job);
 	}
 
 	@Transactional
@@ -130,7 +145,7 @@ public class JobService {
 			job.getAdditionalInfo().put("finalizedAt", new Date());
 		}
 		
-        job = repository.save(job);
+        job = repository.saveAndFlush(job);
         
         jobLogger.info("Job " + jobId + " now has state: " + to);
         return job;
