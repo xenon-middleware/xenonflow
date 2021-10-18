@@ -2,9 +2,13 @@ package nl.esciencecenter.computeservice.rest;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.io.StringReader;
+import java.util.HashMap;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -21,6 +25,10 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.esciencecenter.client.Job;
 import nl.esciencecenter.computeservice.utils.CwlTestUtils;
@@ -65,6 +73,24 @@ public class CwlResultTest {
 					.header(headerName, apiToken)
 			).andExpect(status().is2xxSuccessful()).andReturn().getResponse();
 			assertFalse(response.getContentAsString().isEmpty());
+		}).doesNotThrowAnyException();
+	}
+	
+	@Test
+	public void echoJobIdAndNameTest() {
+		logger.info("Starting echo error log test");
+		assertThatCode(() -> {
+			String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/jobid-test.json"), "UTF-8");
+			Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
+			
+			MockHttpServletResponse response = this.mockMvc.perform(
+					get(job.getLog())
+					.header(headerName, apiToken)
+			).andExpect(status().is2xxSuccessful()).andReturn().getResponse();
+			assertFalse(response.getContentAsString().isEmpty());
+			
+			String output = (String) job.getOutput().get("out");
+			assertTrue(output.equals(job.getId() + " " + job.getName()+"\n"));
 		}).doesNotThrowAnyException();
 	}
 }
