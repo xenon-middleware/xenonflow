@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,10 +28,12 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import nl.esciencecenter.computeservice.config.AdaptorConfig;
 import nl.esciencecenter.computeservice.config.XenonflowConfig;
 import nl.esciencecenter.computeservice.model.Job;
+import nl.esciencecenter.computeservice.model.JobRepository;
 import nl.esciencecenter.computeservice.model.JobState;
 import nl.esciencecenter.computeservice.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.model.WorkflowBinding;
 import nl.esciencecenter.computeservice.model.XenonflowException;
+import nl.esciencecenter.computeservice.service.JobService;
 import nl.esciencecenter.computeservice.service.staging.CwlFileStagingObject;
 import nl.esciencecenter.computeservice.service.staging.FileStagingObject;
 import nl.esciencecenter.computeservice.service.staging.StagingManifest;
@@ -47,6 +50,12 @@ import nl.esciencecenter.xenon.filesystems.FileSystem;
 public class CwlStageInTest {
 	@Value("${xenonflow.config}")
 	private String xenonConfigFile;
+	
+	@Autowired
+	private JobService jobService;
+	
+	@Autowired
+	private JobRepository repository;
 	
 	private FileSystem sourceFileSystem;
 	
@@ -80,10 +89,15 @@ public class CwlStageInTest {
 		job.setId(uuid);
 		job.setInput(WorkflowBinding.fromFile(new File("src/test/resources/cwl/echo-file.json")));
 		job.setName("createStagingManifestTest");
-		job.setInternalState(JobState.SUBMITTED);
+		job.setInternalState(JobState.SUCCESS);
 		job.setWorkflow("echo-file.cwl");
+		job.setURI("");
+		job.setLog("");
 		
-		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), this.getSourceFileSystem(), null, jobLogger);
+		
+		repository.save(job);
+		
+		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), this.getSourceFileSystem(), null, jobLogger, jobService);
 		
 		List<String> paths = new ArrayList<String>();
 		for (StagingObject stageObject : manifest) {
@@ -98,6 +112,8 @@ public class CwlStageInTest {
 				paths.add(object.getTargetPath().toString());
 			}
 		}
+		
+		repository.delete(job);
 		
 		List<String> expected = Arrays.asList("cwlcommand", "echo-file.cwl", "echo-file.json", "job-order.json");
 		assertEquals("Expecting arrays to be equal", expected, paths);
@@ -114,9 +130,13 @@ public class CwlStageInTest {
 		job.setWorkflow("count-lines-remote.cwl");
 		job.setInput(WorkflowBinding.fromFile(new File("src/test/resources/cwl/count-lines-job.json")));
 		job.setName("createStagingManifestTest");
-		job.setInternalState(JobState.SUBMITTED);
+		job.setInternalState(JobState.SUCCESS);
+		job.setURI("");
+		job.setLog("");
 		
-		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), this.getSourceFileSystem(), null, jobLogger);
+		repository.saveAndFlush(job);
+		
+		StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, this.getSourceFileSystem(), this.getSourceFileSystem(), null, jobLogger, jobService);
 		
 		List<String> paths = new ArrayList<String>();
 		for (StagingObject stageObject : manifest) {
@@ -131,6 +151,8 @@ public class CwlStageInTest {
 				paths.add(object.getTargetPath().toString());
 			}
 		}
+		
+		repository.delete(job);
 		
 		List<String> expected = Arrays.asList("cwlcommand", "count-lines-remote.cwl", "parseInt-tool.cwl", "ipsum.txt", "job-order.json");
 		assertEquals("Expecting arrays to be equal", expected, paths);
