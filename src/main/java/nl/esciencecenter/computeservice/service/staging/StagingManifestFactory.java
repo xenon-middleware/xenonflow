@@ -37,7 +37,7 @@ import nl.esciencecenter.xenon.filesystems.Path;
 public class StagingManifestFactory {
 	private static Logger logger = LoggerFactory.getLogger(StagingManifestFactory.class);
 	
-	public static StagingManifest createStagingInManifest(Job job, FileSystem cwlFileSystem, FileSystem sourceFileSystem, String cwlCommandScript, Logger jobLogger) throws CwlException, XenonException, JsonParseException, JsonMappingException, IOException, StatePreconditionException, XenonflowException {
+	public static StagingManifest createStagingInManifest(Job job, FileSystem cwlFileSystem, FileSystem sourceFileSystem, String cwlCommandScript, Logger jobLogger, JobService jobService) throws CwlException, XenonException, JsonParseException, JsonMappingException, IOException, StatePreconditionException, XenonflowException {
 		StagingManifest manifest = new StagingManifest(job.getId(), job.getSandboxDirectory());
 
 		WorkflowDescription wfd = CWLUtils.loadLocalWorkflow(job, cwlFileSystem, jobLogger);
@@ -55,7 +55,7 @@ public class StagingManifestFactory {
         manifest.add(new CwlFileStagingObject(wfd.localPath, wfd.workflowBaseName, null));
         addSubWorkflowsToManifest(wfd.workflow, manifest, wfd.workflowBasePath, cwlFileSystem, jobLogger);
 
-        addInputToManifest(job, wfd.workflow, manifest, jobLogger);
+        addInputToManifest(job, wfd.workflow, manifest, jobLogger, jobService);
 
         return manifest;
 	}
@@ -120,35 +120,45 @@ public class StagingManifestFactory {
         }
 	}
 	
-	public static void addInputToManifest(Job job, Workflow workflow, StagingManifest manifest, Logger jobLogger) throws CwlException, JsonParseException, JsonMappingException, IOException, StatePreconditionException, XenonflowException, XenonException {	
+	public static void addInputToManifest(Job job, Workflow workflow, StagingManifest manifest, Logger jobLogger, JobService jobService) throws CwlException, JsonParseException, JsonMappingException, IOException, StatePreconditionException, XenonflowException, XenonException {	
 		// Read in the job order as a hashmap
 		ObjectMapper mapper = new ObjectMapper(new JsonFactory());
-		TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
+		TypeReference<WorkflowBinding> typeRef = new TypeReference<WorkflowBinding>() {};
 	
 		if (workflow.getInputs() == null) {
 			throw new CwlException("Error staging files, cannot read the workflow file!\nworkflow: " + workflow);
 		}
 
-		Path remoteJobOrder = null;
-        if (workflow.getInputs().length > 0 && job.hasInput()) {
-        	remoteJobOrder = new Path("job-order.json");
-        	
-        	// Add files and directories from the input to the staging
-        	// manifest and update the input to point to locations
-        	// on the remote server
-        	String jobOrderString = job.getInput().toString();
-        	logger.debug("Old job order string: " + jobOrderString);
-        	
-        	HashMap<String, Object> jobOrder = mapper.readValue(new StringReader(jobOrderString), typeRef);
-        	
+		// Add files and directories from the input to the staging
+    	// manifest and update the input to point to locations
+    	// on the remote server
+		WorkflowBinding jobOrder = null;
+		if(job.hasInput()) {
+			String jobOrderString = job.getInput().toString();
+			logger.debug("Old job order string: " + jobOrderString);
+			jobOrder = mapper.readValue(new StringReader(jobOrderString), typeRef);
+		} else {
+			jobOrder = new WorkflowBinding();
+		}
+        if (workflow.getInputs().length > 0) {
+        	Path remoteJobOrder = new Path("job-order.json");
+
 			jobLogger.debug("Parsing inputs from: " + workflow.toString());
         	for (InputParameter parameter : workflow.getInputs()) {
-    			addParameterToManifest(manifest, jobOrder, parameter);
+        		if (parameter.getId().equals("jobid")) {
+        			jobOrder.put("jobid", job.getId());
+        		} else if (parameter.getId().equals("jobname")) {
+        			jobOrder.put("jobname", job.getName());
+        		} else {
+        			addParameterToManifest(manifest, jobOrder, parameter);
+        		}
         	}
-        
-    		String newJobOrderString = mapper.writeValueAsString(jobOrder);
-    		logger.debug("New job order string: " + newJobOrderString);
-    		manifest.add(new StringToFileStagingObject(newJobOrderString, remoteJobOrder, null));
+    	
+			String newJobOrderString = mapper.writeValueAsString(jobOrder);
+			logger.debug("New job order string: " + newJobOrderString);
+			manifest.add(new StringToFileStagingObject(newJobOrderString, remoteJobOrder, null));
+			
+			jobService.setInput(job.getId(), jobOrder);
         }
 	}
 	

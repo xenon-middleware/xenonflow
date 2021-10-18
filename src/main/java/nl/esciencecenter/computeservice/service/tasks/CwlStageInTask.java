@@ -66,7 +66,7 @@ public class CwlStageInTask implements Runnable {
 			
 			String cwlCommand = service.getConfig().defaultComputeResource().getCwlCommand();
 			// Staging files
-			StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, service.getCwlFileSystem(), service.getSourceFileSystem(), cwlCommand, jobLogger);
+			StagingManifest manifest = StagingManifestFactory.createStagingInManifest(job, service.getCwlFileSystem(), service.getSourceFileSystem(), cwlCommand, jobLogger, jobService);
 	       
 			sourceToRemoteStager.stageIn(manifest);
 	        
