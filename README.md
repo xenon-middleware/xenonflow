@@ -78,6 +78,12 @@ Xenon-flow configuration consists of
         	2. `password`: Password in base64 encoded
         4. `properties`: Optional properties (usually not needed)
 
+#### Environment Variables
+There are two environment variables that can be set in your environement which can then be
+used in the config.yml file: `XENONFLOW_FILES` and `XENONFLOW_HOME`.
+
+ 
+
 ### application.properties
 The application.properties needs configuration for the following things:
 1. api-key

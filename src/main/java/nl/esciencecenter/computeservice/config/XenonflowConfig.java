@@ -85,6 +85,7 @@ public class XenonflowConfig {
 			String contents = new String(Files.readAllBytes(xenonflowConfigPath));
 			contents = contents.replaceAll("\\$\\{XENONFLOW_FILES\\}", xenonflowFiles);
 			contents = contents.replaceAll("\\$\\{XENONFLOW_HOME\\}", xenonflowHome);
+			contents = contents.replaceAll("\\$XENONFLOW_FILES", xenonflowHome);
 			contents = contents.replaceAll("\\$XENONFLOW_HOME", xenonflowHome);
 			config = mapper.readValue(contents, XenonflowConfig.class);
         
