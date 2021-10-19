@@ -174,6 +174,9 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 		if (xenonflowHome == null) {
 			xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
 		}
+		if (xenonflowFiles == null) {
+			xenonflowFiles = xenonflowHome;
+		}
 		XenonflowConfig config;
 		try {
 			config = XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome, xenonflowFiles);

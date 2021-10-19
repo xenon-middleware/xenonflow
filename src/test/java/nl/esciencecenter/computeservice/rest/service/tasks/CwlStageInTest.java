@@ -68,6 +68,9 @@ public class CwlStageInTest {
 			if (xenonflowHome == null) {
 				xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
 			}
+			if (xenonflowFiles == null) {
+				xenonflowFiles = xenonflowHome;
+			}
 			
 			System.out.println("Loading config from:" + xenonConfigFile);
 			XenonflowConfig config = XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome, xenonflowFiles);

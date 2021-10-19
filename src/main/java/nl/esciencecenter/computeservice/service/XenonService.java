@@ -82,6 +82,9 @@ public class XenonService implements AutoCloseable {
 		if (xenonflowHome == null) {
 			xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
 		}
+		if (xenonflowFiles == null) {
+			xenonflowFiles = xenonflowHome;
+		}
 		logger.info("Xenonflow is using as home: " + xenonflowHome);
 
 		// Read xenon config
