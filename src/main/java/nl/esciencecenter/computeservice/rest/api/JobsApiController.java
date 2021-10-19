@@ -46,16 +46,16 @@ public class JobsApiController implements JobsApi {
 
 	@Autowired
 	private XenonService xenonService;
-	
+
 	@Autowired
 	private JobRepository repository;
-	
+
 	@Autowired
 	private JobService jobService;
-	
+
 	@Autowired
 	private DeleteJobTask deleteJobTask;
-	
+
 	@Override
 	public ResponseEntity<Job> cancelJobById(@ApiParam(value = "Job ID",required=true ) @PathVariable("jobId") String jobId) {
 		requestLogger.info("CANCEL request received for job: " + jobId);
@@ -66,10 +66,10 @@ public class JobsApiController implements JobsApi {
 				HttpHeaders headers = new HttpHeaders();
 				ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
 				builder.replacePath("/jobs/" + job.get().getId());
-				
+
 				logger.debug("Setting location header to: " + builder.build().toUri());
 				headers.setLocation(builder.build().toUri());
-				
+
 				return new ResponseEntity<Job>(job.get(), headers, HttpStatus.OK);
 			}
 			return new ResponseEntity<Job>(HttpStatus.NOT_FOUND);
@@ -77,8 +77,8 @@ public class JobsApiController implements JobsApi {
 			logger.error("Error during job cancellation request:", e);
 			return new ResponseEntity<Job>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		
-		
+
+
 	}
 
 	@Override
@@ -89,10 +89,10 @@ public class JobsApiController implements JobsApi {
 			if (j.isPresent()) {
 				HttpHeaders headers = new HttpHeaders();
 				ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
-				
+
 				logger.debug("Setting location header to: " + builder.build().toUri());
 				headers.setLocation(builder.replacePath("/jobs").build().toUri());
-				
+
 				return new ResponseEntity<Void>(headers, HttpStatus.OK);
 			}
 			return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
@@ -120,7 +120,7 @@ public class JobsApiController implements JobsApi {
 		logger.debug("JobId: "+jobId);
 		String logFileName = xenonService.getJobLogName("jobs."+jobId);
 		logger.debug("Loading log file from: " + logFileName);
-		
+
 		File logFile = new File(logFileName);
 		InputStreamResource inputStreamResource;
 		try {
@@ -153,31 +153,31 @@ public class JobsApiController implements JobsApi {
 				job.setName(uuid);
 				job.setWorkflow("none");
 				job.setInternalState(JobState.PERMANENT_FAILURE);
-				
+
 				job.getAdditionalInfo().put("error", "Name and Workflow cannot be null");
 				return new ResponseEntity<Job>(job, HttpStatus.BAD_REQUEST);
 			}
-			
+
 			if(!CWLUtils.isLocalWorkflow(new Path(body.getWorkflow()), xenonService.getCwlFileSystem())) {
 				Job job = new Job();
 				job.setId(uuid);
 				job.setName(body.getName());
 				job.setWorkflow(body.getWorkflow());
 				job.setInternalState(JobState.PERMANENT_FAILURE);
-				
+
 				job.getAdditionalInfo().put("error", "supplied workflow is not an exisiting workflow");
 				return new ResponseEntity<Job>(job, HttpStatus.BAD_REQUEST);
 			}
-			
+
 			Job job = submitJob(body, uuid);
-			
+
 			HttpHeaders headers = new HttpHeaders();
 			ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromCurrentRequestUri();
 			builder.pathSegment(job.getId());
-			
+
 			logger.debug("Setting location header to: " + builder.build().toUri());
 			headers.setLocation(builder.build().toUri());
-			
+
 			return new ResponseEntity<Job>(job, headers, HttpStatus.CREATED);
 		} catch (StatePreconditionException | XenonException e) {
 			logger.error("Error while posting job", e);
@@ -186,7 +186,7 @@ public class JobsApiController implements JobsApi {
 			return new ResponseEntity<Job>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
+
 	public Job submitJob(JobDescription body, String uuid) throws StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + uuid);
 		LoggingUtils.addFileAppenderToLogger("jobs." + uuid, xenonService.getJobLogName("jobs." + uuid));
@@ -204,24 +204,24 @@ public class JobsApiController implements JobsApi {
 
 		builder.pathSegment("log");
 		job.setLog(builder.build().toString());
-		
+
 		ServletUriComponentsBuilder b = ServletUriComponentsBuilder.fromCurrentRequest();
 		String baseurl = b.path("/..").build().normalize().toString();
 		job.getAdditionalInfo().put("baseurl", baseurl);
 		job.getAdditionalInfo().put("createdAt", new Date());
 
-		job = repository.save(job);
+		job = repository.saveAndFlush(job);
 
 		jobLogger.info("Submitted Job: " + job);
 
 		return job;
 	}
-	
+
 	public Optional<Job> cancelJob(String jobId) throws StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
-		
+
 		jobLogger.info("Trying to cancel job " + jobId);
-		
+
 		Optional<Job> j = repository.findById(jobId);
 		if (j.isPresent()) {
 			Job job = j.get();
@@ -253,9 +253,9 @@ public class JobsApiController implements JobsApi {
 
 	public Optional<Job> deleteJob(String jobId) throws StatePreconditionException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
-		
+
 		jobLogger.info("Going to delete job " + jobId);
-		
+
 		Optional<Job> j = repository.findById(jobId);
 		if (j.isPresent()) {
 			Job job = j.get();

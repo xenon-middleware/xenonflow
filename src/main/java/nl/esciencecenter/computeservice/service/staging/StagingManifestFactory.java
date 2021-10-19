@@ -145,10 +145,10 @@ public class StagingManifestFactory {
 
 			jobLogger.debug("Parsing inputs from: " + workflow.toString());
         	for (InputParameter parameter : workflow.getInputs()) {
-        		if (parameter.getId().equals("jobid")) {
-        			jobOrder.put("jobid", job.getId());
-        		} else if (parameter.getId().equals("jobname")) {
-        			jobOrder.put("jobname", job.getName());
+        		if (parameter.getId().equals("xenonflow_jobid")) {
+        			jobOrder.put("xenonflow_jobid", job.getId());
+        		} else if (parameter.getId().equals("xenonflow_jobname")) {
+        			jobOrder.put("xenonflow_jobname", job.getName());
         		} else {
         			addParameterToManifest(manifest, jobOrder, parameter);
         		}

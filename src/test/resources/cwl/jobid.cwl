@@ -1,11 +1,11 @@
 cwlVersion: v1.0
 class: CommandLineTool
 inputs:
-  - id: jobid
+  - id: xenonflow_jobid
     type: string
     inputBinding:
       position: 1
-  - id: jobname
+  - id: xenonflow_jobname
     type: string
     inputBinding:
       position: 2

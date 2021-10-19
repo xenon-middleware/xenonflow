@@ -34,14 +34,14 @@ public interface JobsApi {
 			@ApiResponse(code = 404, message = "Job not found", response = Void.class) })
 	@RequestMapping(value = "/jobs/{jobId}", method = RequestMethod.DELETE)
 	ResponseEntity<Void> deleteJobById(
-			@ApiParam(value = "Job ID", required = true) @PathVariable("jobId") String jobId); 
+			@ApiParam(value = "Job ID", required = true) @PathVariable("jobId") String jobId);
 
 	@ApiOperation(value = "Get a job", notes = "", response = Job.class, tags = {})
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Status of job", response = Job.class),
 			@ApiResponse(code = 404, message = "Job not found", response = Job.class) })
 	@RequestMapping(value = "/jobs/{jobId}", produces = { "application/json" }, method = RequestMethod.GET)
 	ResponseEntity<Job> getJobById(
-			@ApiParam(value = "Job ID", required = true) @PathVariable("jobId") String jobId); 
+			@ApiParam(value = "Job ID", required = true) @PathVariable("jobId") String jobId);
 
 	@ApiOperation(value = "Log of a job", notes = "", response = String.class, tags = {})
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Job log", response = String.class),

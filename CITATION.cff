@@ -31,6 +31,11 @@ authors:
     family-names: Maassen
     given-names: Jason
     orcid: "https://orcid.org/0000-0002-8172-4865"
+  -
+    affiliation: "Netherlands eScience Center"
+    family-names: Kok
+    given-names: Peter
+    orcid: "https://orcid.org/0000-0002-6630-7326"
 cff-version: "1.0.3"
 keywords: 
   - workflow
@@ -38,5 +43,5 @@ license: "Apache-2.0"
 message: "If you use this software, please cite it using these metadata."
 repository-code: "https://github.com/xenon-middleware/xenon-flow"
 title: "xenon-flow"
-version: "v1.0-rc1"
+version: "v1.0"
 ...

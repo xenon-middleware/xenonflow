@@ -7,9 +7,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.StringReader;
-import java.util.HashMap;
-
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.jupiter.api.AfterAll;
@@ -25,10 +22,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.esciencecenter.client.Job;
 import nl.esciencecenter.computeservice.utils.CwlTestUtils;
@@ -78,7 +71,7 @@ public class CwlResultTest {
 	
 	@Test
 	public void echoJobIdAndNameTest() {
-		logger.info("Starting echo error log test");
+		logger.info("Starting jobid and name test");
 		assertThatCode(() -> {
 			String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/jobid-test.json"), "UTF-8");
 			Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
