@@ -169,13 +169,14 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 	@Bean
 	public TargetAdaptorConfig targetFileSystemConfig() {
 		String xenonflowHome = System.getenv("XENONFLOW_HOME");
+		String xenonflowFiles = System.getenv("XENONFLOW_FILES");
 		
 		if (xenonflowHome == null) {
 			xenonflowHome = Paths.get(".").toAbsolutePath().normalize().toString();
 		}
 		XenonflowConfig config;
 		try {
-			config = XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome);
+			config = XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome, xenonflowFiles);
 			return config.getTargetFilesystemConfig();
 		} catch (IOException e) {
 			e.printStackTrace();
