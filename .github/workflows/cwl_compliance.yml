@@ -39,8 +39,12 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: common-workflow-language/common-workflow-language.git
+          ref: main
+          path: common-workflow-language
       - name: Check cwltool
         run: cwltool --version
+      - name: Check repo layout:
+        run: ls -l
       - name: Build with Gradle
         run: ./gradlew build -x test
       - name: Run cwl compliance tests
