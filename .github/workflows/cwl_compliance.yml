@@ -51,7 +51,7 @@ jobs:
         run: |
           ./gradlew bootRun &
           cd common-workflow-language
-          sleep 20
+          sleep 40
           ./run_test.sh --junit-xml=../../result.xml --junit-verbose RUNNER=../xenon-flow-runner.sh
         env:
           XENONFLOW_HOME: ${{github.workspace}}
