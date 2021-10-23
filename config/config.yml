@@ -32,7 +32,7 @@ default: local
 
 sourceFileSystem:
    adaptor: file
-   location: ${XENONFLOW_FILES}
+   location: ${XENONFLOW_FILES}/v1.0
 
 targetFileSystem:
    adaptor: file
