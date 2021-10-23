@@ -43,8 +43,8 @@ jobs:
         run: cwltool --version
       - name: Build with Gradle
         run: ./gradlew build -x test
-      - name: Run E2E Tests
-        uses: BerniWittmann/background-server-action@latest
+      - name: Run cwl compliance tests
+        uses: BerniWittmann/background-server-action@v1.0.4
         with:
           command: cd common-workflow-language && ./run_test.sh -j10 --junit-xml=../../result.xml --junit-verbose RUNNER=../xenon-flow-runner.sh
           start: ./gradlew bootRun
