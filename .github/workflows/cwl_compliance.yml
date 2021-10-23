@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - cwl_compliance
   pull_request:
     branches:
       - master
