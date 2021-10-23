@@ -118,6 +118,7 @@ public class WorkflowDeserializer extends JsonDeserializer<Workflow> {
 	
 	private InputParameter deserializeInputParameter(String id, JsonNode node, ObjectMapper mapper)
 			throws JsonParseException, JsonMappingException, IOException {
+		
 		if (node.isTextual()) {
 			return new InputParameter(id, node.asText());
 		} else {
@@ -128,7 +129,7 @@ public class WorkflowDeserializer extends JsonDeserializer<Workflow> {
 			
 			
 			String type = inferType(node, parameter);
-			InputParameter i = new InputParameter(id, type);
+			InputParameter i = new InputParameter(id, type, isOptional(type));
 			i.putAll(parameter);
 			return i;
 		}
@@ -146,7 +147,7 @@ public class WorkflowDeserializer extends JsonDeserializer<Workflow> {
 			
 			
 			String type = inferType(node, parameter);
-			OutputParameter o = new OutputParameter(id, type);
+			OutputParameter o = new OutputParameter(id, type, isOptional(type));
 			o.putAll(parameter);
 			return o;
 		}
@@ -160,7 +161,9 @@ public class WorkflowDeserializer extends JsonDeserializer<Workflow> {
 			type = "complex";
 			JsonNode typeDef = node.findValue("type");
 			
-			if (typeDef.get("type").isTextual() && typeDef.get("type").asText().equals("array")) {
+			if (typeDef.isObject()
+					&& typeDef.get("type").isTextual()
+					&& typeDef.get("type").asText().equals("array")) {
 				JsonNode arrayType = typeDef.get("items");
 				if (arrayType.isTextual() && arrayType.asText().equals("File")) {
 					type = "File[]";
@@ -174,5 +177,9 @@ public class WorkflowDeserializer extends JsonDeserializer<Workflow> {
 			}
 		}
 		return type;
+	}
+	
+	private boolean isOptional(String type) {
+		return type.endsWith("?");
 	}
 }

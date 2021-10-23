@@ -24,11 +24,21 @@ public class ProcessDeserializer extends JsonDeserializer<Process> {
 			
 			Iterator<JsonNode> nodes = n.elements();
 			JsonNode main = null;
+			JsonNode workflow = null;
 			while (nodes.hasNext()) {
 				JsonNode m = nodes.next();
-				if (m.get("id").asText().equals("#main")) {
+				String nodeId = m.get("id").asText();
+				if (nodeId.equals("main") || nodeId.equals("#main")) {
 					main = m;
 				}
+				// in case we do not find a main, keep the first workflow we find
+				// and use that
+				if (workflow == null && m.get("class").asText().equals("Workflow")) {
+					workflow = m;
+				}
+			}
+			if (main == null) {
+				main = workflow;
 			}
 			
 			return oc.treeToValue(main, Workflow.class);

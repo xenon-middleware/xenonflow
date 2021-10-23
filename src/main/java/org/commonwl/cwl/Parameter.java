@@ -23,12 +23,15 @@ public class Parameter extends HashMap<String, Object> {
 
 	private String id;
 	private String type;
+	private boolean optional;
 	
 	public Parameter(
 			@JsonProperty("id") String id,
-			@JsonProperty("type") String type){
+			@JsonProperty("type") String type,
+			@JsonProperty("optional") boolean optional){
 		this.id = id;
 		this.type = type;
+		this.setOptional(optional);
 	}
 	
 	public String getType() {
@@ -45,5 +48,13 @@ public class Parameter extends HashMap<String, Object> {
 	
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public boolean isOptional() {
+		return optional;
+	}
+
+	public void setOptional(boolean optional) {
+		this.optional = optional;
 	}
 }

@@ -27,7 +27,19 @@ public class OutputParameter extends Parameter {
 	public OutputParameter(
 			@JsonProperty("id") String id,
 			@JsonProperty("type") String type){
-		super(id, type);
+		super(id, type, false);
+	}
+	
+	public OutputParameter(
+			@JsonProperty("id") String id,
+			@JsonProperty("type") String type,
+			@JsonProperty("optional") boolean optional){
+		super(id, type, optional);
+	}
+	
+	@Override
+	public String toString() {
+		return "OutputParameter [id=" + getId() + ", type=" + getType() + ", optional=" + isOptional()  +"]";
 	}
 
 }

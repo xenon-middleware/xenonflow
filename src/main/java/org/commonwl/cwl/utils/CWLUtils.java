@@ -47,10 +47,11 @@ public class CWLUtils {
 		for (Step step : workflow.getSteps()) {
 			RunCommand run = step.getRun();
 			if (!run.isSubWorkflow()) {
-				if (CWLUtils.isLocalPath(run.getWorkflowPath())) {
-					paths.add(new Path(run.getWorkflowPath()));
+				String path = run.getWorkflowPath();
+				if (!CWLUtils.isWorkflowReference(path)&& CWLUtils.isLocalPath(path)) {
+					paths.add(new Path(path));
 					
-					Path subWorkflowPath = workflowBasePath.resolve(run.getWorkflowPath());
+					Path subWorkflowPath = workflowBasePath.resolve(path);
 					Path subWorkflowBasePath = subWorkflowPath.getParent();
 					logger.debug("Loading sub-workflow from: " + subWorkflowPath);
 					String extension = FilenameUtils.getExtension(subWorkflowPath.getFileNameAsString());
@@ -91,8 +92,14 @@ public class CWLUtils {
 	public static WorkflowDescription loadLocalWorkflow(Job job, FileSystem cwlFileSystem, Logger jobLogger) throws JsonParseException, JsonMappingException, IOException, XenonException {
 		WorkflowDescription output = new WorkflowDescription();
 		
+		String workflow = job.getWorkflow();
+		if (workflow.contains("#")) {
+			workflow = workflow.split("#")[0];
+		}
+			
+		
         // Add the workflow to the staging manifest
-        Path localWorkflow = new Path(job.getWorkflow());
+        Path localWorkflow = new Path(workflow);
         output.localPath = localWorkflow;
         output.workflowBaseName = new Path (localWorkflow.getFileNameAsString());
 
@@ -132,6 +139,18 @@ public class CWLUtils {
 
 		return paths;
 	}
+	
+	public static boolean isPathNotLocation(String path) {
+		try {
+			// If it is an url this will not throw an exception
+			// and thus is a location
+			new URL(path);
+			return false;
+		} catch (MalformedURLException e) {
+			// It's not a URL, so we should interpret it as a path
+			return true;
+		}
+	}
 
 	/**
 	 * Determines if
@@ -150,6 +169,10 @@ public class CWLUtils {
 			// and fail down the line if it's not correct
 			return true;
 		}
+	}
+	
+	public static boolean isWorkflowReference(String path) {
+		return path.startsWith("#");
 	}
 	
 	/**

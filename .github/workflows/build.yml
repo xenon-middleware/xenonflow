@@ -2,7 +2,7 @@ name: Build and Test Xenonflow
 
 on:
   schedule:
-    - cron: "0 4 * * *"
+    - cron: "0 0 1 * *"
   push:
     branches:
       - master

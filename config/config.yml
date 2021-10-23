@@ -22,7 +22,7 @@ ComputeResources:
         maxTime: 20
         scheduler:
             adaptor: local
-            location: ${XENONFLOW_FILES}/running-jobs/
+            location: ${XENONFLOW_HOME}/running-jobs/
 
 #######
 # To use the docker slurm container instead
@@ -32,11 +32,11 @@ default: local
 
 sourceFileSystem:
    adaptor: file
-   location: ${XENONFLOW_FILES}/upload/
-   
+   location: ${XENONFLOW_FILES}
+
 targetFileSystem:
    adaptor: file
-   location: ${XENONFLOW_FILES}/output/
+   location: ${XENONFLOW_HOME}/output/
    hosted: true
 
 # Location where xenonflow can find the cwl workflows that are
