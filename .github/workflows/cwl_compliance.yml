@@ -43,7 +43,7 @@ jobs:
           path: common-workflow-language
       - name: Check cwltool
         run: cwltool --version
-      - name: Check repo layout:
+      - name: Check repo layout
         run: ls -l
       - name: Build with Gradle
         run: ./gradlew build -x test
