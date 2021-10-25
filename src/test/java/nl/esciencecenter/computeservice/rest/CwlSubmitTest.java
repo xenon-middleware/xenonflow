@@ -217,11 +217,13 @@ public class CwlSubmitTest {
 		assertTrue(dir.containsKey("class"));
 		assertEquals("Directory", (String)dir.get("class"));
 		assertTrue(dir.containsKey("location"));
+		assertTrue(((String)dir.get("location")).endsWith("output1"));
 		
 		HashMap<String, Object> dir2 = (HashMap<String, Object>) out.get(1);
 		assertTrue(dir2.containsKey("class"));
 		assertEquals("Directory", (String)dir2.get("class"));
 		assertTrue(dir2.containsKey("location"));
+		assertTrue(((String)dir2.get("location")).endsWith("output2"));
 		
 		assertTrue(xenonService.getTargetFileSystem().exists(new Path((String) dir.get("path"))));
 		assertTrue(xenonService.getTargetFileSystem().exists(new Path((String) dir2.get("path"))));
@@ -245,11 +247,13 @@ public class CwlSubmitTest {
 		assertTrue(dir.containsKey("class"));
 		assertEquals("Directory", (String)dir.get("class"));
 		assertTrue(dir.containsKey("location"));
+		assertTrue(((String)dir.get("location")).endsWith("output1"));
 		
 		HashMap<String, Object> dir2 = (HashMap<String, Object>) out.get(1);
 		assertTrue(dir2.containsKey("class"));
 		assertEquals("Directory", (String)dir2.get("class"));
 		assertTrue(dir2.containsKey("location"));
+		assertTrue(((String)dir2.get("location")).endsWith("output2"));
 		
 		assertTrue(xenonService.getTargetFileSystem().exists(new Path((String) dir.get("path"))));
 		assertTrue(xenonService.getTargetFileSystem().exists(new Path((String) dir2.get("path"))));

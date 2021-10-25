@@ -462,12 +462,15 @@ public abstract class XenonStager {
 			if (parameter.getType().equals("Directory[]")) {
 				List<HashMap<String, Object>> values = (List<HashMap<String, Object>>) binding.get(paramId);
 				for (HashMap<String, Object> value : values) {
-					Path dirPath = manifest.getTargetDirectory().resolve(object.getTargetPath());
-					value.put("path", dirPath.toString());
-					value.put("location", b.build().toString());
-					
-					if (value.containsKey("listing")) {
-						fixListingRecursive(b, value, dirPath);
+					if (object.getTargetPath().toString().equals((String)value.get("basename"))) {
+						Path dirPath = manifest.getTargetDirectory().resolve(object.getTargetPath());
+						value.put("path", dirPath.toString());
+						value.put("location", b.build().toString());
+						
+						if (value.containsKey("listing")) {
+							fixListingRecursive(b, value, dirPath);
+						}
+						break;
 					}
 				}
 			
