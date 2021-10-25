@@ -364,22 +364,17 @@ public abstract class XenonStager {
 				String outputTarget = null;
 				Object outputObject = null;
 				
-				UriComponentsBuilder b;
-				if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
-					b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
-					b.pathSegment("output");
-					b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-				} else {
-					b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());
-					b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-				}
+				UriComponentsBuilder b = createUriBuilderFromObject(manifest, targetFileSystem, object);
 				
 				if (parameter != null && binding.containsKey(paramId)) {
 					if (parameter.getType().equals("File[]")) {
 						List<HashMap<String, Object>> values = (List<HashMap<String, Object>>) binding.get(paramId);
 						for (HashMap<String, Object> value : values) {
-							value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-							value.put("location", b.build().toString());
+							if (object.getTargetPath().toString().equals((String)value.get("basename"))) {
+								value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+								value.put("location", b.build().toString());
+								break;
+							}
 						}
 					
 						outputTarget = paramId;
@@ -436,6 +431,7 @@ public abstract class XenonStager {
 		}
 		return binding;
 	}
+
 	
 	@SuppressWarnings("unchecked")
 	public void fixDirectoryStagingObject(Job job, StagingManifest manifest,
@@ -456,15 +452,8 @@ public abstract class XenonStager {
 		
 		FileSystem targetFileSystem = getTargetFileSystem();
 		
-		UriComponentsBuilder b;
-		if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
-			b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
-			b.pathSegment("output");
-			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-		} else {
-			b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());
-			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-		}
+		UriComponentsBuilder b = createUriBuilderFromObject(manifest, targetFileSystem, object);
+		
 
 		String  outputTarget = object.getTargetPath().getFileNameAsString();
 		Object outputObject = null;
@@ -503,6 +492,20 @@ public abstract class XenonStager {
 		}
 		
 		binding.put(outputTarget, outputObject);
+	}
+
+	private UriComponentsBuilder createUriBuilderFromObject(StagingManifest manifest, FileSystem targetFileSystem,
+			FileOrDirectoryStagingObject object) {
+		UriComponentsBuilder b;
+		if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
+			b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
+			b.pathSegment("output");
+			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+		} else {
+			b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());
+			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+		}
+		return b;
 	}
 
 	@SuppressWarnings("unchecked")

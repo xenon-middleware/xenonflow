@@ -4,7 +4,7 @@ import org.commonwl.cwl.Parameter;
 
 import nl.esciencecenter.xenon.filesystems.Path;
 
-public class DirectoryStagingObject extends BaseStagingObject {
+public class DirectoryStagingObject extends BaseStagingObject implements FileOrDirectoryStagingObject {
 	private Path sourcePath;
 	private Path targetPath;
 
