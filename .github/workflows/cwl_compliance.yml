@@ -16,6 +16,7 @@ jobs:
   compliance:
     name: Compliance
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - name: Set up java
