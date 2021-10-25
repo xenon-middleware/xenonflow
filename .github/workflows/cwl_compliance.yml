@@ -16,7 +16,6 @@ jobs:
   compliance:
     name: Compliance
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
       - name: Set up java
@@ -49,6 +48,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build -x test
       - name: Run cwl compliance tests
+        is_skippable: true
         run: |
           ./gradlew bootRun > xenonflow.log &
           cd common-workflow-language
