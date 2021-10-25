@@ -1,4 +1,4 @@
-name: Build and Test Xenonflow
+name: Xenonflow CWL Compliance
 
 on:
   push:
@@ -14,7 +14,7 @@ on:
 
 jobs:
   compliance:
-    name: Ubuntu
+    name: Compliance
     runs-on: ubuntu-latest
 
     steps:
