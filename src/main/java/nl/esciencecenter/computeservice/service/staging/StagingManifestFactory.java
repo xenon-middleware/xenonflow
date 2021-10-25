@@ -191,8 +191,12 @@ public class StagingManifestFactory {
 			if (map.containsKey(paramId)) {
 				addFileOrDirectoryToManifest(manifest, parameter, map, paramId);
 			}
-		} else if (parameter.getType().equals("File") || parameter.getType().equals("Directory")
-				 || parameter.getType().equals("stdout") || parameter.getType().equals("stderr")) {
+		} else if (parameter.getType().equals("File")
+				 || parameter.getType().equals("File?")
+				 || parameter.getType().equals("Directory")
+				 || parameter.getType().equals("Directory?")
+				 || parameter.getType().equals("stdout")
+				 || parameter.getType().equals("stderr")) {
 			if (!map.containsKey(paramId) && !parameter.containsKey("default")) {
 				throw new CwlException("Error staging files, cannot find: " + paramId + " in the job order.");
 			} else {
