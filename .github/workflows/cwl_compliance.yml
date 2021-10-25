@@ -57,7 +57,7 @@ jobs:
           XENONFLOW_HOME: ${{github.workspace}}
           XENONFLOW_FILES: ${{github.workspace}}/common-workflow-language/v1.0
           XENONFLOW_API_KEY: in1uP28Y1Et9YGp95VLYzhm5Jgd5M1r0CKI7326RHwbVcHGa
-      - name: Publish Unit Test Results
+      - name: Publish Compliance Results
         uses: EnricoMi/publish-unit-test-result-action@v1.23
         if: always()
         with:
