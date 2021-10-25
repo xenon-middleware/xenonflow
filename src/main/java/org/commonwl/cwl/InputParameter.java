@@ -39,11 +39,18 @@ public class InputParameter extends Parameter {
 			@JsonProperty("id") String id,
 			@JsonProperty("type") String type
 			){
-		super(id, type);
+		super(id, type, false);
+	}
+	
+	public InputParameter(
+			@JsonProperty("id") String id,
+			@JsonProperty("type") String type,
+			@JsonProperty("optional") boolean optional){
+		super(id, type, optional);
 	}
 
 	@Override
 	public String toString() {
-		return "InputParameter [id=" + getId() + ", type=" + getType() +"]";
+		return "InputParameter [id=" + getId() + ", type=" + getType() + ", optional=" + isOptional()  +"]";
 	}
 }

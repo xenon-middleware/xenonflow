@@ -157,8 +157,13 @@ public class JobsApiController implements JobsApi {
 				job.getAdditionalInfo().put("error", "Name and Workflow cannot be null");
 				return new ResponseEntity<Job>(job, HttpStatus.BAD_REQUEST);
 			}
+			
+			String workflow = body.getWorkflow();
+			if (workflow.contains("#")) {
+				workflow = workflow.split("#")[0];
+			}
 
-			if(!CWLUtils.isLocalWorkflow(new Path(body.getWorkflow()), xenonService.getCwlFileSystem())) {
+			if(!CWLUtils.isLocalWorkflow(new Path(workflow), xenonService.getCwlFileSystem())) {
 				Job job = new Job();
 				job.setId(uuid);
 				job.setName(body.getName());

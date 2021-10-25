@@ -2,7 +2,7 @@ name: Build and Test Xenonflow
 
 on:
   schedule:
-    - cron: "0 4 * * *"
+    - cron: "0 0 1 * *"
   push:
     branches:
       - master
@@ -15,7 +15,7 @@ on:
 
 jobs:
   build:
-    name: Ubuntu
+    name: Build and Test
     runs-on: ubuntu-latest
 
     steps:
@@ -40,3 +40,8 @@ jobs:
         run: ./gradlew build -x test
       - name: Test
         run: ./gradlew check
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1.23
+        if: always()
+        with:
+          files: build/test-results/test/*.xml
