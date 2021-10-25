@@ -62,4 +62,6 @@ jobs:
         if: always()
         with:
           files: result.xml
+          check_name: CWL Compliance Results
+          fail_on: nothing
 
