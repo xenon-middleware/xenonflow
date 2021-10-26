@@ -9,10 +9,8 @@ inputs:
     type:
       type: array
       items: Directory
-    inputBinding: {}
   - id: newnames
     type: string[]
-    inputBinding: {}
 
 steps:
     copydirs:

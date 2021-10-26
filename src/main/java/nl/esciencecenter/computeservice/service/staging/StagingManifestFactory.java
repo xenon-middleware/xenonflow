@@ -307,8 +307,15 @@ public class StagingManifestFactory {
 		Path sourcePath = null;
 		if (dir.containsKey("path")) {
 			sourcePath = new Path((String) dir.get("path"));
-		} else if (dir.containsKey("location") && CWLUtils.isLocalPath((String)dir.get("location"))) {
-			sourcePath = CWLUtils.getLocalPath((String)dir.get("location"));
+		} else if (dir.containsKey("location")) {
+			String location = (String)dir.get("location");
+			if (CWLUtils.isPathNotLocation(location)) {
+				// it is a path but set in location
+				sourcePath = new Path(location);
+			} else if (CWLUtils.isLocalPath(location)) {
+				// it is an actual local path with file:// in front
+				sourcePath = CWLUtils.getLocalPath(location);
+			}
 		} else if(dir.containsKey("basename")) {
 			sourcePath = CWLUtils.getLocalPath((String)dir.get("basename"));
 		}

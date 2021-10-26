@@ -350,35 +350,41 @@ public abstract class XenonStager {
 				FileStagingObject object = (FileStagingObject) stageObject;
 				Parameter parameter = object.getParameter();
 				
+				String paramId = null;
+				if (parameter != null) {
+					if (parameter.getId().startsWith("#") && parameter.getId().contains("/")) {
+						// If the parameter name start with # it likely
+						// has the format #main/param_name
+						paramId = parameter.getId().split("/")[1];
+					} else{
+						paramId = parameter.getId();
+					}
+				}
+				
 				String outputTarget = null;
 				Object outputObject = null;
 				
-				UriComponentsBuilder b;
-				if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
-					b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
-					b.pathSegment("output");
-					b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-				} else {
-					b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());
-					b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-				}
+				UriComponentsBuilder b = createUriBuilderFromObject(manifest, targetFileSystem, object);
 				
-				if (parameter != null && binding.containsKey(parameter.getId())) {
+				if (parameter != null && binding.containsKey(paramId)) {
 					if (parameter.getType().equals("File[]")) {
-						List<HashMap<String, Object>> values = (List<HashMap<String, Object>>) binding.get(parameter.getId());
+						List<HashMap<String, Object>> values = (List<HashMap<String, Object>>) binding.get(paramId);
 						for (HashMap<String, Object> value : values) {
-							value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-							value.put("location", b.build().toString());
+							if (object.getTargetPath().toString().equals((String)value.get("basename"))) {
+								value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+								value.put("location", b.build().toString());
+								break;
+							}
 						}
 					
-						outputTarget = parameter.getId();
+						outputTarget = paramId;
 						outputObject = values;
 					} else {
-						HashMap<String, Object> value = (HashMap<String, Object>) binding.get(parameter.getId());
+						HashMap<String, Object> value = (HashMap<String, Object>) binding.get(paramId);
 						value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
 						value.put("location", b.build().toString());
 					
-						outputTarget = parameter.getId();
+						outputTarget = paramId;
 						outputObject = value;
 					}
 				} else {
@@ -425,6 +431,7 @@ public abstract class XenonStager {
 		}
 		return binding;
 	}
+
 	
 	@SuppressWarnings("unchecked")
 	public void fixDirectoryStagingObject(Job job, StagingManifest manifest,
@@ -432,42 +439,49 @@ public abstract class XenonStager {
 		DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
 		Parameter parameter = object.getParameter();
 		
+		String paramId = null;
+		if (parameter != null) {
+			if (parameter.getId().startsWith("#") && parameter.getId().contains("/")) {
+				// If the parameter name start with # it likely
+				// has the format #main/param_name
+				paramId = parameter.getId().split("/")[1];
+			} else{
+				paramId = parameter.getId();
+			}
+		}
+		
 		FileSystem targetFileSystem = getTargetFileSystem();
 		
-		UriComponentsBuilder b;
-		if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
-			b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
-			b.pathSegment("output");
-			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-		} else {
-			b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());
-			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
-		}
+		UriComponentsBuilder b = createUriBuilderFromObject(manifest, targetFileSystem, object);
+		
 
 		String  outputTarget = object.getTargetPath().getFileNameAsString();
 		Object outputObject = null;
 		
-		if (parameter != null && binding.containsKey(parameter.getId())) {
+		if (parameter != null && binding.containsKey(paramId)) {
 			if (parameter.getType().equals("Directory[]")) {
-				List<HashMap<String, Object>> values = (List<HashMap<String, Object>>) binding.get(parameter.getId());
+				List<HashMap<String, Object>> values = (List<HashMap<String, Object>>) binding.get(paramId);
 				for (HashMap<String, Object> value : values) {
-					Path dirPath = manifest.getTargetDirectory().resolve(object.getTargetPath());
-					value.put("path", dirPath.toString());
-					value.put("location", b.build().toString());
-					
-					if (value.containsKey("listing")) {
-						fixListingRecursive(b, value, dirPath);
+					if (object.getTargetPath().toString().equals((String)value.get("basename"))) {
+						Path dirPath = manifest.getTargetDirectory().resolve(object.getTargetPath());
+						value.put("path", dirPath.toString());
+						value.put("location", b.build().toString());
+						
+						if (value.containsKey("listing")) {
+							fixListingRecursive(b, value, dirPath);
+						}
+						break;
 					}
 				}
 			
-				outputTarget = parameter.getId();
+				outputTarget = paramId;
 				outputObject = values;
 			} else {
-				HashMap<String, Object> value = (HashMap<String, Object>) binding.get(parameter.getId());
+				HashMap<String, Object> value = (HashMap<String, Object>) binding.get(paramId);
 				value.put("path", manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
 				value.put("location", b.build().toString());
 			
-				outputTarget = parameter.getId();
+				outputTarget = paramId;
 				outputObject = value;
 			}
 		} else {
@@ -481,6 +495,20 @@ public abstract class XenonStager {
 		}
 		
 		binding.put(outputTarget, outputObject);
+	}
+
+	private UriComponentsBuilder createUriBuilderFromObject(StagingManifest manifest, FileSystem targetFileSystem,
+			FileOrDirectoryStagingObject object) {
+		UriComponentsBuilder b;
+		if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
+			b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
+			b.pathSegment("output");
+			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+		} else {
+			b = UriComponentsBuilder.fromUriString(targetFileSystem.getLocation().toString());
+			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());
+		}
+		return b;
 	}
 
 	@SuppressWarnings("unchecked")

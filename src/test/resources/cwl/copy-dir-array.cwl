@@ -7,10 +7,8 @@ requirements:
 inputs:
   - id: inp_dirs
     type: Directory[]
-    inputBinding: {}
   - id: newnames
     type: string[]
-    inputBinding: {}
 
 steps:
     copydirs:
@@ -20,7 +18,9 @@ steps:
         out:
             - out
         run: copy-dir.cwl 
-        scatter: ["inp", "newname"]
+        scatter:
+            - inp
+            - newname
         scatterMethod: dotproduct
 
 outputs:
