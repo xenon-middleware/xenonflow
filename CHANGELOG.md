@@ -1,3 +1,13 @@
+# Version 1.0.1
+- Adding cwl compliance check and fixed a bunch of related bugs
+- Reduced logging output
+- Fixed various bugs
+- Fixed a number of crashes related to the tests ran by the compliance test.
+- Fixing output bug when parameter has # in its id
+- Fixing file and directory array location wrangling
+- Fixed directory tests and staging
+- Fixing directory path staging for cwl check: nr85 directory_input_docker
+
 # Version 1.0
 - Various bugfixes
 - Fixed uri's supplied by xenonflow when runing behind a proxy server

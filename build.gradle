@@ -10,7 +10,7 @@ plugins {
     id "com.github.node-gradle.node" version "2.2.2"
 }
 
-version = 'v1.0'
+version = 'v1.0.1'
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
