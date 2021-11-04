@@ -20,6 +20,7 @@ import nl.esciencecenter.computeservice.service.tasks.CwlStageInTask;
 import nl.esciencecenter.computeservice.service.tasks.CwlStageOutTask;
 import nl.esciencecenter.computeservice.service.tasks.CwlWorkflowTask;
 import nl.esciencecenter.computeservice.service.tasks.DeleteJobTask;
+import nl.esciencecenter.computeservice.utils.RemoteFilesystemUtils;
 import nl.esciencecenter.xenon.XenonException;
 import nl.esciencecenter.xenon.adaptors.schedulers.JobCanceledException;
 import nl.esciencecenter.xenon.schedulers.JobStatus;
@@ -259,6 +260,14 @@ public class XenonMonitor {
 							jobService.setXenonState(job.getId(), status.getState());
 							jobService.setXenonExitcode(job.getId(), status.getExitCode());
 							jobService.setJobState(job.getId(), JobState.RUNNING_CR, JobState.CANCELLED);
+						}
+						
+						try {
+							// delete remote directory
+							RemoteFilesystemUtils.deleteRemoteWorkdir(xenonService.getRemoteFileSystem(), jobLogger, job);
+						} catch (XenonException e) {
+							jobLogger.info("Exception while deleting remote directory:", e);
+							logger.error("Exception while deleting remote directory:", e);
 						}
 					}
 				}

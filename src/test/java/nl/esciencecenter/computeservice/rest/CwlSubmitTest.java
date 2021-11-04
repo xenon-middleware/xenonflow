@@ -2,6 +2,7 @@ package nl.esciencecenter.computeservice.rest;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -12,8 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.After;
 import org.junit.Test;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ import nl.esciencecenter.client.CWLState;
 import nl.esciencecenter.client.Job;
 import nl.esciencecenter.computeservice.service.XenonService;
 import nl.esciencecenter.computeservice.utils.CwlTestUtils;
+import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 
 @RunWith(SpringRunner.class)
@@ -53,14 +55,17 @@ public class CwlSubmitTest {
 	@Value("${xenonflow.http.auth-token}")
 	private String apiToken;
 
-	@AfterAll
+	@After
 	public void deleteJob() throws Exception {
-		for (String jobId : CwlTestUtils.getCreated()) {
+		for (Job job : CwlTestUtils.getCreated()) {
 			this.mockMvc.perform(
-					delete("/jobs/"+jobId)
+					delete(job.getUri())
 					.header(headerName, apiToken)
 				);
 			Thread.sleep(1100);
+			FileSystem targetFileSystem = xenonService.getTargetFileSystem();
+			Path targetPath = targetFileSystem.getWorkingDirectory().resolve(job.getSandboxDirectory());
+			assertFalse(targetFileSystem.exists(targetPath));
 		}
 		CwlTestUtils.clearCreated();
 	}
@@ -179,7 +184,10 @@ public class CwlSubmitTest {
 		@SuppressWarnings("unchecked")
 		HashMap<String, Object> out = (HashMap<String, Object>) job.getOutput().get("out");
 		
-		assertEquals(job.getSandboxDirectory() + "/ipsum.txt", (String)out.get("path"));
+		Path ipsumPath = new Path((String)out.get("path"));
+		assertEquals(job.getSandboxDirectory() + "/ipsum.txt", ipsumPath.toString());
+		FileSystem targetFileSystem = xenonService.getTargetFileSystem();
+		assertTrue(targetFileSystem.exists(ipsumPath));
 	}
 	
 	@Test
@@ -312,6 +320,11 @@ public class CwlSubmitTest {
 		Job job = CwlTestUtils.waitForFinal(location, mockMvc, headerName, apiToken);
 		
 		assertTrue(job.getState() == CWLState.CANCELLED);
+		
+		// Make sure the remote directory gets cleaned up correctly
+		FileSystem remoteFileSystem = xenonService.getRemoteFileSystem();
+		Path remotePath = remoteFileSystem.getWorkingDirectory().resolve(job.getSandboxDirectory());
+		assertFalse(remoteFileSystem.exists(remotePath));
 	}
 	
 	@Test
@@ -330,6 +343,11 @@ public class CwlSubmitTest {
 		
 		job = CwlTestUtils.waitForFinal(location, mockMvc, headerName, apiToken);
 		assertTrue(job.getState() == CWLState.CANCELLED);
+		
+		// Make sure the remote directory gets cleaned up correctly
+		FileSystem remoteFileSystem = xenonService.getRemoteFileSystem();
+		Path remotePath = remoteFileSystem.getWorkingDirectory().resolve(job.getSandboxDirectory());
+		assertFalse(remoteFileSystem.exists(remotePath));
 	}
 	
 /* This one currently does not work. It needs mocking of XenonService so it puts
@@ -355,16 +373,34 @@ public class CwlSubmitTest {
 	}
 */
 	@Test
-	public void submitAndDeleteEchoTest() throws Exception {
+	public void submitAndDeleteCopyTest() throws Exception {
 		logger.info("Starting delete test");
-		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/echo-test.json"), "UTF-8");
+		String contents = IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream("jobs/copy-test.json"), "UTF-8");
 		
 		Job job = CwlTestUtils.postJobAndWaitForFinal(contents, mockMvc, headerName, apiToken);
+		
+		
+		assertTrue(job.getOutput().containsKey("out"));
+		@SuppressWarnings("unchecked")
+		HashMap<String, Object> out = (HashMap<String, Object>) job.getOutput().get("out");
+		
+		FileSystem targetFileSystem = xenonService.getTargetFileSystem();
+		
+		// Check if output is there before deletion.
+		Path ipsumPath = new Path((String)out.get("path"));
+		assertEquals(job.getSandboxDirectory() + "/ipsum.txt", ipsumPath.toString());
+		assertTrue(targetFileSystem.exists(ipsumPath));
+		
+		// Delete the job
 		String location = job.getUri();
 		this.mockMvc.perform(delete(location)
 				.header(headerName, apiToken)).andExpect(status().is2xxSuccessful());
 		
 		this.mockMvc.perform(get(location)
 				.header(headerName, apiToken)).andExpect(status().isNotFound());
+		
+		// Check if the output has been deleted
+		Path targetPath = targetFileSystem.getWorkingDirectory().resolve(job.getSandboxDirectory());
+		assertFalse(targetFileSystem.exists(targetPath));
 	}
 }

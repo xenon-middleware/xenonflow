@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.After;
 import org.junit.Test;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import nl.esciencecenter.client.Job;
+import nl.esciencecenter.computeservice.service.XenonService;
 import nl.esciencecenter.computeservice.utils.CwlTestUtils;
+import nl.esciencecenter.xenon.filesystems.FileSystem;
+import nl.esciencecenter.xenon.filesystems.Path;
 
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
@@ -36,20 +39,27 @@ public class CwlResultTest {
 	@Autowired
     private MockMvc mockMvc;
 	
+	@Autowired
+	private XenonService xenonService;
+
 	@Value("${xenonflow.http.auth-token-header-name}")
 	private String headerName;
 
 	@Value("${xenonflow.http.auth-token}")
 	private String apiToken;
 
-	@AfterAll
+	@After
 	public void deleteJob() throws Exception {
-		for (String jobId : CwlTestUtils.getCreated()) {
+		for (Job job : CwlTestUtils.getCreated()) {
 			this.mockMvc.perform(
-					delete("/jobs/"+jobId)
+					delete(job.getUri())
 					.header(headerName, apiToken)
 				);
 			Thread.sleep(1100);
+			
+			FileSystem targetFileSystem = xenonService.getTargetFileSystem();
+			Path targetPath = targetFileSystem.getWorkingDirectory().resolve(job.getSandboxDirectory());
+			assertFalse(targetFileSystem.exists(targetPath));
 		}
 		CwlTestUtils.clearCreated();
 	}

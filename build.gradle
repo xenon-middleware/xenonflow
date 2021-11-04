@@ -90,10 +90,10 @@ distributions {
 			from(['config/config.yml', 'config/application.properties']) {
 				into '/config'
 			}
-			from('/test_setup') {
-				into '/test_setup'
+			from('src/test/resources/cwl/echo.cwl') {
+				into '/cwl'
 			}
-			from('/docs') {
+			from('docs') {
 				into 'docs'
 			}
 			from (['README.md',

@@ -53,31 +53,16 @@ public class DeleteJobTask {
 			}
 			
 			try {
-				// delete remote directory
-				Path remoteDirectory = job.getSandboxDirectory();
-				FileSystem remoteFilesystem = xenonService.getRemoteFileSystem();
-				
-				if (remoteFilesystem.exists(remoteDirectory)) {
-					jobLogger.info("Deleting remote directory: " + remoteDirectory);
-					remoteFilesystem.delete(remoteDirectory, true);
-				} else {
-					jobLogger.info("Remote directory: " + remoteDirectory + " does not exist, skipping.");
-				}
-			} catch (XenonException e) {
-				jobLogger.info("Exception while deleting remote directory:", e);
-				logger.error("Exception while deleting remote directory:", e);
-			}
-			
-			try {
 				// delete local output directory if it exists
-				FileSystem localFilesystem = xenonService.getSourceFileSystem();
-				Path localDirectory = localFilesystem.getWorkingDirectory().resolve("out/" + job.getId() + "/").toAbsolutePath();
+				FileSystem targetFilesystem = xenonService.getTargetFileSystem();
+				Path targetDirectory = job.getSandboxDirectory();
+				Path localDirectory = targetFilesystem.getWorkingDirectory().resolve(targetDirectory).toAbsolutePath();
 				
-				if (localFilesystem.exists(localDirectory)) {
+				if (targetFilesystem.exists(localDirectory)) {
 					jobLogger.info("Deleting local output directory: " + localDirectory);
-					localFilesystem.delete(localDirectory, true);
+					targetFilesystem.delete(localDirectory, true);
 				} else {
-					jobLogger.info("Local directory: " + localFilesystem + " does not exist, skipping.");
+					jobLogger.info("Local directory: " + localDirectory + " does not exist, skipping.");
 				}
 			} catch (XenonException e) {
 				jobLogger.info("Exception while deleting local directory:", e);

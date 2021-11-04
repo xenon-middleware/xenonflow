@@ -31,6 +31,7 @@ import nl.esciencecenter.xenon.filesystems.CopyStatus;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 import nl.esciencecenter.xenon.filesystems.PosixFilePermission;
+import nl.esciencecenter.computeservice.utils.RemoteFilesystemUtils;
 
 public abstract class XenonStager {
 	private static final Logger logger = LoggerFactory.getLogger(XenonMonitor.class);
@@ -247,28 +248,7 @@ public abstract class XenonStager {
 						jobLogger.info("StageIn complete.");
 						logger.info(job.getId()+": staging in complete.");
 					} else if (job.getInternalState() == JobState.STAGING_OUT){
-						WorkflowBinding files = null;
-						if (manifest.size() > 0) {
-				    		files = postStageout(job, manifest);
-				    		jobLogger.info("Fixed output: " + files.toIndentedString());
-				    	} else {
-				    		jobLogger.warn("There are no files to stage.");
-				    	}
-				    	
-				        jobLogger.info("StageOut complete.");
-				        logger.info(job.getId()+": staging out complete.");
-				        
-				        int exitcode = ((StagingOutJob)stagingJob).exitcode;
-
-				        if (!job.getInternalState().isFinal()) {
-				        	if (exitcode == 0) {
-				        		job = jobService.completeJob(jobId, files, JobState.STAGING_OUT, JobState.SUCCESS);
-				        		logger.info(job.getId()+": job completed successfully.");
-				        	} else {
-				        		job = jobService.completeJob(jobId, files, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
-				        		logger.info(job.getId()+": job completed with errors, exitcode: " + exitcode);
-				        	}
-				        }
+						job = postStageout(jobId, stagingJob, manifest, jobLogger, job);
 					}
 				}
 			} catch (XenonException | StatePreconditionException | IOException e) {
@@ -278,6 +258,43 @@ public abstract class XenonStager {
 				copyMap.remove(jobId);
 			}
 		}
+	}
+
+
+	private Job postStageout(String jobId, StagingJob stagingJob, StagingManifest manifest, Logger jobLogger, Job job)
+			throws IOException, XenonException, StatePreconditionException {
+		jobLogger.debug("Starting postStageout");
+		WorkflowBinding files = null;
+		if (manifest.size() > 0) {
+			files = fixOutputPaths(job, manifest);
+			jobLogger.info("Fixed output: " + files.toIndentedString());
+		} else {
+			jobLogger.warn("There are no files to stage.");
+		}
+		
+		jobLogger.info("StageOut complete.");
+		logger.info(job.getId()+": staging out complete.");
+		
+		int exitcode = ((StagingOutJob)stagingJob).exitcode;
+
+		if (!job.getInternalState().isFinal()) {
+			if (exitcode == 0) {
+				job = jobService.completeJob(jobId, files, JobState.STAGING_OUT, JobState.SUCCESS);
+				logger.info(job.getId()+": job completed successfully.");
+			} else {
+				job = jobService.completeJob(jobId, files, JobState.STAGING_OUT, JobState.PERMANENT_FAILURE);
+				logger.info(job.getId()+": job completed with errors, exitcode: " + exitcode);
+			}
+		}
+		
+		try {
+			// delete remote directory
+			RemoteFilesystemUtils.deleteRemoteWorkdir(getSourceFileSystem(), jobLogger, job);
+		} catch (XenonException e) {
+			jobLogger.info("Exception while deleting remote directory:", e);
+			logger.error("Exception while deleting remote directory:", e);
+		}
+		return job;
 	}
 
 
@@ -338,13 +355,13 @@ public abstract class XenonStager {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public WorkflowBinding postStageout(Job job, StagingManifest manifest) throws IOException, XenonException {
+	public WorkflowBinding fixOutputPaths(Job job, StagingManifest manifest) throws IOException, XenonException {
 		Logger jobLogger = LoggerFactory.getLogger("jobs." + manifest.getJobId());
 		WorkflowBinding binding = job.getOutput();
 		
 		FileSystem targetFileSystem = getTargetFileSystem();
 		
-		jobLogger.debug("Starting postStageout");
+		
 		for (StagingObject stageObject : manifest) {
 			if (stageObject instanceof FileStagingObject) {
 				FileStagingObject object = (FileStagingObject) stageObject;
@@ -402,32 +419,6 @@ public abstract class XenonStager {
 			} else if (stageObject instanceof DirectoryStagingObject) {
 				fixDirectoryStagingObject(job, manifest, stageObject, binding, jobLogger);
 			}
-//			} else if (stageObject instanceof FileToStringStagingObject) {
-//				FileToStringStagingObject object = (FileToStringStagingObject) stageObject;
-//				Path sourcePath = object.getSourcePath();
-//				String contents = IOUtils.toString(sourceFileSystem.readFromFile(sourcePath), "UTF-8");
-//				object.setBytesCopied(contents.length());
-//				
-//				jobLogger.debug("Read contents from " + sourcePath + ": " + contents);
-//				outputTarget = object.getTargetString();
-//				outputObject = contents;
-//			} else if (stageObject instanceof FileToMapStagingObject) {
-//				FileToMapStagingObject object = (FileToMapStagingObject) stageObject;
-//				Path sourcePath = object.getSourcePath();
-//				String contents = IOUtils.toString(sourceFileSystem.readFromFile(sourcePath), "UTF-8");
-//				object.setBytesCopied(contents.length());
-//				jobLogger.debug("Read contents from " + sourcePath + ": " + contents);
-//
-//				if (contents.length() > 0) {
-//					ObjectMapper mapper = new ObjectMapper(new JsonFactory());
-//					TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {
-//					};
-//					HashMap<String, Object> value = mapper.readValue(new StringReader(contents), typeRef);
-//
-//					outputTarget = object.getTargetString();
-//					outputObject = value;
-//				}
-//			}
 		}
 		return binding;
 	}

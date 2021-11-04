@@ -18,9 +18,9 @@ import nl.esciencecenter.client.Job;
 
 public class CwlTestUtils {
 	private static ObjectMapper mapper = new ObjectMapper();
-	private static List<String> created = new LinkedList<String>();
+	private static List<Job> created = new LinkedList<Job>();
 
-	public static List<String> getCreated() {
+	public static List<Job> getCreated() {
 		return created;
 	}
 	
@@ -105,7 +105,7 @@ public class CwlTestUtils {
 		).andExpect(status().is2xxSuccessful()).andReturn().getResponse();
 		 
 		Job job = mapper.readValue(response.getContentAsString(), Job.class);
-		created.add(job.getId());
+		created.add(job);
 		
 		return response;
 	}
