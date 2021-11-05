@@ -69,6 +69,7 @@ dependencies {
     //Misc
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
     implementation group: 'commons-io', name: 'commons-io', version: '2.5'
+    implementation group: 'org.fusesource.jansi', name: 'jansi', version: '2.4.0'
 
 	//Test
 	testImplementation group: 'org.hamcrest', name:'hamcrest', version:'2.2'

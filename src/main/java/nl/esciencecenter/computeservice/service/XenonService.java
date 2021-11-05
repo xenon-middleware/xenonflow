@@ -24,6 +24,7 @@ import nl.esciencecenter.xenon.schedulers.Scheduler;
 @Service
 public class XenonService implements AutoCloseable {
 	private static final Logger logger = LoggerFactory.getLogger(XenonService.class);
+	private static final Logger stdoutLogger = LoggerFactory.getLogger("stdout");
 
 	@Value("${xenonflow.config}")
 	private String xenonConfigFile;
@@ -85,7 +86,8 @@ public class XenonService implements AutoCloseable {
 		if (xenonflowFiles == null) {
 			xenonflowFiles = xenonflowHome;
 		}
-		logger.info("Xenonflow is using as home: " + xenonflowHome);
+		stdoutLogger.info("XENONFLOW_HOME is: " + xenonflowHome);
+		stdoutLogger.info("XENONFLOW_FILES is: " + xenonflowFiles);
 
 		// Read xenon config
 		setConfig(XenonflowConfig.loadFromFile(xenonConfigFile, xenonflowHome, xenonflowFiles));
@@ -95,6 +97,17 @@ public class XenonService implements AutoCloseable {
 		// TODO: Is assertions the nicest way?
 		assert(resource != null);
 		assert(resource.getSchedulerConfig() != null);
+		
+		if(getConfig().getSourceFilesystemConfig().shouldClearOnJobDone()) {
+			Path source = getSourceFileSystem().getWorkingDirectory();
+			
+			stdoutLogger.warn("Xenonflow input clearing is ON, xenonflow will clean up input files from: " + source);
+		}
+		
+		if(getConfig().getTargetFilesystemConfig().isHosted()) {
+			stdoutLogger.info("Target FileSystem hosting is ON");
+		}
+			
 		
 		// Make sure everything is running.
 		checkSchedulerStates();

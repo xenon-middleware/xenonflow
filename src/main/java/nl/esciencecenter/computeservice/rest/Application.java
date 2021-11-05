@@ -60,6 +60,7 @@ import nl.esciencecenter.xenon.XenonException;
 @Order(1)
 public class Application extends WebSecurityConfigurerAdapter implements WebMvcConfigurer, CommandLineRunner, ApplicationListener<ApplicationReadyEvent> {
 	private static final Logger logger = LoggerFactory.getLogger(Application.class);
+	private static final Logger stdoutLogger = LoggerFactory.getLogger("stdout");
 	
 	@Value("${local.server.address}")
 	private String bindAdress;
@@ -231,6 +232,6 @@ public class Application extends WebSecurityConfigurerAdapter implements WebMvcC
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
 		String scheme = ssl ? "https://" : "http://";
-		logger.info("Server running at: " + scheme + bindAdress + ":" + serverPort);
+		stdoutLogger.info("Server running at: " + scheme + bindAdress + ":" + serverPort);
 	}
 }

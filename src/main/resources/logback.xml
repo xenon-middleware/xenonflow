@@ -22,14 +22,24 @@
     </encoder>
     <file>${LOG_PATH}/request.log</file>
   </appender>
+  
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <withJansi>true</withJansi>
+    <encoder>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level - %highlight(%msg%n)</pattern>
+    </encoder>
+  </appender>
 
   <logger name="requests" level="WARN">
   	<appender-ref ref="REQUESTS"/>
   </logger>
+  
+  <logger name="stdout" level="INFO">
+  	<appender-ref ref="STDOUT"/>
+  </logger>
 
-  <logger name="nl.esciencecenter" additivity="false" level="WARN">
+  <logger name="nl.esciencecenter" additivity="false" level="INFO">
     <appender-ref ref="FILE"/>
-    <appender-ref ref="CONSOLE"/>
   </logger>
 
   <logger name="org.springframework" level="WARN">
@@ -54,7 +64,6 @@
 
   <root level="WARN">
       <appender-ref ref="FILE"/>
-      <appender-ref ref="CONSOLE"/>
   </root>
 
 </configuration>
