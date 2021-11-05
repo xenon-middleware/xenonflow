@@ -1,3 +1,9 @@
+# Not yet released
+- Xenonflow now cleans up the remote directory when a job completes
+- Xenonflow now cleans up the output directory correctly when deleting a job
+- Added an option to the sourceDirectory config that controls deleting the input
+  to a job when it is completed.
+
 # Version 1.0.1
 - Adding cwl compliance check and fixed a bunch of related bugs
 - Reduced logging output

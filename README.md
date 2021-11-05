@@ -226,3 +226,19 @@ To run xenonflow in ssl (https) mode you can follow the following steps:
    4. `server.ssl.key-store-password` The password to the key store.
    5. `server.ssl.key-alias` The alias as given to the keystore.
 
+### Cleaning Input Data
+*Warning:* This will delete the input data on the source directory. It is recommended to set
+the input filesystem to a different location than the cwl and output filesystems so files are
+not lost by accident.
+
+You can have xenonflow clean up the input files after a task has run by setting the `clearOnJobDone` parameter
+to true in the sourceFileSystem.
+
+i.e.
+
+```yaml
+sourceFileSystem:
+   adaptor: file
+   location: ${XENONFLOW_FILES}/input
+   clearOnJobDone: true
+```

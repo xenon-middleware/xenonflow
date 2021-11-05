@@ -55,7 +55,8 @@ public class StagingManifestFactory {
         manifest.add(new CwlFileStagingObject(wfd.localPath, wfd.workflowBaseName, null));
         addSubWorkflowsToManifest(wfd.workflow, manifest, wfd.workflowBasePath, cwlFileSystem, jobLogger);
 
-        addInputToManifest(job, wfd.workflow, manifest, jobLogger, jobService);
+        WorkflowBinding newInput = addInputToManifest(job, wfd.workflow, manifest, jobLogger);
+        jobService.setInput(job.getId(), newInput);
 
         return manifest;
 	}
@@ -120,7 +121,7 @@ public class StagingManifestFactory {
         }
 	}
 	
-	public static void addInputToManifest(Job job, Workflow workflow, StagingManifest manifest, Logger jobLogger, JobService jobService) throws CwlException, JsonParseException, JsonMappingException, IOException, StatePreconditionException, XenonflowException, XenonException {	
+	public static WorkflowBinding addInputToManifest(Job job, Workflow workflow, StagingManifest manifest, Logger jobLogger) throws CwlException, JsonParseException, JsonMappingException, IOException, XenonflowException, XenonException {	
 		// Read in the job order as a hashmap
 		ObjectMapper mapper = new ObjectMapper(new JsonFactory());
 		TypeReference<WorkflowBinding> typeRef = new TypeReference<WorkflowBinding>() {};
@@ -157,9 +158,9 @@ public class StagingManifestFactory {
 			String newJobOrderString = mapper.writeValueAsString(jobOrder);
 			logger.debug("New job order string: " + newJobOrderString);
 			manifest.add(new StringToFileStagingObject(newJobOrderString, remoteJobOrder, null));
-			
-			jobService.setInput(job.getId(), jobOrder);
         }
+        
+        return jobOrder;
 	}
 	
 	private static WorkflowBinding addOutputToManifest(Job job, Workflow workflow, StagingManifest manifest, String outputContents, Logger jobLogger) throws JsonParseException, JsonMappingException, IOException, XenonException, XenonflowException, CwlException {    	

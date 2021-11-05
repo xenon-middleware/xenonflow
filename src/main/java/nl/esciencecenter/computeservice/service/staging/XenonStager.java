@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.commonwl.cwl.CwlException;
 import org.commonwl.cwl.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,7 @@ import nl.esciencecenter.computeservice.model.JobRepository;
 import nl.esciencecenter.computeservice.model.JobState;
 import nl.esciencecenter.computeservice.model.StatePreconditionException;
 import nl.esciencecenter.computeservice.model.WorkflowBinding;
+import nl.esciencecenter.computeservice.model.XenonflowException;
 import nl.esciencecenter.computeservice.service.JobService;
 import nl.esciencecenter.computeservice.service.XenonMonitor;
 import nl.esciencecenter.computeservice.service.XenonService;
@@ -31,16 +33,14 @@ import nl.esciencecenter.xenon.filesystems.CopyStatus;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 import nl.esciencecenter.xenon.filesystems.PosixFilePermission;
-import nl.esciencecenter.computeservice.utils.RemoteFilesystemUtils;
+import nl.esciencecenter.computeservice.utils.FileSystemUtils;
 
 public abstract class XenonStager {
 	private static final Logger logger = LoggerFactory.getLogger(XenonMonitor.class);
 
-//	private FileSystem sourceFileSystem;
-//	private FileSystem targetFileSystem;
 	private JobService jobService;
 	private JobRepository repository;
-	protected XenonService service;
+	protected XenonService xenonService;
 	private HashMap<String, StagingJob> copyMap;
 	
 	private static class StagingJob {
@@ -68,7 +68,7 @@ public abstract class XenonStager {
 	public XenonStager(JobService jobService, JobRepository repository, XenonService service) {
 		this.jobService = jobService;
 		this.repository = repository;
-		this.service = service;
+		this.xenonService = service;
 		this.copyMap = new LinkedHashMap<String, StagingJob>();		
 	}
 
@@ -275,8 +275,26 @@ public abstract class XenonStager {
 		jobLogger.info("StageOut complete.");
 		logger.info(job.getId()+": staging out complete.");
 		
+		// Clean Up
+		try {
+			// delete remote directory
+			FileSystemUtils.deleteRemoteWorkdir(getSourceFileSystem(), jobLogger, job);
+		} catch (XenonException e) {
+			jobLogger.info("Exception while deleting remote directory:", e);
+			logger.error("Exception while deleting remote directory:", e);
+		}
+		if (xenonService.getConfig().getSourceFilesystemConfig().shouldClearOnJobDone()) {
+			try {
+				// delete input files
+				FileSystemUtils.deleteInputFromInputDir(xenonService, jobLogger, job);
+			} catch (XenonException | CwlException | XenonflowException e) {
+				jobLogger.info("Exception while deleting input directory:", e);
+				logger.error("Exception while deleting input directory:", e);
+			}
+		}
+		
+		// Set the final status
 		int exitcode = ((StagingOutJob)stagingJob).exitcode;
-
 		if (!job.getInternalState().isFinal()) {
 			if (exitcode == 0) {
 				job = jobService.completeJob(jobId, files, JobState.STAGING_OUT, JobState.SUCCESS);
@@ -287,13 +305,6 @@ public abstract class XenonStager {
 			}
 		}
 		
-		try {
-			// delete remote directory
-			RemoteFilesystemUtils.deleteRemoteWorkdir(getSourceFileSystem(), jobLogger, job);
-		} catch (XenonException e) {
-			jobLogger.info("Exception while deleting remote directory:", e);
-			logger.error("Exception while deleting remote directory:", e);
-		}
 		return job;
 	}
 
@@ -491,7 +502,7 @@ public abstract class XenonStager {
 	private UriComponentsBuilder createUriBuilderFromObject(StagingManifest manifest, FileSystem targetFileSystem,
 			FileOrDirectoryStagingObject object) {
 		UriComponentsBuilder b;
-		if (service.getConfig().getTargetFilesystemConfig().isHosted()) {
+		if (xenonService.getConfig().getTargetFilesystemConfig().isHosted()) {
 			b = UriComponentsBuilder.fromUriString(manifest.getBaseurl());
 			b.pathSegment("output");
 			b.pathSegment(manifest.getTargetDirectory().resolve(object.getTargetPath()).toString());

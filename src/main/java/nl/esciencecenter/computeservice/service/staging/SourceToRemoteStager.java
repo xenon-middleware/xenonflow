@@ -14,17 +14,17 @@ public class SourceToRemoteStager extends XenonStager {
 
 	@Override
 	protected FileSystem getTargetFileSystem() throws XenonException {
-		return service.getRemoteFileSystem();
+		return xenonService.getRemoteFileSystem();
 	}
 
 	@Override
 	protected FileSystem getSourceFileSystem() throws XenonException {
-		return service.getSourceFileSystem();
+		return xenonService.getSourceFileSystem();
 	}
 	
 	@Override
 	protected FileSystem getCwlFileSystem() throws XenonException {
-		return service.getCwlFileSystem();
+		return xenonService.getCwlFileSystem();
 	}
 
 }

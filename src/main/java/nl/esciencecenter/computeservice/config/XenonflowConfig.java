@@ -49,7 +49,7 @@ public class XenonflowConfig {
 	private String defaultComputeResourceName = null;
 	
 	@JsonProperty(value="sourceFileSystem", required=true)
-	private AdaptorConfig sourceFileSystemConfig;
+	private SourceAdaptorConfig sourceFileSystemConfig;
 	
 	@JsonProperty(value="targetFileSystem", required=true)
 	private TargetAdaptorConfig targetFileSystemConfig;
@@ -136,7 +136,7 @@ public class XenonflowConfig {
 	
 	@JsonCreator
 	public XenonflowConfig(@JsonProperty(value="ComputeResources", required=true) Map<String, ComputeResource> computeResources,
-								@JsonProperty(value="sourceFileSystem", required=true) AdaptorConfig sourceFileSystemConfig,
+								@JsonProperty(value="sourceFileSystem", required=true) SourceAdaptorConfig sourceFileSystemConfig,
 								@JsonProperty(value="targetFileSystem", required=true) TargetAdaptorConfig targetFileSystemConfig,
 								@JsonProperty(value="cwlFileSystem", required=true) AdaptorConfig cwlFileSystemConfig) {
 		super();
@@ -171,11 +171,11 @@ public class XenonflowConfig {
 		}
 	}
 	
-	public AdaptorConfig getSourceFilesystemConfig() {
+	public SourceAdaptorConfig getSourceFilesystemConfig() {
 		return sourceFileSystemConfig;
 	}
 
-	public void setSourceFilesystemConfig(AdaptorConfig sourceFileSystemConfig) {
+	public void setSourceFilesystemConfig(SourceAdaptorConfig sourceFileSystemConfig) {
 		this.sourceFileSystemConfig = sourceFileSystemConfig;
 	}
 	

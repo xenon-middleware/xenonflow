@@ -5,9 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import nl.esciencecenter.xenon.credentials.Credential;
 
 public class TargetAdaptorConfig extends AdaptorConfig {
-	@JsonProperty(value="baseurl", required=false)
-	private String baseurl = "output";
-
 	@JsonProperty(value="hosted", required=false)
 	private boolean hosted = false;
 	
