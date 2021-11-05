@@ -57,12 +57,12 @@ def wait_until_finished(created, headers, quiet):
                 return 33
             elif status not in WAITING_STATES:
                 print("Unsupported state received from xenonflow: ", status)
-                return -1
+                return 33
         else:
             if not quiet:
                 print("Received a non 200 reply from xenonflow: ",
                       response.text)
-            return -1
+            return 33
 
 
 def main():
@@ -115,7 +115,7 @@ def main():
         else:
             if not quiet:
                 print("Could not create job: ", created.text)
-            return -1
+            return 33
 
 
 if __name__ == "__main__":
