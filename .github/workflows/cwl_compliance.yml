@@ -52,7 +52,7 @@ jobs:
           ./gradlew bootRun > xenonflow.log &
           cd common-workflow-language
           sleep 40
-          ./run_test.sh --junit-xml=../../result.xml --junit-verbose RUNNER=../xenon-flow-runner.sh  --badgedir=../badges || true
+          ./run_test.sh --junit-xml=../../result.xml --junit-verbose RUNNER=../xenon-flow-runner.sh  --badgedir=../../badges || true
         env:
           XENONFLOW_HOME: ${{github.workspace}}
           XENONFLOW_FILES: ${{github.workspace}}/common-workflow-language/v1.0
@@ -68,7 +68,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Compliance Badges
-          path: badges/*
+          path: badges/*.json
       - name: Publish Compliance Results
         uses: EnricoMi/publish-unit-test-result-action@v1.23
         if: always()
