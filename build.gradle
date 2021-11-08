@@ -86,7 +86,7 @@ bootJar {
 // Don't use include an extra directory in the dist zip.
 distributions {
     boot {
-    	baseName = 'xenonflow'
+    	distributionBaseName = 'xenonflow'
         contents {
 			from(['config/config.yml', 'config/application.properties']) {
 				into '/config'

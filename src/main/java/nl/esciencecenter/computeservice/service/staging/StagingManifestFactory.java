@@ -47,12 +47,12 @@ public class StagingManifestFactory {
 		}
 		
 		if (cwlCommandScript == null) {
-			manifest.add(new CommandScriptStagingObject("#!/usr/bin/env bash\n\ncwltool $@", new Path("cwlcommand"), null));
+			manifest.add(new CommandScriptStagingObject("#!/usr/bin/env bash\n\ncwltool $@", new Path("cwlcommand")));
 		} else {
-			manifest.add(new CommandScriptStagingObject(cwlCommandScript, new Path("cwlcommand"), null));
+			manifest.add(new CommandScriptStagingObject(cwlCommandScript, new Path("cwlcommand")));
 		}
 		
-        manifest.add(new CwlFileStagingObject(wfd.localPath, wfd.workflowBaseName, null));
+        manifest.add(new CwlFileStagingObject(wfd.localPath, wfd.workflowBaseName, cwlFileSystem));
         addSubWorkflowsToManifest(wfd.workflow, manifest, wfd.workflowBasePath, cwlFileSystem, jobLogger);
 
         WorkflowBinding newInput = addInputToManifest(job, wfd.workflow, manifest, jobLogger);
@@ -117,7 +117,7 @@ public class StagingManifestFactory {
         		localPath = workflowBasePath.resolve(path);
         	}
         	Path remotePath = path;
-        	manifest.add(new CwlFileStagingObject(localPath, remotePath, null));
+        	manifest.add(new CwlFileStagingObject(localPath, remotePath, fileSystem));
         }
 	}
 	

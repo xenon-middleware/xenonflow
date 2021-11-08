@@ -1,7 +1,6 @@
 package nl.esciencecenter.computeservice.service.staging;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -9,7 +8,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import org.commonwl.cwl.CwlException;
 import org.commonwl.cwl.Parameter;
@@ -28,11 +26,9 @@ import nl.esciencecenter.computeservice.service.JobService;
 import nl.esciencecenter.computeservice.service.XenonMonitor;
 import nl.esciencecenter.computeservice.service.XenonService;
 import nl.esciencecenter.xenon.XenonException;
-import nl.esciencecenter.xenon.filesystems.CopyMode;
 import nl.esciencecenter.xenon.filesystems.CopyStatus;
 import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
-import nl.esciencecenter.xenon.filesystems.PosixFilePermission;
 import nl.esciencecenter.computeservice.utils.FileSystemUtils;
 
 public abstract class XenonStager {
@@ -105,96 +101,25 @@ public abstract class XenonStager {
 		}
 		
 		Path sourceDirectory = sourceFileSystem.getWorkingDirectory().toAbsolutePath();
-		Path cwlDirectory = cwlFileSystem.getWorkingDirectory().toAbsolutePath();
 
 		List<String> stagingIds = new LinkedList<String>();
 		List<String> cwlFileIds = new LinkedList<String>();
 		// Copy all the files there
 		for (StagingObject stageObject : manifest) {
 			if (stageObject instanceof CwlFileStagingObject) {
-				CwlFileStagingObject object = (CwlFileStagingObject) stageObject;
-				Path sourcePath = object.getSourcePath();
-				if (!sourcePath.isAbsolute()) {
-					sourcePath = cwlDirectory.resolve(object.getSourcePath()).toAbsolutePath();
-				}
-				Path targetPath = targetDirectory.resolve(object.getTargetPath());
-				Path targetDir = targetPath.getParent();
-				if (!targetFileSystem.exists(targetDir)) {
-					targetFileSystem.createDirectories(targetDir);
-				}
-				
-				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
-				String copyId = cwlFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
-						false);
-				stageObject.setCopyId(copyId);
+				String copyId = stageObject.stage(jobLogger, cwlFileSystem, targetFileSystem, sourceDirectory, targetDirectory);
 				cwlFileIds.add(copyId);
-			}else if (stageObject instanceof FileStagingObject) {
-				FileStagingObject object = (FileStagingObject) stageObject;
-				Path sourcePath = object.getSourcePath();
-				if (!sourcePath.isAbsolute()) {
-					sourcePath = sourceDirectory.resolve(object.getSourcePath()).toAbsolutePath();
-				}
-				Path targetPath = targetDirectory.resolve(object.getTargetPath());
-				Path targetDir = targetPath.getParent();
-				if (!targetFileSystem.exists(targetDir)) {
-					targetFileSystem.createDirectories(targetDir);
-				}
-				
-				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
-				String copyId = sourceFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
-						false);
-				stageObject.setCopyId(copyId);
-				stagingIds.add(copyId);
 			} else if (stageObject instanceof StringToFileStagingObject) {
-				StringToFileStagingObject object = (StringToFileStagingObject) stageObject;
-				Path targetPath = targetDirectory.resolve(object.getTargetPath());
-				Path targetDir = targetPath.getParent();
-
-				if (!targetFileSystem.exists(targetDir)) {
-					targetFileSystem.createDirectories(targetDir);
-				}
-				
-				jobLogger.info("Writing string to: " + targetPath);
-				String contents = object.getSourceString();
-				
-				jobLogger.debug("Input contents: " + contents);
-				
-				PrintWriter out = new PrintWriter(targetFileSystem.writeToFile(targetPath));
-				out.write(contents);
-				out.close();
-
-				stageObject.setBytesCopied(contents.length());
-				
-				if (stageObject instanceof CommandScriptStagingObject) {
-					Set<PosixFilePermission> permissions = targetFileSystem.getAttributes(targetPath).getPermissions();
-					permissions.add(PosixFilePermission.OWNER_EXECUTE);
-					permissions.add(PosixFilePermission.GROUP_EXECUTE);
-					permissions.add(PosixFilePermission.OTHERS_EXECUTE);
-					targetFileSystem.setPosixFilePermissions(targetPath, permissions);
-				}
-			} else if (stageObject instanceof DirectoryStagingObject) {
-				DirectoryStagingObject object = (DirectoryStagingObject) stageObject;
-				Path sourcePath = object.getSourcePath();
-				if (!sourcePath.isAbsolute()) {
-					sourcePath = sourceDirectory.resolve(object.getSourcePath()).toAbsolutePath();
-				}
-				Path targetPath = targetDirectory.resolve(object.getTargetPath());
-				Path targetDir = targetPath.getParent();
-
-				if (!targetFileSystem.exists(targetDir)) {
-					targetFileSystem.createDirectories(targetDir);
-				}
-				
-				jobLogger.info("Copying from " + sourcePath + " to " + targetPath);
-				String copyId = sourceFileSystem.copy(sourcePath, targetFileSystem, targetPath, CopyMode.REPLACE,
-						true);
-				stageObject.setCopyId(copyId);
+				stageObject.stage(jobLogger, sourceFileSystem, targetFileSystem, sourceDirectory, targetDirectory);
+			} else {
+				String copyId = stageObject.stage(jobLogger, sourceFileSystem, targetFileSystem, sourceDirectory, targetDirectory);
 				stagingIds.add(copyId);
 			}
 		}
 		
 		return Pair.of(stagingIds, cwlFileIds);
 	}
+
 	
 	public void updateStaging() {
 		for(Iterator<Map.Entry<String,StagingJob>> stagingEntries=copyMap.entrySet().iterator(); stagingEntries.hasNext();) {

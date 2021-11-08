@@ -2,7 +2,7 @@ package nl.esciencecenter.computeservice.service.staging;
 
 import org.commonwl.cwl.Parameter;
 
-public class BaseStagingObject implements StagingObject {
+public abstract class BaseStagingObject implements StagingObject {
 
 	protected long bytesCopied = 0;
 	protected String copyId;
