@@ -4,7 +4,7 @@ plugins {
     id 'idea'
     id 'eclipse'
     id 'application'
-    id 'org.springframework.boot' version '2.2.4.RELEASE'
+    id 'org.springframework.boot' version '2.5.6'
     id 'io.spring.dependency-management' version '1.0.7.RELEASE'
     id 'jacoco'
     id "com.github.node-gradle.node" version "2.2.2"
@@ -15,7 +15,7 @@ sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
 application {
-	mainClassName = 'nl.esciencecenter.computeservice.rest.Application'
+	mainClass.set('nl.esciencecenter.computeservice.rest.Application')
 }
 
 
