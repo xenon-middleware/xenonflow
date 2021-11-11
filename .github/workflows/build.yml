@@ -39,7 +39,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build -x test
       - name: Test
-        run: ./gradlew check
+        run: ./gradlew --info check
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.23
         if: always()
