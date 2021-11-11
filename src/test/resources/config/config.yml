@@ -17,8 +17,8 @@ ComputeResources:
     local:
         cwlCommand: |
             #!/usr/bin/env bash
-
-            /Users/bweel/.pyenv/shims/cwltool $@
+            
+            cwltool $@
         maxTime: 20
         scheduler:
             adaptor: local
