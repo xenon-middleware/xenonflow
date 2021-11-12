@@ -4,7 +4,7 @@ plugins {
     id 'idea'
     id 'eclipse'
     id 'application'
-    id 'org.springframework.boot' version '2.2.4.RELEASE'
+    id 'org.springframework.boot' version '2.5.6'
     id 'io.spring.dependency-management' version '1.0.7.RELEASE'
     id 'jacoco'
     id "com.github.node-gradle.node" version "2.2.2"
@@ -43,10 +43,10 @@ dependencies {
     implementation group: 'nl.esciencecenter.xenon.adaptors', name: 'xenon-adaptors-cloud', version: '3.0.2'
 
     //Spring(boot)
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.2.4.RELEASE'
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.2.4.RELEASE'
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '2.2.4.RELEASE'
-    implementation group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '2.2.4.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.5.6'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.5.6'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '2.5.6'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '2.5.6'
     implementation group: 'io.springfox', name: 'springfox-boot-starter', version: '3.0.0'
 
     //Jackson, match version used in Spring
@@ -58,11 +58,11 @@ dependencies {
     implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
 	
 	//JPA, hibernate and h2 database persistance libraries
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.2.4.RELEASE'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.5.6'
 	runtimeOnly group: 'com.h2database', name: 'h2', version: '1.4.199'
 	
 	// Security
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.2.4.RELEASE'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.5.6'
 	
 	// Admin Interface
 
@@ -75,7 +75,7 @@ dependencies {
 	testImplementation group: 'org.hamcrest', name:'hamcrest', version:'2.2'
     testImplementation group: 'org.hamcrest', name:'hamcrest-library', version:'2.2'
     testImplementation group: 'junit', name:'junit', version:'4.13'
-    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.2.4.RELEASE'
+    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.5.6'
 }
 
 bootJar {
