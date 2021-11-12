@@ -15,7 +15,7 @@ sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
 application {
-	mainClassName = 'nl.esciencecenter.computeservice.rest.Application'
+	mainClass = 'nl.esciencecenter.computeservice.rest.Application'
 }
 
 
@@ -79,14 +79,14 @@ dependencies {
 }
 
 bootJar {
-	baseName = 'xenonflow'
+    baseName = 'xenonflow'
 }
 
 // Include some more files in the distribution zip
 // Don't use include an extra directory in the dist zip.
 distributions {
     boot {
-    	baseName = 'xenonflow'
+    	distributionBaseName = 'xenonflow'
         contents {
 			from(['config/config.yml', 'config/application.properties']) {
 				into '/config'
