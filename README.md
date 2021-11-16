@@ -2,7 +2,7 @@
 [![Build and Test Xenonflow](https://github.com/xenon-middleware/xenon-flow/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/xenon-middleware/xenon-flow/actions/workflows/build.yml)
 [![DOI](https://zenodo.org/badge/63334137.svg)](https://zenodo.org/badge/latestdoi/63334137)
 
-##### CWL Compliance
+##### CWL Compliance v1.0
 
 ![Required](https://badgen.net/https/raw.githubusercontent.com/xenon-middleware/xenon-flow/gh-pages/badges/required.json?icon=commonwl)
 ![Workflow](https://badgen.net/https/raw.githubusercontent.com/xenon-middleware/xenon-flow/gh-pages/badges/workflow.json?icon=commonwl)
