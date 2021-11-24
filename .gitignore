@@ -6,7 +6,12 @@ build/
 .settings
 *.iws
 .DS_Store
+.vscode
 
+# Ignore yarn
+src/main/frontend/yarn-v1.22.0/
+
+# Xenonflow logs
 log/
 db/
 xenon-flow.log
