@@ -54,6 +54,10 @@ public class CwlResultTest {
 
 	@After
 	public void deleteJob() throws Exception {
+		if (xenonService.getConfig().getSourceFilesystemConfig().shouldClearOnJobDone()) {
+			// Make sure we do not throw away the input if the testDeleteInput test fails
+			xenonService.getConfig().getSourceFilesystemConfig().setClearOnJobDone(false);
+		}
 		for (Job job : CwlTestUtils.getCreated()) {
 			mockMvc.perform(
 					delete(job.getUri())

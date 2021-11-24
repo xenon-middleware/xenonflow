@@ -4,7 +4,7 @@ plugins {
     id 'idea'
     id 'eclipse'
     id 'application'
-    id 'org.springframework.boot' version '2.2.4.RELEASE'
+    id 'org.springframework.boot' version '2.3.12.RELEASE'
     id 'io.spring.dependency-management' version '1.0.7.RELEASE'
     id 'jacoco'
     id "com.github.node-gradle.node" version "2.2.2"
@@ -15,7 +15,7 @@ sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
 application {
-	mainClassName = 'nl.esciencecenter.computeservice.rest.Application'
+	mainClass = 'nl.esciencecenter.computeservice.rest.Application'
 }
 
 
@@ -43,26 +43,27 @@ dependencies {
     implementation group: 'nl.esciencecenter.xenon.adaptors', name: 'xenon-adaptors-cloud', version: '3.0.2'
 
     //Spring(boot)
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.2.4.RELEASE'
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.2.4.RELEASE'
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '2.2.4.RELEASE'
-    implementation group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '2.2.4.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.3.12.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.3.12.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat', version: '2.3.12.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-devtools', version: '2.3.12.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '2.3.12.RELEASE'
     implementation group: 'io.springfox', name: 'springfox-boot-starter', version: '3.0.0'
 
     //Jackson, match version used in Spring
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.8'
-    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.9.8'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.9.8'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.4'
+    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.11.4'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.11.4'
 	
     //compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310'
     implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
 	
 	//JPA, hibernate and h2 database persistance libraries
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.2.4.RELEASE'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.3.12.RELEASE'
 	runtimeOnly group: 'com.h2database', name: 'h2', version: '1.4.199'
 	
 	// Security
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.2.4.RELEASE'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.3.12.RELEASE'
 	
 	// Admin Interface
 
@@ -75,18 +76,20 @@ dependencies {
 	testImplementation group: 'org.hamcrest', name:'hamcrest', version:'2.2'
     testImplementation group: 'org.hamcrest', name:'hamcrest-library', version:'2.2'
     testImplementation group: 'junit', name:'junit', version:'4.13'
-    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.2.4.RELEASE'
+    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.3.12.RELEASE'
+
+    runtimeOnly group: 'org.springframework.boot', name: 'spring-boot-properties-migrator', version: '2.3.12.RELEASE'
 }
 
 bootJar {
-	baseName = 'xenonflow'
+    baseName = 'xenonflow'
 }
 
 // Include some more files in the distribution zip
 // Don't use include an extra directory in the dist zip.
 distributions {
     boot {
-    	baseName = 'xenonflow'
+    	distributionBaseName = 'xenonflow'
         contents {
 			from(['config/config.yml', 'config/application.properties']) {
 				into '/config'
