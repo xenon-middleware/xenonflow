@@ -17,7 +17,7 @@ ComputeResources:
     local:
         cwlCommand: |
             #!/usr/bin/env bash
-
+            
             cwltool $@
         maxTime: 20
         scheduler:

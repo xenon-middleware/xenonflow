@@ -1,12 +1,17 @@
 package nl.esciencecenter.computeservice.service.staging;
 
-import org.commonwl.cwl.Parameter;
+import java.io.PrintWriter;
 
+import org.commonwl.cwl.Parameter;
+import org.slf4j.Logger;
+
+import nl.esciencecenter.xenon.XenonException;
+import nl.esciencecenter.xenon.filesystems.FileSystem;
 import nl.esciencecenter.xenon.filesystems.Path;
 
 public class StringToFileStagingObject extends BaseStagingObject {
-	private String sourceString;
-	private Path targetPath;
+	protected String sourceString;
+	protected Path targetPath;
 
 	public StringToFileStagingObject(String source, Path targetPath, Parameter parameter) {
 		super(parameter);
@@ -37,5 +42,28 @@ public class StringToFileStagingObject extends BaseStagingObject {
 				+ ", targetPath=" + targetPath
 				+ ", parameter=" + parameter
 				+ "]";
+	}
+	
+	public String stage(Logger jobLogger, FileSystem sourceFileSystem, FileSystem targetFileSystem,
+			Path sourceDirectory, Path targetDirectory) throws XenonException {
+		Path targetPath = targetDirectory.resolve(getTargetPath());
+		Path targetDir = targetPath.getParent();
+
+		if (!targetFileSystem.exists(targetDir)) {
+			targetFileSystem.createDirectories(targetDir);
+		}
+		
+		jobLogger.info("Writing string to: " + targetPath);
+		String contents = getSourceString();
+		
+		jobLogger.debug("Input contents: " + contents);
+		
+		PrintWriter out = new PrintWriter(targetFileSystem.writeToFile(targetPath));
+		out.write(contents);
+		out.close();
+
+		setBytesCopied(contents.length());
+		
+		return null;
 	}
 }
