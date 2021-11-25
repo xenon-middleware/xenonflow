@@ -39,6 +39,10 @@ public abstract class XenonStager {
 	protected XenonService xenonService;
 	private HashMap<String, StagingJob> copyMap;
 	
+	/**
+	 * Data class that holds references to the manifest
+	 * and all ids created for staging this job.
+	 */
 	private static class StagingJob {
 		private final StagingManifest manifest;
 		private final List<String> copyIds;
@@ -52,6 +56,9 @@ public abstract class XenonStager {
 		}
 	}
 	
+	/**
+	 * Data class for staging jobs out that also holds the exitcode
+	 */
 	private static final class StagingOutJob extends StagingJob {
 		private final int exitcode;
 		
@@ -122,14 +129,11 @@ public abstract class XenonStager {
 
 	
 	public void updateStaging() {
+		// This for loop is using an iterator because we remove items while looping
 		for(Iterator<Map.Entry<String,StagingJob>> stagingEntries=copyMap.entrySet().iterator(); stagingEntries.hasNext();) {
 			Map.Entry<String,StagingJob> entry = stagingEntries.next();
 			String jobId = entry.getKey();
 			StagingJob stagingJob = entry.getValue();
-			
-			StagingManifest manifest = stagingJob.manifest;
-			List<String> copyIds = stagingJob.copyIds;
-			List<String> cwlFileIds = stagingJob.cwlFileIds;
 			Logger jobLogger = LoggerFactory.getLogger("jobs." + jobId);
 			
 			Optional<Job> j = repository.findById(jobId);		
@@ -144,6 +148,11 @@ public abstract class XenonStager {
 				FileSystem sourceFileSystem = getSourceFileSystem();
 				FileSystem cwlFileSystem = getCwlFileSystem();
 
+				StagingManifest manifest = stagingJob.manifest;
+				List<String> copyIds = stagingJob.copyIds;
+				List<String> cwlFileIds = stagingJob.cwlFileIds;
+
+				
 				// Check if the job has been cancelled
 				if (job.getInternalState().isCancellationActive() || job.getInternalState().isDeletionActive()) {
 					for (String id: copyIds) {
